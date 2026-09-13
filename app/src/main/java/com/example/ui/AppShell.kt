@@ -1,0 +1,851 @@
+package com.example.ui
+
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MenuOpen
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.components.AddTransactionSheet
+import com.example.ui.components.AiAdvisorSheet
+import com.example.ui.components.PlayfulTopBar
+import com.example.ui.components.UserAuthModal
+import com.example.ui.navigation.AppDestination
+import com.example.ui.screens.BudgetsScreen
+import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.MoneyFlowScreen
+import com.example.ui.screens.SavingsScreen
+import com.example.ui.screens.SettingsScreen
+import com.example.ui.screens.TransactionsScreen
+import com.example.ui.screens.WishlistScreen
+import com.example.ui.viewmodel.ExpenseTrackerViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppShell(
+    viewModel: ExpenseTrackerViewModel,
+    modifier: Modifier = Modifier
+) {
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+    val allUsers by viewModel.allUsers.collectAsStateWithLifecycle()
+    val summary by viewModel.dashboardSummary.collectAsStateWithLifecycle()
+    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+    val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
+    val totalSavings by viewModel.totalSavings.collectAsStateWithLifecycle()
+    val moneyFlows by viewModel.moneyFlows.collectAsStateWithLifecycle()
+    val wishlist by viewModel.wishlist.collectAsStateWithLifecycle()
+    val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
+    val actionMessage by viewModel.actionMessage.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    var currentDestination by remember { mutableStateOf(AppDestination.HOME) }
+    var showAddTransactionSheet by remember { mutableStateOf(false) }
+    var editingTransaction by remember { mutableStateOf<com.example.data.model.TransactionItem?>(null) }
+    var showAuthModal by remember { mutableStateOf(false) }
+    var showMoreMenuSheet by remember { mutableStateOf(false) }
+    var showAiAdvisorSheet by remember { mutableStateOf(false) }
+
+    val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val aiAdvisorSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(actionMessage) {
+        actionMessage?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            viewModel.clearActionMessage()
+        }
+    }
+
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isWideScreen = maxWidth >= 720.dp
+
+        if (isWideScreen) {
+            // Tablet & Desktop Canonical Layout with NavigationRail
+            Row(modifier = Modifier.fillMaxSize()) {
+                NavigationRail(
+                    modifier = Modifier.fillMaxHeight(),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    header = {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .clickable { showAuthModal = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 22.sp)
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            FloatingActionButton(
+                                onClick = { showAddTransactionSheet = true },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.testTag("rail_fab_add")
+                            ) {
+                                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Flow")
+                            }
+                        }
+                    }
+                ) {
+                    AppDestination.entries.forEach { dest ->
+                        NavigationRailItem(
+                            selected = currentDestination == dest,
+                            onClick = { currentDestination = dest },
+                            icon = { Icon(imageVector = dest.icon, contentDescription = dest.title) },
+                            label = { Text(dest.title, style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.testTag("rail_item_${dest.route}")
+                        )
+                    }
+                }
+
+                // Main Content for Wide Screens
+                Scaffold(
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+                    topBar = {
+                        PlayfulTopBar(
+                            currentUser = currentUser,
+                            onUserClick = { showAuthModal = true },
+                            onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                        )
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Box(modifier = Modifier.widthIn(max = 1100.dp)) {
+                            ScreenRouter(
+                                destination = currentDestination,
+                                currentUser = currentUser,
+                                summary = summary,
+                                transactions = transactions,
+                                moneyFlows = moneyFlows,
+                                wishlist = wishlist,
+                                savingsGoals = savingsGoals,
+                                totalSavings = totalSavings,
+                                budgets = budgets,
+                                allUsersCount = allUsers.size,
+                                onNavigateTo = { routeName ->
+                                    AppDestination.entries.find { it.route == routeName }?.let {
+                                        currentDestination = it
+                                    }
+                                },
+                                onOpenAddTransaction = {
+                                    editingTransaction = null
+                                    showAddTransactionSheet = true
+                                },
+                                onOpenAuthModal = { showAuthModal = true },
+                                onDeleteTransaction = { viewModel.deleteTransaction(it) },
+                                onEditTransaction = { item ->
+                                    editingTransaction = item
+                                    showAddTransactionSheet = true
+                                },
+                                onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
+                                    viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
+                                },
+                                onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
+                                onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
+                                onAddWishlistItem = { t, c, p, n -> viewModel.addWishlistItem(t, c, p, n) },
+                                onToggleWishlist = { viewModel.toggleWishlistItem(it) },
+                                onAddSavingsGoal = { t, a, e -> viewModel.addSavingsGoal(t, a, e) },
+                                onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                                onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+                topBar = {
+                    Column(modifier = Modifier.statusBarsPadding()) {
+                        PlayfulTopBar(
+                            currentUser = currentUser,
+                            onUserClick = { showAuthModal = true },
+                            onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                        )
+                        // Playful Category / Destination Quick Pill Row
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 16.dp, vertical = 6.dp)
+                        ) {
+                            items(AppDestination.entries) { dest ->
+                                val isSelected = currentDestination == dest
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                                    ),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { currentDestination = dest }
+                                        .testTag("quick_tab_${dest.route}")
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(text = dest.emoji, fontSize = 12.sp)
+                                        Text(
+                                            text = dest.title,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
+                                            ),
+                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = innerPadding.calculateTopPadding())
+                ) {
+                    ScreenRouter(
+                        destination = currentDestination,
+                        currentUser = currentUser,
+                        summary = summary,
+                        transactions = transactions,
+                        moneyFlows = moneyFlows,
+                        wishlist = wishlist,
+                        savingsGoals = savingsGoals,
+                        totalSavings = totalSavings,
+                        budgets = budgets,
+                        allUsersCount = allUsers.size,
+                        onNavigateTo = { routeName ->
+                            AppDestination.entries.find { it.route == routeName }?.let {
+                                currentDestination = it
+                            }
+                        },
+                        onOpenAddTransaction = {
+                            editingTransaction = null
+                            showAddTransactionSheet = true
+                        },
+                        onOpenAuthModal = { showAuthModal = true },
+                        onDeleteTransaction = { viewModel.deleteTransaction(it) },
+                        onEditTransaction = { item ->
+                            editingTransaction = item
+                            showAddTransactionSheet = true
+                        },
+                        onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
+                            viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
+                        },
+                        onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
+                        onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
+                        onAddWishlistItem = { t, c, p, n -> viewModel.addWishlistItem(t, c, p, n) },
+                        onToggleWishlist = { viewModel.toggleWishlistItem(it) },
+                        onAddSavingsGoal = { t, a, e -> viewModel.addSavingsGoal(t, a, e) },
+                        onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                        onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                    )
+
+                    AmoebaFloatingBottomDocker(
+                        currentDestination = currentDestination,
+                        onNavigate = { currentDestination = it },
+                        onOpenAddSheet = { showAddTransactionSheet = true },
+                        onOpenMoreMenu = { showMoreMenuSheet = true },
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+                }
+            }
+        }
+    }
+
+    // Add / Edit Transaction Bottom Sheet
+    if (showAddTransactionSheet) {
+        AddTransactionSheet(
+            currency = currentUser?.currencySymbol ?: "$",
+            sheetState = addSheetState,
+            onDismiss = {
+                showAddTransactionSheet = false
+                editingTransaction = null
+            },
+            initialItem = editingTransaction,
+            customCategories = customCategories,
+            onCreateCustomCategory = { name, emoji, type, colorHex ->
+                viewModel.addCustomCategory(name, emoji, type, colorHex)
+            },
+            onSaveTransaction = { type, title, amount, category, notes, method, date, recurrence ->
+                val currentEdit = editingTransaction
+                if (currentEdit != null) {
+                    viewModel.updateTransaction(
+                        id = currentEdit.id,
+                        type = type,
+                        title = title,
+                        amount = amount,
+                        category = category,
+                        date = date,
+                        notes = notes,
+                        paymentMethod = method,
+                        recurrence = recurrence
+                    )
+                } else {
+                    viewModel.addTransaction(
+                        type = type,
+                        title = title,
+                        amount = amount,
+                        category = category,
+                        notes = notes,
+                        paymentMethod = method,
+                        date = date,
+                        recurrence = recurrence
+                    )
+                }
+                editingTransaction = null
+                showAddTransactionSheet = false
+            }
+        )
+    }
+
+    // User Authentication & Account Switcher Modal
+    if (showAuthModal) {
+        UserAuthModal(
+            currentUser = currentUser,
+            allUsers = allUsers,
+            sheetState = authSheetState,
+            onDismiss = { showAuthModal = false },
+            onSwitchUser = { user ->
+                viewModel.switchUser(user)
+            },
+            onRegisterUser = { username, email, displayName, emoji, colorHex ->
+                viewModel.registerNewUser(
+                    username = username,
+                    email = email,
+                    displayName = displayName,
+                    avatarEmoji = emoji,
+                    avatarColorHex = colorHex,
+                    onSuccess = {},
+                    onError = {}
+                )
+            }
+        )
+    }
+
+    // More Hub Quick Modal Sheet (for quick access to Budgets & Settings on mobile)
+    if (showMoreMenuSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMoreMenuSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "App Hub & Controls",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Card(
+                    onClick = {
+                        currentDestination = AppDestination.SAVINGS
+                        showMoreMenuSheet = false
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("more_hub_savings")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(text = "🐷", fontSize = 22.sp)
+                        Column {
+                            Text(text = "Savings & Goals", fontWeight = FontWeight.Bold)
+                            Text(text = "Track deposits, vaults & progress targets", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                Card(
+                    onClick = {
+                        currentDestination = AppDestination.BUDGETS
+                        showMoreMenuSheet = false
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(text = "📊", fontSize = 22.sp)
+                        Column {
+                            Text(text = "Category Budgets", fontWeight = FontWeight.Bold)
+                            Text(text = "Manage spending caps & allocations", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                Card(
+                    onClick = {
+                        currentDestination = AppDestination.SETTINGS
+                        showMoreMenuSheet = false
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(text = "⚙️", fontSize = 22.sp)
+                        Column {
+                            Text(text = "Settings & Profiles", fontWeight = FontWeight.Bold)
+                            Text(text = "User data isolation, accounts & specs", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                Card(
+                    onClick = {
+                        showMoreMenuSheet = false
+                        showAuthModal = true
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 22.sp)
+                        Column {
+                            Text(text = "Switch Profile (${allUsers.size} accounts)", fontWeight = FontWeight.Bold)
+                            Text(text = "Current: @${currentUser?.username}", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Gemini AI Financial Advisor Sheet
+    if (showAiAdvisorSheet) {
+        AiAdvisorSheet(
+            currentUser = currentUser,
+            summary = summary,
+            budgets = budgets,
+            savingsGoals = savingsGoals,
+            recentTransactions = transactions,
+            sheetState = aiAdvisorSheetState,
+            onDismiss = { showAiAdvisorSheet = false }
+        )
+    }
+}
+
+@Composable
+private fun ScreenRouter(
+    destination: AppDestination,
+    currentUser: com.example.data.local.entities.UserEntity?,
+    summary: com.example.ui.viewmodel.DashboardSummaryUiState,
+    transactions: List<com.example.data.model.TransactionItem>,
+    moneyFlows: List<com.example.data.local.entities.MoneyFlowEntity>,
+    wishlist: List<com.example.data.local.entities.WishlistItemEntity>,
+    savingsGoals: List<com.example.data.local.entities.SavingsGoalEntity>,
+    totalSavings: Double,
+    budgets: List<com.example.data.local.entities.BudgetEntity>,
+    allUsersCount: Int,
+    onNavigateTo: (String) -> Unit,
+    onOpenAddTransaction: () -> Unit,
+    onOpenAuthModal: () -> Unit,
+    onDeleteTransaction: (com.example.data.model.TransactionItem) -> Unit,
+    onEditTransaction: (com.example.data.model.TransactionItem) -> Unit,
+    onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
+    onAddMoneyFlow: (String, String, Double, String) -> Unit,
+    onToggleMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
+    onAddWishlistItem: (String, Double, String, String) -> Unit,
+    onToggleWishlist: (com.example.data.local.entities.WishlistItemEntity) -> Unit,
+    onAddSavingsGoal: (String, Double, String) -> Unit,
+    onAddBudget: (String, Double) -> Unit,
+    onOpenAiAdvisor: () -> Unit = {}
+) {
+    AnimatedContent(
+        targetState = destination,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "screen_transition"
+    ) { target ->
+        when (target) {
+            AppDestination.HOME -> HomeScreen(
+                currentUser = currentUser,
+                summary = summary,
+                onNavigateTo = onNavigateTo,
+                onOpenAddTransaction = onOpenAddTransaction,
+                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday,
+                onOpenAiAdvisor = onOpenAiAdvisor
+            )
+            AppDestination.TRANSACTIONS -> TransactionsScreen(
+                currentUser = currentUser,
+                transactions = transactions,
+                onDeleteTransaction = onDeleteTransaction,
+                onEditTransaction = onEditTransaction,
+                onOpenAddTransaction = onOpenAddTransaction
+            )
+            AppDestination.MONEY_FLOW -> MoneyFlowScreen(
+                currentUser = currentUser,
+                moneyFlows = moneyFlows,
+                onAddMoneyFlow = onAddMoneyFlow,
+                onToggleSettled = onToggleMoneyFlow
+            )
+            AppDestination.WISHLIST -> WishlistScreen(
+                currentUser = currentUser,
+                wishlistItems = wishlist,
+                onAddWishlistItem = onAddWishlistItem,
+                onTogglePurchased = onToggleWishlist
+            )
+            AppDestination.SAVINGS -> SavingsScreen(
+                currentUser = currentUser,
+                savingsGoals = savingsGoals,
+                totalSavings = totalSavings,
+                onAddSavingsGoal = onAddSavingsGoal
+            )
+            AppDestination.BUDGETS -> BudgetsScreen(
+                currentUser = currentUser,
+                budgets = budgets,
+                onAddBudget = onAddBudget
+            )
+            AppDestination.SETTINGS -> SettingsScreen(
+                currentUser = currentUser,
+                allUsersCount = allUsersCount,
+                onOpenAuthModal = onOpenAuthModal
+            )
+        }
+    }
+}
+
+@Composable
+private fun AmoebaFloatingBottomDocker(
+    currentDestination: AppDestination,
+    onNavigate: (AppDestination) -> Unit,
+    onOpenAddSheet: () -> Unit,
+    onOpenMoreMenu: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val selectedDockerIndex = when (currentDestination) {
+        AppDestination.HOME -> 0
+        AppDestination.TRANSACTIONS -> 1
+        AppDestination.WISHLIST -> 3
+        AppDestination.MONEY_FLOW, AppDestination.SAVINGS, AppDestination.BUDGETS, AppDestination.SETTINGS -> 4
+    }
+
+    var previousIndex by remember { mutableIntStateOf(selectedDockerIndex) }
+    val isMovingRight = selectedDockerIndex >= previousIndex
+
+    LaunchedEffect(selectedDockerIndex) {
+        previousIndex = selectedDockerIndex
+    }
+
+    // Dynamic dual spring: the leading edge travels ahead with higher stiffness,
+    // while the trailing edge lags behind, stretching the bubble horizontally like an amoeba in transit.
+    val animLeft by animateFloatAsState(
+        targetValue = selectedDockerIndex.toFloat(),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = if (isMovingRight) 180f else 480f
+        ),
+        label = "amoeba_left"
+    )
+
+    val animRight by animateFloatAsState(
+        targetValue = selectedDockerIndex.toFloat(),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = if (isMovingRight) 480f else 180f
+        ),
+        label = "amoeba_right"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .testTag("mobile_bottom_bar"),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(32.dp),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            shadowElevation = 10.dp,
+            tonalElevation = 6.dp,
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(32.dp))
+        ) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(66.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                val density = LocalDensity.current
+                val slotWidthPx = with(density) { (maxWidth / 5).toPx() }
+                val bubbleBaseDiameterPx = with(density) { 46.dp.toPx() }
+                val bubbleRadiusPx = bubbleBaseDiameterPx / 2f
+
+                val minSlot = minOf(animLeft, animRight)
+                val maxSlot = maxOf(animLeft, animRight)
+                val stretch = maxSlot - minSlot
+
+                // Calculate fluid amoeba boundaries
+                val leftPx = (minSlot + 0.5f) * slotWidthPx - bubbleRadiusPx
+                val rightPx = (maxSlot + 0.5f) * slotWidthPx + bubbleRadiusPx
+                val bubbleWidthPx = (rightPx - leftPx).coerceAtLeast(bubbleBaseDiameterPx)
+                // Volume preservation: subtle squash in height as horizontal stretch increases
+                val squashFactor = (1f - (stretch * 0.12f)).coerceIn(0.78f, 1.0f)
+                val bubbleHeightPx = bubbleBaseDiameterPx * squashFactor
+
+                val bubbleLeftDp = with(density) { leftPx.toDp() }
+                val bubbleWidthDp = with(density) { bubbleWidthPx.toDp() }
+                val bubbleHeightDp = with(density) { bubbleHeightPx.toDp() }
+
+                // 1. Organic Amoeba Bubble Indicator
+                Box(
+                    modifier = Modifier
+                        .offset(x = bubbleLeftDp)
+                        .size(width = bubbleWidthDp, height = bubbleHeightDp)
+                        .align(Alignment.CenterStart)
+                        .shadow(
+                            elevation = 3.dp,
+                            shape = CircleShape,
+                            ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                            spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                        )
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                            shape = CircleShape
+                        )
+                )
+
+                // 2. Interactive Docker Icons
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 0. Home
+                    DockerSlotItem(
+                        icon = AppDestination.HOME.icon,
+                        contentDescription = AppDestination.HOME.title,
+                        isSelected = selectedDockerIndex == 0,
+                        onClick = { onNavigate(AppDestination.HOME) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_item_home")
+                    )
+
+                    // 1. Transactions
+                    DockerSlotItem(
+                        icon = AppDestination.TRANSACTIONS.icon,
+                        contentDescription = AppDestination.TRANSACTIONS.title,
+                        isSelected = selectedDockerIndex == 1,
+                        onClick = { onNavigate(AppDestination.TRANSACTIONS) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_item_transactions")
+                    )
+
+                    // 2. Middle: Add Flow (+) Action Button
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            shadowElevation = 5.dp,
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .clickable { onOpenAddSheet() }
+                                .testTag("dock_add_flow_button")
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = "Add Flow",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // 3. Wishlist
+                    DockerSlotItem(
+                        icon = AppDestination.WISHLIST.icon,
+                        contentDescription = AppDestination.WISHLIST.title,
+                        isSelected = selectedDockerIndex == 3,
+                        onClick = { onNavigate(AppDestination.WISHLIST) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_item_wishlist")
+                    )
+
+                    // 4. More
+                    DockerSlotItem(
+                        icon = Icons.Default.MenuOpen,
+                        contentDescription = "More",
+                        isSelected = selectedDockerIndex == 4,
+                        onClick = { onOpenMoreMenu() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("nav_item_more")
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DockerSlotItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.18f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = 400f
+        ),
+        label = "docker_icon_scale"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                }
+        )
+    }
+}

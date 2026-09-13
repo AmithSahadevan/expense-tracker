@@ -1,0 +1,175 @@
+package com.example.data.local.entities
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "users",
+    indices = [Index(value = ["username"], unique = true), Index(value = ["email"], unique = true)]
+)
+data class UserEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val username: String,
+    val email: String,
+    val displayName: String,
+    val avatarEmoji: String = "⚡",
+    val avatarColorHex: String = "#7048E8",
+    val passwordHash: String = "",
+    val currencySymbol: String = "$",
+    val monthlySalary: Double = 0.0,
+    val paydayDayOfMonth: Int = 1,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "income",
+    indices = [Index(value = ["userId"])]
+)
+data class IncomeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val title: String,
+    val amount: Double,
+    val category: String,
+    val date: Long = System.currentTimeMillis(),
+    val recurrence: String = "NONE", // NONE, WEEKLY, MONTHLY
+    val paymentMethod: String = "BANK",
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "expenses",
+    indices = [Index(value = ["userId"])]
+)
+data class ExpenseEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val title: String,
+    val amount: Double,
+    val category: String,
+    val date: Long = System.currentTimeMillis(),
+    val recurrence: String = "NONE",
+    val paymentMethod: String = "CARD", // CARD, CASH, TRANSFER
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "savings",
+    indices = [Index(value = ["userId"])]
+)
+data class SavingsEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val title: String,
+    val targetAmount: Double,
+    val currentAmount: Double = 0.0,
+    val category: String = "General",
+    val targetDate: Long? = null,
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+object SavingsType {
+    const val ADULT_MONEY = "ADULT_MONEY"
+    const val EMERGENCY_FUND = "EMERGENCY_FUND"
+}
+
+object SavingsActionType {
+    const val DEPOSIT = "DEPOSIT"
+    const val WITHDRAWAL = "WITHDRAWAL"
+}
+
+@Entity(
+    tableName = "savings_transactions",
+    indices = [Index(value = ["userId"]), Index(value = ["savingsType"])]
+)
+data class SavingsTransactionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val savingsType: String, // "ADULT_MONEY" or "EMERGENCY_FUND"
+    val transactionType: String, // "DEPOSIT" or "WITHDRAWAL"
+    val amount: Double,
+    val title: String,
+    val notes: String = "",
+    val date: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "money_flow",
+    indices = [Index(value = ["userId"])]
+)
+data class MoneyFlowEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val personName: String,
+    val direction: String, // OWED_TO_ME, I_OWE
+    val amount: Double,
+    val dueDate: Long? = null,
+    val isSettled: Boolean = false,
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "wishlist_items",
+    indices = [Index(value = ["userId"])]
+)
+data class WishlistItemEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val title: String,
+    val estimatedCost: Double,
+    val priority: String = "MEDIUM", // LOW, MEDIUM, HIGH, MUST_HAVE
+    val url: String = "",
+    val notes: String = "",
+    val isPurchased: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "budgets",
+    indices = [Index(value = ["userId"])]
+)
+data class BudgetEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val category: String,
+    val allocatedAmount: Double,
+    val period: String = "MONTHLY", // MONTHLY, WEEKLY
+    val spentAmount: Double = 0.0,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "savings_goals",
+    indices = [Index(value = ["userId"])]
+)
+data class SavingsGoalEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val title: String,
+    val goalAmount: Double,
+    val savedAmount: Double = 0.0,
+    val targetDate: Long? = null,
+    val emoji: String = "🎯",
+    val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "custom_categories",
+    indices = [Index(value = ["userId"])]
+)
+data class CategoryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val name: String,
+    val emoji: String = "🏷️",
+    val type: String = "EXPENSE", // EXPENSE, INCOME
+    val colorHex: String = "#6366F1",
+    val createdAt: Long = System.currentTimeMillis()
+)
