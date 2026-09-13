@@ -14,6 +14,13 @@ val SunnyYellow = Color(0xFFFFD166)
 val BubblegumPink = Color(0xFFFD79A8)
 val SkyAzure = Color(0xFF0984E3)
 
+// Emergency Fund "protected vault" tokens (identical in light & dark so the vault always stands apart)
+val EmergencyVault = Color(0xFF0F172A)
+val EmergencyShield = Color(0xFFF59E0B)
+val EmergencyGold = Color(0xFFFBBF24)
+// Chart series color for Emergency Fund (validated vs light & dark surfaces, paired with primary violet)
+val EmergencyChartAmber = Color(0xFFD97706)
+
 // Light Theme Tokens
 val LightBackground = Color(0xFFF7F8FC)
 val LightSurface = Color(0xFFFFFFFF)

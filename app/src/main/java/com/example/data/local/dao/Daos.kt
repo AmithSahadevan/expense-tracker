@@ -148,11 +148,17 @@ interface MoneyFlowDao {
 
 @Dao
 interface WishlistDao {
-    @Query("SELECT * FROM wishlist_items WHERE userId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM wishlist_items WHERE userId = :userId ORDER BY dateAdded DESC, id DESC")
     fun getWishlistForUser(userId: Long): Flow<List<WishlistItemEntity>>
+
+    @Query("SELECT * FROM wishlist_items WHERE id = :id AND userId = :userId LIMIT 1")
+    suspend fun getWishlistItemById(id: Long, userId: Long): WishlistItemEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWishlistItem(item: WishlistItemEntity): Long
+
+    @Update
+    suspend fun updateWishlistItem(item: WishlistItemEntity)
 
     @Query("UPDATE wishlist_items SET isPurchased = :isPurchased WHERE id = :id AND userId = :userId")
     suspend fun setPurchased(id: Long, userId: Long, isPurchased: Boolean): Int

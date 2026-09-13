@@ -1,6 +1,12 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,20 +14,24 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,48 +39,177 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.ProductLookupResult
+import com.example.data.model.WishlistAffordability
+import com.example.data.model.WishlistAffordabilityCalculator
+import com.example.data.model.WishlistBrowser
+import com.example.data.model.WishlistFilter
+import com.example.data.model.WishlistItemInput
+import com.example.ui.components.AffordabilityChip
+import com.example.ui.components.ChoicePill
 import com.example.ui.components.FunkyEmptyState
+import com.example.ui.components.PriorityBadge
+import com.example.ui.components.ProductImage
+import com.example.ui.components.PurchasedBadge
+import com.example.ui.components.WishlistItemFormSheet
+import com.example.ui.components.formatMoney
 
 @Composable
 fun WishlistScreen(
     currentUser: UserEntity?,
     wishlistItems: List<WishlistItemEntity>,
-    onAddWishlistItem: (title: String, cost: Double, priority: String, notes: String) -> Unit,
+    // Affordability is based on Adult Money ONLY. The Emergency Fund is deliberately not a parameter.
+    adultMoneyBalance: Double,
+    onAddWishlistItem: (WishlistItemInput) -> Unit,
+    onUpdateWishlistItem: (id: Long, input: WishlistItemInput) -> Unit,
+    onDeleteWishlistItem: (WishlistItemEntity) -> Unit,
     onTogglePurchased: (WishlistItemEntity) -> Unit,
+    onLookupProduct: suspend (String) -> ProductLookupResult,
     modifier: Modifier = Modifier
 ) {
     val currency = currentUser?.currencySymbol ?: "$"
-    var showAddDialog by remember { mutableStateOf(false) }
-    var itemTitle by remember { mutableStateOf("") }
-    var itemCost by remember { mutableStateOf("") }
-    var itemPriority by remember { mutableStateOf("HIGH") }
-    var itemNotes by remember { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
+    var selectedItemId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showForm by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<WishlistItemEntity?>(null) }
+    var pendingDelete by remember { mutableStateOf<WishlistItemEntity?>(null) }
+    // Hoisted so the list keeps its scroll position after returning from a product's details.
+    val gridState = rememberLazyGridState()
+
+    val selectedItem = wishlistItems.find { it.id == selectedItemId }
+    BackHandler(enabled = selectedItem != null) { selectedItemId = null }
+
+    AnimatedContent(
+        targetState = selectedItem?.id,
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        label = "wishlist_detail_transition",
+        modifier = modifier
+    ) { detailId ->
+        val detailItem = wishlistItems.find { it.id == detailId }
+        if (detailItem != null) {
+            WishlistItemDetail(
+                item = detailItem,
+                adultMoneyBalance = adultMoneyBalance,
+                currency = currency,
+                onBack = { selectedItemId = null },
+                onEdit = {
+                    editingItem = detailItem
+                    showForm = true
+                },
+                onDelete = { pendingDelete = detailItem },
+                onTogglePurchased = { onTogglePurchased(detailItem) }
+            )
+        } else {
+            WishlistBrowse(
+                items = wishlistItems,
+                filter = filter,
+                onFilterChange = { filter = it },
+                adultMoneyBalance = adultMoneyBalance,
+                currency = currency,
+                gridState = gridState,
+                onOpenItem = { selectedItemId = it.id },
+                onAddClick = {
+                    editingItem = null
+                    showForm = true
+                }
+            )
+        }
+    }
+
+    if (showForm) {
+        WishlistItemFormSheet(
+            initialItem = editingItem,
+            currency = currency,
+            adultMoneyBalance = adultMoneyBalance,
+            onLookupProduct = onLookupProduct,
+            onDismiss = {
+                showForm = false
+                editingItem = null
+            },
+            onSave = { input ->
+                val editing = editingItem
+                if (editing != null) onUpdateWishlistItem(editing.id, input) else onAddWishlistItem(input)
+                showForm = false
+                editingItem = null
+            }
+        )
+    }
+
+    pendingDelete?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Remove from wishlist?", fontWeight = FontWeight.Bold) },
+            text = { Text("\"${item.title}\" (${formatMoney(currency, item.estimatedCost)}) will be deleted. This can't be undone.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteWishlistItem(item)
+                        if (selectedItemId == item.id) selectedItemId = null
+                        pendingDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+}
+
+private fun LazyGridScope.fullWidthItem(key: String, content: @Composable () -> Unit) {
+    item(key = key, span = { GridItemSpan(maxLineSpan) }) { content() }
+}
+
+@Composable
+private fun WishlistBrowse(
+    items: List<WishlistItemEntity>,
+    filter: WishlistFilter,
+    onFilterChange: (WishlistFilter) -> Unit,
+    adultMoneyBalance: Double,
+    currency: String,
+    gridState: LazyGridState,
+    onOpenItem: (WishlistItemEntity) -> Unit,
+    onAddClick: () -> Unit
+) {
+    val visibleItems = remember(items, filter, adultMoneyBalance) {
+        WishlistBrowser.apply(items, filter, adultMoneyBalance)
+    }
+    val canAffordCount = remember(items, adultMoneyBalance) {
+        WishlistBrowser.apply(items, WishlistFilter.CAN_AFFORD, adultMoneyBalance).size
+    }
+    val needMoreCount = remember(items, adultMoneyBalance) {
+        WishlistBrowser.apply(items, WishlistFilter.NEED_MORE, adultMoneyBalance).size
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = onAddClick,
                 containerColor = Color(0xFFFD79A8),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(18.dp),
@@ -82,215 +221,266 @@ fun WishlistScreen(
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Wishlist Item")
             }
         },
-        modifier = modifier.testTag("wishlist_screen")
+        modifier = Modifier.testTag("wishlist_screen")
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = 150.dp),
+            state = gridState,
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = innerPadding.calculateTopPadding() + 12.dp,
+                bottom = 160.dp
+            ),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "Wishlist Vault",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = "Dream big, buy intentionally",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            if (wishlistItems.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 20.dp, bottom = 140.dp),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    FunkyEmptyState(
-                        emoji = "✨",
-                        headline = "Your wishlist is looking lonely",
-                        subtext = "That special thing you've been eyeing? Give it a home here until your wallet gives you the green light.",
-                        actionButtonText = "+ Add Wishlist Item",
-                        onActionClick = { showAddDialog = true },
-                        badgeText = "Blank Shelf",
-                        accentColor = Color(0xFFFD79A8)
+            fullWidthItem("header") {
+                Column {
+                    Text(
+                        text = "Wishlist Vault",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Dream big, buy intentionally",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+
+            fullWidthItem("spending_power") {
+                WishlistSpendingPowerCard(
+                    adultMoneyBalance = adultMoneyBalance,
+                    currency = currency,
+                    wantedCount = canAffordCount + needMoreCount,
+                    canAffordCount = canAffordCount
+                )
+            }
+
+            if (items.isEmpty()) {
+                fullWidthItem("empty") {
+                    Box(modifier = Modifier.padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
+                        FunkyEmptyState(
+                            emoji = "✨",
+                            headline = "Your wishlist is looking lonely",
+                            subtext = "That special thing you've been eyeing? Add its name, price and photo link, and we'll track when your Adult Money can cover it.",
+                            actionButtonText = "+ Add Wishlist Item",
+                            onActionClick = onAddClick,
+                            badgeText = "Blank Shelf",
+                            accentColor = Color(0xFFFD79A8)
+                        )
+                    }
+                }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 120.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(wishlistItems, key = { it.id }) { item ->
-                        Card(
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (item.isPurchased)
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                else
-                                    MaterialTheme.colorScheme.surface
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            text = item.title,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = when (item.priority) {
-                                                "MUST_HAVE" -> Color(0xFFFF6B6B).copy(alpha = 0.2f)
-                                                "HIGH" -> Color(0xFFFD79A8).copy(alpha = 0.2f)
-                                                else -> Color(0xFF6C5CE7).copy(alpha = 0.2f)
-                                            }
-                                        ) {
-                                            Text(
-                                                text = item.priority.replace("_", " "),
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 10.sp
-                                                ),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                color = when (item.priority) {
-                                                    "MUST_HAVE" -> Color(0xFFFF6B6B)
-                                                    "HIGH" -> Color(0xFFFD79A8)
-                                                    else -> Color(0xFF6C5CE7)
-                                                }
-                                            )
-                                        }
-                                    }
-
-                                    if (item.notes.isNotBlank()) {
-                                        Text(
-                                            text = item.notes,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "$currency${String.format("%.2f", item.estimatedCost)}",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    IconButton(onClick = { onTogglePurchased(item) }) {
-                                        Icon(
-                                            imageVector = if (item.isPurchased)
-                                                Icons.Filled.Favorite
-                                            else
-                                                Icons.Outlined.FavoriteBorder,
-                                            contentDescription = "Toggle Purchased",
-                                            tint = if (item.isPurchased) Color(0xFFFD79A8) else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                fullWidthItem("filters") {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        WishlistFilter.entries.forEach { option ->
+                            val label = when (option) {
+                                WishlistFilter.ALL -> "${option.label} · ${items.size}"
+                                WishlistFilter.CAN_AFFORD -> "${option.label} · $canAffordCount"
+                                WishlistFilter.NEED_MORE -> "${option.label} · $needMoreCount"
+                                WishlistFilter.HIGHEST_PRICE, WishlistFilter.LOWEST_PRICE -> option.label
                             }
+                            ChoicePill(
+                                label = label,
+                                selected = filter == option,
+                                accent = MaterialTheme.colorScheme.primary,
+                                onClick = { onFilterChange(option) },
+                                modifier = Modifier.testTag("wishlist_filter_${option.name.lowercase()}")
+                            )
                         }
                     }
-                    item {
-                        Spacer(modifier = Modifier.navigationBarsPadding().height(48.dp))
+                }
+
+                if (visibleItems.isEmpty()) {
+                    fullWidthItem("filter_empty") {
+                        Text(
+                            text = when (filter) {
+                                WishlistFilter.CAN_AFFORD ->
+                                    "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
+                                WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money 🎉"
+                                else -> "No items to show."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
                     }
+                }
+
+                items(visibleItems, key = { it.id }) { item ->
+                    WishlistProductCard(
+                        item = item,
+                        adultMoneyBalance = adultMoneyBalance,
+                        currency = currency,
+                        onClick = { onOpenItem(item) }
+                    )
                 }
             }
         }
     }
+}
 
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = {
+@Composable
+private fun WishlistSpendingPowerCard(
+    adultMoneyBalance: Double,
+    currency: String,
+    wantedCount: Int,
+    canAffordCount: Int
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("wishlist_spending_power")
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "Add to Wishlist",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
+                    text = "💳 Current Adult Money",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = itemTitle,
-                        onValueChange = { itemTitle = it },
-                        label = { Text("What are you eyeing?") },
-                        placeholder = { Text("e.g. Noise-cancelling headphones") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                Text(
+                    text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (wantedCount > 0) {
+                Text(
+                    text = "You can afford $canAffordCount of $wantedCount items you still want",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Text(
+                text = "🔒 Your Emergency Fund is protected and never counted toward wishlist items.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
-                    OutlinedTextField(
-                        value = itemCost,
-                        onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) itemCost = it },
-                        label = { Text("Estimated Cost ($currency)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+@Composable
+private fun WishlistProductCard(
+    item: WishlistItemEntity,
+    adultMoneyBalance: Double,
+    currency: String,
+    onClick: () -> Unit
+) {
+    val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
 
-                    OutlinedTextField(
-                        value = itemNotes,
-                        onValueChange = { itemNotes = it },
-                        label = { Text("Notes / Motivation") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val cost = itemCost.toDoubleOrNull() ?: 0.0
-                        if (itemTitle.isNotBlank() && cost > 0) {
-                            onAddWishlistItem(itemTitle, cost, itemPriority, itemNotes)
-                            showAddDialog = false
-                            itemTitle = ""
-                            itemCost = ""
-                            itemNotes = ""
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("wishlist_card_${item.id}")
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+            ) {
+                ProductImage(
+                    imageUrl = item.imageUrl,
+                    productName = item.title,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .alpha(if (item.isPurchased) 0.5f else 1f)
+                )
+                PriorityBadge(
+                    priority = item.priority,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp)
+                )
+            }
+
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    minLines = 2,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = item.store.ifBlank { "Store not added" },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = formatMoney(currency, item.estimatedCost),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Fixed minimum height keeps cards in the same row aligned.
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .heightIn(min = 58.dp)
+                        .testTag("wishlist_status_${item.id}")
+                ) {
+                    when {
+                        item.isPurchased -> PurchasedBadge()
+                        affordability is WishlistAffordability.CanAfford -> {
+                            AffordabilityChip(result = affordability, currency = currency)
+                            Text(
+                                text = "${formatMoney(currency, affordability.remainingAfterPurchase)} left after purchase",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2
+                            )
                         }
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Save to Wishlist")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { showAddDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+                        affordability is WishlistAffordability.MoreNeeded -> {
+                            Text(
+                                text = "${formatMoney(currency, affordability.amountNeeded)} more needed",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2
+                            )
+                            LinearProgressIndicator(
+                                progress = { affordability.progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        }
+                    }
                 }
             }
-        )
+        }
     }
 }

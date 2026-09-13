@@ -22,7 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
@@ -56,8 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
 import com.example.data.model.TransactionType
+import com.example.ui.components.AdultMoneyCard
 import com.example.ui.components.BalanceHeroCard
+import com.example.ui.components.EmergencyFundCard
 import com.example.ui.components.FunkyEmptyState
+import com.example.ui.components.formatMoney
 import com.example.ui.viewmodel.DashboardSummaryUiState
 import java.util.Locale
 
@@ -126,6 +128,7 @@ fun HomeScreen(
             expense = summary.totalExpense,
             currentMonthSpending = summary.currentMonthSpending,
             currentMonthIncome = summary.currentMonthIncome,
+            movedToSavings = summary.movedToSavings,
             currency = currency
         )
 
@@ -144,7 +147,7 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "SAVINGS BREAKDOWN",
+                    text = "SAVINGS",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp
@@ -153,7 +156,7 @@ fun HomeScreen(
                 )
 
                 Text(
-                    text = "Total: $currency${String.format(Locale.US, "%,.2f", summary.totalSavings)} →",
+                    text = "Total savings: ${formatMoney(currency, summary.totalSavings)} →",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -165,165 +168,18 @@ fun HomeScreen(
                 )
             }
 
-            // Adult Money Card (Discretionary)
-            Card(
-                onClick = { onNavigateTo("savings") },
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_adult_money_card")
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "💳", fontSize = 20.sp)
-                        }
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Adult Money",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                ) {
-                                    Text(
-                                        text = "DISCRETIONARY",
-                                        fontSize = 8.5.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "Can be used for wishlist & personal spending",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+            AdultMoneyCard(
+                balance = summary.adultMoneyBalance,
+                currency = currency,
+                onClick = { onNavigateTo("savings") }
+            )
 
-                    Text(
-                        text = "$currency${String.format(Locale.US, "%,.2f", summary.adultMoneyBalance)}",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            // Emergency Fund Card (Visually Protected and Clearly Separate)
-            Card(
-                onClick = { onNavigateTo("savings") },
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF0F172A) // Distinct dark security vault theme
-                ),
-                border = BorderStroke(2.dp, Color(0xFFF59E0B)), // Amber protective shield border
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("home_emergency_fund_card")
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFF59E0B).copy(alpha = 0.25f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(text = "🛡️", fontSize = 18.sp)
-                            }
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Emergency Fund",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = Color(0xFFF59E0B).copy(alpha = 0.3f),
-                                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.6f))
-                                    ) {
-                                        Text(
-                                            text = "🔒 PROTECTED",
-                                            fontSize = 8.5.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = Color(0xFFFBBF24),
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Text(
-                            text = "$currency${String.format(Locale.US, "%,.2f", summary.emergencyFundBalance)}",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Black,
-                                color = Color(0xFFFBBF24)
-                            )
-                        )
-                    }
-
-                    // Protected notice banner
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color.White.copy(alpha = 0.08f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(text = "⚠️", fontSize = 12.sp)
-                            Text(
-                                text = "Strictly protected. Never counted as available spending or wishlist money.",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-            }
+            // Emergency Fund: visually protected and clearly separate from spendable money
+            EmergencyFundCard(
+                balance = summary.emergencyFundBalance,
+                currency = currency,
+                onClick = { onNavigateTo("savings") }
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

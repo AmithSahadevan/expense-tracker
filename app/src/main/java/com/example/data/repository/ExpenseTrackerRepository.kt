@@ -19,6 +19,7 @@ import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.WishlistItemEntity
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.WishlistItemInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -244,7 +245,8 @@ class ExpenseTrackerRepository(
         amount: Double,
         title: String,
         notes: String = "",
-        date: Long = System.currentTimeMillis()
+        date: Long = System.currentTimeMillis(),
+        affectsAvailableMoney: Boolean = true
     ): Long = withContext(Dispatchers.IO) {
         savingsDao.insertSavingsTransaction(
             SavingsTransactionEntity(
@@ -254,11 +256,13 @@ class ExpenseTrackerRepository(
                 amount = amount,
                 title = title,
                 notes = notes,
-                date = date
+                date = date,
+                affectsAvailableMoney = affectsAvailableMoney
             )
         )
     }
 
+    /** Returns false if the record does not exist or belongs to another user. */
     suspend fun updateSavingsTransaction(
         userId: Long,
         id: Long,
@@ -267,20 +271,22 @@ class ExpenseTrackerRepository(
         amount: Double,
         title: String,
         notes: String = "",
-        date: Long = System.currentTimeMillis()
-    ) = withContext(Dispatchers.IO) {
+        date: Long = System.currentTimeMillis(),
+        affectsAvailableMoney: Boolean = true
+    ): Boolean = withContext(Dispatchers.IO) {
+        val existing = savingsDao.getSavingsTransactionById(id, userId) ?: return@withContext false
         savingsDao.updateSavingsTransaction(
-            SavingsTransactionEntity(
-                id = id,
-                userId = userId,
+            existing.copy(
                 savingsType = savingsType,
                 transactionType = transactionType,
                 amount = amount,
                 title = title,
                 notes = notes,
-                date = date
+                date = date,
+                affectsAvailableMoney = affectsAvailableMoney
             )
         )
+        true
     }
 
     suspend fun deleteSavingsTransaction(userId: Long, id: Long) = withContext(Dispatchers.IO) {
@@ -335,22 +341,46 @@ class ExpenseTrackerRepository(
     fun getWishlistForUser(userId: Long): Flow<List<WishlistItemEntity>> =
         wishlistDao.getWishlistForUser(userId)
 
-    suspend fun addWishlistItem(
-        userId: Long,
-        title: String,
-        estimatedCost: Double,
-        priority: String = "MEDIUM",
-        notes: String = ""
-    ): Long = withContext(Dispatchers.IO) {
+    suspend fun addWishlistItem(userId: Long, input: WishlistItemInput): Long = withContext(Dispatchers.IO) {
         wishlistDao.insertWishlistItem(
             WishlistItemEntity(
                 userId = userId,
-                title = title,
-                estimatedCost = estimatedCost,
-                priority = priority,
-                notes = notes
+                title = input.title,
+                estimatedCost = input.price,
+                priority = input.priority,
+                url = input.url,
+                notes = input.notes,
+                imageUrl = input.imageUrl,
+                store = input.store,
+                description = input.description,
+                dateAdded = input.dateAdded,
+                targetPurchaseDate = input.targetPurchaseDate
             )
         )
+    }
+
+    /** Returns false if the item does not exist or belongs to another user. */
+    suspend fun updateWishlistItem(userId: Long, id: Long, input: WishlistItemInput): Boolean = withContext(Dispatchers.IO) {
+        val existing = wishlistDao.getWishlistItemById(id, userId) ?: return@withContext false
+        wishlistDao.updateWishlistItem(
+            existing.copy(
+                title = input.title,
+                estimatedCost = input.price,
+                priority = input.priority,
+                url = input.url,
+                notes = input.notes,
+                imageUrl = input.imageUrl,
+                store = input.store,
+                description = input.description,
+                dateAdded = input.dateAdded,
+                targetPurchaseDate = input.targetPurchaseDate
+            )
+        )
+        true
+    }
+
+    suspend fun deleteWishlistItem(userId: Long, id: Long) = withContext(Dispatchers.IO) {
+        wishlistDao.deleteWishlistItem(id, userId)
     }
 
     suspend fun toggleWishlistPurchased(userId: Long, id: Long, isPurchased: Boolean) = withContext(Dispatchers.IO) {

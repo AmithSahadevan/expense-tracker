@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.local.dao.BudgetDao
 import com.example.data.local.dao.CategoryDao
 import com.example.data.local.dao.MoneyFlowDao
@@ -35,7 +37,7 @@ import com.example.data.local.entities.WishlistItemEntity
         SavingsGoalEntity::class,
         CategoryEntity::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -51,6 +53,28 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        // Explicit migration so existing savings history survives the upgrade
+        // (the destructive fallback below would otherwise wipe all user data).
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE savings_transactions ADD COLUMN affectsAvailableMoney INTEGER NOT NULL DEFAULT 1"
+                )
+            }
+        }
+
+        // Wishlist product details. Existing items keep their data; "date added" starts as the creation time.
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE wishlist_items ADD COLUMN imageUrl TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE wishlist_items ADD COLUMN store TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE wishlist_items ADD COLUMN description TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE wishlist_items ADD COLUMN dateAdded INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE wishlist_items ADD COLUMN targetPurchaseDate INTEGER")
+                db.execSQL("UPDATE wishlist_items SET dateAdded = createdAt")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -58,6 +82,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "expense_tracker_db"
                 )
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .build()

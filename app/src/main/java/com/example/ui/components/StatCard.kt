@@ -35,6 +35,7 @@ fun BalanceHeroCard(
     expense: Double,
     currentMonthSpending: Double = 0.0,
     currentMonthIncome: Double = 0.0,
+    movedToSavings: Double = 0.0,
     currency: String,
     modifier: Modifier = Modifier
 ) {
@@ -88,6 +89,15 @@ fun BalanceHeroCard(
                     letterSpacing = (-0.5).sp
                 ),
                 color = MaterialTheme.colorScheme.onPrimary
+            )
+
+            Text(
+                text = if (movedToSavings > 0)
+                    "Spendable now · ${formatMoney(currency, movedToSavings)} moved into savings is excluded"
+                else
+                    "Spendable now · savings are never counted here",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

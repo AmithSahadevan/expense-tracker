@@ -72,8 +72,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.ProductLookupResult
+import com.example.data.model.SavingsTransactionInput
+import com.example.data.model.WishlistItemInput
 import com.example.ui.components.AddTransactionSheet
-import com.example.ui.components.AiAdvisorSheet
 import com.example.ui.components.PlayfulTopBar
 import com.example.ui.components.UserAuthModal
 import com.example.ui.navigation.AppDestination
@@ -96,8 +98,7 @@ fun AppShell(
     val allUsers by viewModel.allUsers.collectAsStateWithLifecycle()
     val summary by viewModel.dashboardSummary.collectAsStateWithLifecycle()
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
-    val savingsGoals by viewModel.savingsGoals.collectAsStateWithLifecycle()
-    val totalSavings by viewModel.totalSavings.collectAsStateWithLifecycle()
+    val savingsTransactions by viewModel.savingsTransactions.collectAsStateWithLifecycle()
     val moneyFlows by viewModel.moneyFlows.collectAsStateWithLifecycle()
     val wishlist by viewModel.wishlist.collectAsStateWithLifecycle()
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
@@ -110,11 +111,9 @@ fun AppShell(
     var editingTransaction by remember { mutableStateOf<com.example.data.model.TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
     var showMoreMenuSheet by remember { mutableStateOf(false) }
-    var showAiAdvisorSheet by remember { mutableStateOf(false) }
 
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val aiAdvisorSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(actionMessage) {
         actionMessage?.let { msg ->
@@ -176,8 +175,7 @@ fun AppShell(
                     topBar = {
                         PlayfulTopBar(
                             currentUser = currentUser,
-                            onUserClick = { showAuthModal = true },
-                            onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                            onUserClick = { showAuthModal = true }
                         )
                     }
                 ) { innerPadding ->
@@ -195,8 +193,7 @@ fun AppShell(
                                 transactions = transactions,
                                 moneyFlows = moneyFlows,
                                 wishlist = wishlist,
-                                savingsGoals = savingsGoals,
-                                totalSavings = totalSavings,
+                                savingsTransactions = savingsTransactions,
                                 budgets = budgets,
                                 allUsersCount = allUsers.size,
                                 onNavigateTo = { routeName ->
@@ -219,11 +216,15 @@ fun AppShell(
                                 },
                                 onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
                                 onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
-                                onAddWishlistItem = { t, c, p, n -> viewModel.addWishlistItem(t, c, p, n) },
+                                onAddWishlistItem = { viewModel.addWishlistItem(it) },
+                                onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
+                                onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
+                                onLookupProduct = viewModel::lookupProduct,
                                 onToggleWishlist = { viewModel.toggleWishlistItem(it) },
-                                onAddSavingsGoal = { t, a, e -> viewModel.addSavingsGoal(t, a, e) },
-                                onAddBudget = { c, a -> viewModel.addBudget(c, a) },
-                                onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                                onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
+                                onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
+                                onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
+                                onAddBudget = { c, a -> viewModel.addBudget(c, a) }
                             )
                         }
                     }
@@ -238,8 +239,7 @@ fun AppShell(
                     Column(modifier = Modifier.statusBarsPadding()) {
                         PlayfulTopBar(
                             currentUser = currentUser,
-                            onUserClick = { showAuthModal = true },
-                            onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                            onUserClick = { showAuthModal = true }
                         )
                         // Playful Category / Destination Quick Pill Row
                         LazyRow(
@@ -298,8 +298,7 @@ fun AppShell(
                         transactions = transactions,
                         moneyFlows = moneyFlows,
                         wishlist = wishlist,
-                        savingsGoals = savingsGoals,
-                        totalSavings = totalSavings,
+                        savingsTransactions = savingsTransactions,
                         budgets = budgets,
                         allUsersCount = allUsers.size,
                         onNavigateTo = { routeName ->
@@ -322,11 +321,15 @@ fun AppShell(
                         },
                         onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
                         onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
-                        onAddWishlistItem = { t, c, p, n -> viewModel.addWishlistItem(t, c, p, n) },
+                        onAddWishlistItem = { viewModel.addWishlistItem(it) },
+                        onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
+                        onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
+                        onLookupProduct = viewModel::lookupProduct,
                         onToggleWishlist = { viewModel.toggleWishlistItem(it) },
-                        onAddSavingsGoal = { t, a, e -> viewModel.addSavingsGoal(t, a, e) },
-                        onAddBudget = { c, a -> viewModel.addBudget(c, a) },
-                        onOpenAiAdvisor = { showAiAdvisorSheet = true }
+                        onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
+                        onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
+                        onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
+                        onAddBudget = { c, a -> viewModel.addBudget(c, a) }
                     )
 
                     AmoebaFloatingBottomDocker(
@@ -449,8 +452,8 @@ fun AppShell(
                     ) {
                         Text(text = "🐷", fontSize = 22.sp)
                         Column {
-                            Text(text = "Savings & Goals", fontWeight = FontWeight.Bold)
-                            Text(text = "Track deposits, vaults & progress targets", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Savings", fontWeight = FontWeight.Bold)
+                            Text(text = "Adult Money & protected Emergency Fund", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -523,19 +526,6 @@ fun AppShell(
             }
         }
     }
-
-    // Gemini AI Financial Advisor Sheet
-    if (showAiAdvisorSheet) {
-        AiAdvisorSheet(
-            currentUser = currentUser,
-            summary = summary,
-            budgets = budgets,
-            savingsGoals = savingsGoals,
-            recentTransactions = transactions,
-            sheetState = aiAdvisorSheetState,
-            onDismiss = { showAiAdvisorSheet = false }
-        )
-    }
 }
 
 @Composable
@@ -546,8 +536,7 @@ private fun ScreenRouter(
     transactions: List<com.example.data.model.TransactionItem>,
     moneyFlows: List<com.example.data.local.entities.MoneyFlowEntity>,
     wishlist: List<com.example.data.local.entities.WishlistItemEntity>,
-    savingsGoals: List<com.example.data.local.entities.SavingsGoalEntity>,
-    totalSavings: Double,
+    savingsTransactions: List<com.example.data.local.entities.SavingsTransactionEntity>,
     budgets: List<com.example.data.local.entities.BudgetEntity>,
     allUsersCount: Int,
     onNavigateTo: (String) -> Unit,
@@ -558,11 +547,15 @@ private fun ScreenRouter(
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
     onAddMoneyFlow: (String, String, Double, String) -> Unit,
     onToggleMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
-    onAddWishlistItem: (String, Double, String, String) -> Unit,
+    onAddWishlistItem: (WishlistItemInput) -> Unit,
+    onUpdateWishlistItem: (Long, WishlistItemInput) -> Unit,
+    onDeleteWishlistItem: (com.example.data.local.entities.WishlistItemEntity) -> Unit,
+    onLookupProduct: suspend (String) -> ProductLookupResult,
     onToggleWishlist: (com.example.data.local.entities.WishlistItemEntity) -> Unit,
-    onAddSavingsGoal: (String, Double, String) -> Unit,
-    onAddBudget: (String, Double) -> Unit,
-    onOpenAiAdvisor: () -> Unit = {}
+    onAddSavingsTransaction: (SavingsTransactionInput) -> Unit,
+    onUpdateSavingsTransaction: (Long, SavingsTransactionInput) -> Unit,
+    onDeleteSavingsTransaction: (Long) -> Unit,
+    onAddBudget: (String, Double) -> Unit
 ) {
     AnimatedContent(
         targetState = destination,
@@ -575,8 +568,7 @@ private fun ScreenRouter(
                 summary = summary,
                 onNavigateTo = onNavigateTo,
                 onOpenAddTransaction = onOpenAddTransaction,
-                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday,
-                onOpenAiAdvisor = onOpenAiAdvisor
+                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday
             )
             AppDestination.TRANSACTIONS -> TransactionsScreen(
                 currentUser = currentUser,
@@ -594,14 +586,21 @@ private fun ScreenRouter(
             AppDestination.WISHLIST -> WishlistScreen(
                 currentUser = currentUser,
                 wishlistItems = wishlist,
+                adultMoneyBalance = summary.adultMoneyBalance, // Emergency Fund never counts toward wishlist
                 onAddWishlistItem = onAddWishlistItem,
+                onUpdateWishlistItem = onUpdateWishlistItem,
+                onDeleteWishlistItem = onDeleteWishlistItem,
+                onLookupProduct = onLookupProduct,
                 onTogglePurchased = onToggleWishlist
             )
             AppDestination.SAVINGS -> SavingsScreen(
                 currentUser = currentUser,
-                savingsGoals = savingsGoals,
-                totalSavings = totalSavings,
-                onAddSavingsGoal = onAddSavingsGoal
+                savingsTransactions = savingsTransactions,
+                adultMoneyBalance = summary.adultMoneyBalance,
+                emergencyFundBalance = summary.emergencyFundBalance,
+                onAddSavingsTransaction = onAddSavingsTransaction,
+                onUpdateSavingsTransaction = onUpdateSavingsTransaction,
+                onDeleteSavingsTransaction = onDeleteSavingsTransaction
             )
             AppDestination.BUDGETS -> BudgetsScreen(
                 currentUser = currentUser,

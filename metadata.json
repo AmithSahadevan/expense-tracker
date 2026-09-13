@@ -2,5 +2,5 @@
   "name": "Expense Tracker",
   "description": "A playful and modular multi-user personal expense and money flow tracker.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

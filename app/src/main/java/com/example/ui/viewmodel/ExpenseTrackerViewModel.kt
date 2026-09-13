@@ -13,10 +13,17 @@ import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.SavingsType
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.ProductLookupResult
+import com.example.data.model.SavingsCalculator
+import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.WishlistInputValidator
+import com.example.data.model.WishlistItemInput
 import com.example.data.repository.AuthRepository
+import com.example.data.remote.ProductLookupService
 import com.example.data.repository.ExpenseTrackerRepository
+import com.example.ui.components.formatMoney
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +42,8 @@ import java.util.Calendar
 data class DashboardSummaryUiState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
-    val remainingMoney: Double = 0.0, // Available money
+    val remainingMoney: Double = 0.0, // Available money: income - expenses - money moved into savings
+    val movedToSavings: Double = 0.0,
     val adultMoneyBalance: Double = 0.0,
     val emergencyFundBalance: Double = 0.0,
     val totalSavings: Double = 0.0,
@@ -52,7 +60,8 @@ data class DashboardSummaryUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExpenseTrackerViewModel(
     private val authRepository: AuthRepository,
-    private val repository: ExpenseTrackerRepository
+    private val repository: ExpenseTrackerRepository,
+    private val productLookup: ProductLookupService
 ) : ViewModel() {
 
     val currentUser: StateFlow<UserEntity?> = authRepository.currentUser
@@ -124,15 +133,11 @@ class ExpenseTrackerViewModel(
     )
 
     val adultMoneyBalance: StateFlow<Double> = savingsTransactions.map { list ->
-        list.filter { it.savingsType == SavingsType.ADULT_MONEY }.fold(0.0) { acc, item ->
-            if (item.transactionType == SavingsActionType.DEPOSIT) acc + item.amount else acc - item.amount
-        }
+        SavingsCalculator.balance(list, SavingsType.ADULT_MONEY)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val emergencyFundBalance: StateFlow<Double> = savingsTransactions.map { list ->
-        list.filter { it.savingsType == SavingsType.EMERGENCY_FUND }.fold(0.0) { acc, item ->
-            if (item.transactionType == SavingsActionType.DEPOSIT) acc + item.amount else acc - item.amount
-        }
+        SavingsCalculator.balance(list, SavingsType.EMERGENCY_FUND)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val totalSavings: StateFlow<Double> = combine(adultMoneyBalance, emergencyFundBalance) { adult, emergency ->
@@ -181,11 +186,17 @@ class ExpenseTrackerViewModel(
     private data class SavingsBalances(
         val adultMoney: Double,
         val emergencyFund: Double,
-        val total: Double
+        val total: Double,
+        val movedOutOfAvailable: Double
     )
 
-    private val savingsBalancesFlow = combine(adultMoneyBalance, emergencyFundBalance, totalSavings) { adult, emergency, total ->
-        SavingsBalances(adult, emergency, total)
+    private val savingsBalancesFlow = combine(
+        adultMoneyBalance,
+        emergencyFundBalance,
+        totalSavings,
+        savingsTransactions
+    ) { adult, emergency, total, list ->
+        SavingsBalances(adult, emergency, total, SavingsCalculator.movedOutOfAvailableMoney(list))
     }
 
     val dashboardSummary: StateFlow<DashboardSummaryUiState> = combine(
@@ -209,7 +220,9 @@ class ExpenseTrackerViewModel(
         DashboardSummaryUiState(
             totalIncome = income,
             totalExpense = expense,
-            remainingMoney = income - expense,
+            // Savings are never spendable: money moved into either savings type leaves Available Money.
+            remainingMoney = income - expense - savingsBal.movedOutOfAvailable,
+            movedToSavings = savingsBal.movedOutOfAvailable,
             adultMoneyBalance = savingsBal.adultMoney,
             emergencyFundBalance = savingsBal.emergencyFund,
             totalSavings = savingsBal.total,
@@ -367,12 +380,43 @@ class ExpenseTrackerViewModel(
         }
     }
 
-    fun addWishlistItem(title: String, cost: Double, priority: String, notes: String = "") {
+    fun addWishlistItem(input: WishlistItemInput) {
         val user = currentUser.value ?: return
+        val clean = cleanWishlistInput(input) ?: return
         viewModelScope.launch {
-            repository.addWishlistItem(user.id, title, cost, priority, notes)
-            _actionMessage.value = "✨ Added to wishlist!"
+            repository.addWishlistItem(user.id, clean)
+            _actionMessage.value = "✨ ${clean.title} added to wishlist!"
         }
+    }
+
+    fun updateWishlistItem(id: Long, input: WishlistItemInput) {
+        val user = currentUser.value ?: return
+        val clean = cleanWishlistInput(input) ?: return
+        viewModelScope.launch {
+            val updated = repository.updateWishlistItem(user.id, id, clean)
+            _actionMessage.value = if (updated) "Wishlist item updated." else "Wishlist item not found."
+        }
+    }
+
+    /** Reads product details from a pasted link, on-device. Failures come back as results, never exceptions. */
+    suspend fun lookupProduct(link: String): ProductLookupResult = productLookup.lookup(link)
+
+    fun deleteWishlistItem(item: WishlistItemEntity) {
+        val user = currentUser.value ?: return
+        if (item.userId != user.id) return
+        viewModelScope.launch {
+            repository.deleteWishlistItem(user.id, item.id)
+            _actionMessage.value = "Removed \"${item.title}\" from wishlist."
+        }
+    }
+
+    private fun cleanWishlistInput(input: WishlistItemInput): WishlistItemInput? {
+        val clean = WishlistInputValidator.clean(input)
+        if (clean == null) {
+            val errors = WishlistInputValidator.validate(input)
+            _actionMessage.value = errors.title ?: errors.price ?: errors.url ?: errors.imageUrl
+        }
+        return clean
     }
 
     fun toggleWishlistItem(item: WishlistItemEntity) {
@@ -414,9 +458,25 @@ class ExpenseTrackerViewModel(
         amount: Double,
         title: String,
         notes: String = "",
-        date: Long = System.currentTimeMillis()
+        date: Long = System.currentTimeMillis(),
+        affectsAvailableMoney: Boolean = true
     ) {
         val user = currentUser.value ?: return
+        if (amount <= 0) {
+            _actionMessage.value = "Enter an amount greater than zero."
+            return
+        }
+        val candidate = SavingsTransactionEntity(
+            userId = user.id,
+            savingsType = savingsType,
+            transactionType = transactionType,
+            amount = amount,
+            title = title,
+            notes = notes,
+            date = date,
+            affectsAvailableMoney = affectsAvailableMoney
+        )
+        if (rejectIfBalanceWouldGoNegative(removedId = null, added = candidate)) return
         viewModelScope.launch {
             repository.addSavingsTransaction(
                 userId = user.id,
@@ -425,11 +485,11 @@ class ExpenseTrackerViewModel(
                 amount = amount,
                 title = title,
                 notes = notes,
-                date = date
+                date = date,
+                affectsAvailableMoney = affectsAvailableMoney
             )
-            val typeLabel = if (savingsType == SavingsType.ADULT_MONEY) "Adult Money" else "Emergency Fund"
             val actionLabel = if (transactionType == SavingsActionType.DEPOSIT) "added to" else "withdrawn from"
-            _actionMessage.value = "${user.currencySymbol}${String.format("%.2f", amount)} $actionLabel $typeLabel"
+            _actionMessage.value = "${formatMoney(user.currencySymbol, amount)} $actionLabel ${savingsTypeLabel(savingsType)}"
         }
     }
 
@@ -440,11 +500,28 @@ class ExpenseTrackerViewModel(
         amount: Double,
         title: String,
         notes: String = "",
-        date: Long = System.currentTimeMillis()
+        date: Long = System.currentTimeMillis(),
+        affectsAvailableMoney: Boolean = true
     ) {
         val user = currentUser.value ?: return
+        if (amount <= 0) {
+            _actionMessage.value = "Enter an amount greater than zero."
+            return
+        }
+        val candidate = SavingsTransactionEntity(
+            id = id,
+            userId = user.id,
+            savingsType = savingsType,
+            transactionType = transactionType,
+            amount = amount,
+            title = title,
+            notes = notes,
+            date = date,
+            affectsAvailableMoney = affectsAvailableMoney
+        )
+        if (rejectIfBalanceWouldGoNegative(removedId = id, added = candidate)) return
         viewModelScope.launch {
-            repository.updateSavingsTransaction(
+            val updated = repository.updateSavingsTransaction(
                 userId = user.id,
                 id = id,
                 savingsType = savingsType,
@@ -452,19 +529,42 @@ class ExpenseTrackerViewModel(
                 amount = amount,
                 title = title,
                 notes = notes,
-                date = date
+                date = date,
+                affectsAvailableMoney = affectsAvailableMoney
             )
-            _actionMessage.value = "Savings record updated."
+            _actionMessage.value = if (updated) "Savings record updated." else "Savings record not found."
         }
+    }
+
+    fun addSavingsTransaction(input: SavingsTransactionInput) = with(input) {
+        addSavingsTransaction(savingsType, transactionType, amount, title, notes, date, affectsAvailableMoney)
+    }
+
+    fun updateSavingsTransaction(id: Long, input: SavingsTransactionInput) = with(input) {
+        updateSavingsTransaction(id, savingsType, transactionType, amount, title, notes, date, affectsAvailableMoney)
     }
 
     fun deleteSavingsTransaction(id: Long) {
         val user = currentUser.value ?: return
+        if (rejectIfBalanceWouldGoNegative(removedId = id, added = null)) return
         viewModelScope.launch {
             repository.deleteSavingsTransaction(user.id, id)
             _actionMessage.value = "Savings record removed."
         }
     }
+
+    private fun rejectIfBalanceWouldGoNegative(removedId: Long?, added: SavingsTransactionEntity?): Boolean {
+        val negativeType = SavingsCalculator.typeThatWouldGoNegative(savingsTransactions.value, removedId, added)
+            ?: return false
+        val currency = currentUser.value?.currencySymbol ?: "$"
+        val balance = SavingsCalculator.balance(savingsTransactions.value, negativeType)
+        _actionMessage.value = "Not enough in ${savingsTypeLabel(negativeType)} " +
+            "(balance ${formatMoney(currency, balance)}). Balances can't go below zero."
+        return true
+    }
+
+    private fun savingsTypeLabel(savingsType: String): String =
+        if (savingsType == SavingsType.EMERGENCY_FUND) "Emergency Fund" else "Adult Money"
 
     fun addBudget(category: String, allocatedAmount: Double) {
         val user = currentUser.value ?: return
@@ -514,12 +614,13 @@ class ExpenseTrackerViewModel(
 
 class ExpenseTrackerViewModelFactory(
     private val authRepository: AuthRepository,
-    private val repository: ExpenseTrackerRepository
+    private val repository: ExpenseTrackerRepository,
+    private val productLookup: ProductLookupService
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ExpenseTrackerViewModel::class.java)) {
-            return ExpenseTrackerViewModel(authRepository, repository) as T
+            return ExpenseTrackerViewModel(authRepository, repository, productLookup) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }

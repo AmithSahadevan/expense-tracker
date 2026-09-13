@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.data.local.AppDatabase
+import com.example.data.remote.ProductLookupService
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.ExpenseTrackerRepository
 import com.example.ui.AppShell
@@ -24,7 +25,7 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getInstance(applicationContext)
         val authRepo = AuthRepository(database.userDao())
         val expenseRepo = ExpenseTrackerRepository(database)
-        ExpenseTrackerViewModelFactory(authRepo, expenseRepo)
+        ExpenseTrackerViewModelFactory(authRepo, expenseRepo, ProductLookupService())
     }
 
     // Flag indicating if the VSYNC keep-alive choreographer loop is currently running

@@ -1,5 +1,6 @@
 package com.example.data.local.entities
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -95,6 +96,9 @@ data class SavingsTransactionEntity(
     val title: String,
     val notes: String = "",
     val date: Long = System.currentTimeMillis(),
+    // true: deposit is taken out of Available Money / withdrawal is returned to it.
+    // false: money came from (or left to) outside the ledger, e.g. savings that existed before the app.
+    @ColumnInfo(defaultValue = "1") val affectsAvailableMoney: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -121,12 +125,17 @@ data class MoneyFlowEntity(
 data class WishlistItemEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val userId: Long,
-    val title: String,
-    val estimatedCost: Double,
+    val title: String, // Product name
+    val estimatedCost: Double, // Price
     val priority: String = "MEDIUM", // LOW, MEDIUM, HIGH, MUST_HAVE
-    val url: String = "",
+    val url: String = "", // Product page link
     val notes: String = "",
     val isPurchased: Boolean = false,
+    @ColumnInfo(defaultValue = "") val imageUrl: String = "",
+    @ColumnInfo(defaultValue = "") val store: String = "",
+    @ColumnInfo(defaultValue = "") val description: String = "",
+    @ColumnInfo(defaultValue = "0") val dateAdded: Long = System.currentTimeMillis(),
+    val targetPurchaseDate: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
 
