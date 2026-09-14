@@ -591,8 +591,7 @@ private fun ScreenRouter(
                 currentUser = currentUser,
                 summary = summary,
                 onNavigateTo = onNavigateTo,
-                onOpenAddTransaction = onOpenAddTransaction,
-                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday
+                onOpenAddTransaction = onOpenAddTransaction
             )
             AppDestination.TRANSACTIONS -> TransactionsScreen(
                 currentUser = currentUser,
@@ -634,7 +633,8 @@ private fun ScreenRouter(
             AppDestination.SETTINGS -> SettingsScreen(
                 currentUser = currentUser,
                 allUsersCount = allUsersCount,
-                onOpenAuthModal = onOpenAuthModal
+                onOpenAuthModal = onOpenAuthModal,
+                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday
             )
         }
     }
