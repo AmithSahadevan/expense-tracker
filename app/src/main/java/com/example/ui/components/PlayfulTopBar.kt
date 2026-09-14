@@ -67,7 +67,7 @@ fun PlayfulTopBar(
                 }
                 Column {
                     Text(
-                        text = "Moolah",
+                        text = "Kyash",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp

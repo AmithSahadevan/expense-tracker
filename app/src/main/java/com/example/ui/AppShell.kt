@@ -241,48 +241,6 @@ fun AppShell(
                             currentUser = currentUser,
                             onUserClick = { showAuthModal = true }
                         )
-                        // Playful Category / Destination Quick Pill Row
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 16.dp, vertical = 6.dp)
-                        ) {
-                            items(AppDestination.entries) { dest ->
-                                val isSelected = currentDestination == dest
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                                    ),
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable { currentDestination = dest }
-                                        .testTag("quick_tab_${dest.route}")
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                                    ) {
-                                        Text(text = dest.emoji, fontSize = 12.sp)
-                                        Text(
-                                            text = dest.title,
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
-                                            ),
-                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             ) { innerPadding ->
@@ -433,6 +391,28 @@ fun AppShell(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
+
+                Card(
+                    onClick = {
+                        currentDestination = AppDestination.MONEY_FLOW
+                        showMoreMenuSheet = false
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(text = "🤝", fontSize = 22.sp)
+                        Column {
+                            Text(text = "Money Flow", fontWeight = FontWeight.Bold)
+                            Text(text = "Track debts, IOUs & shared expenses", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
 
                 Card(
                     onClick = {
