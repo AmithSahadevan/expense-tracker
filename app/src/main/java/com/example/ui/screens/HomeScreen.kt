@@ -46,11 +46,8 @@ import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
 import com.example.data.model.CategoryRegistry
 import com.example.data.model.TransactionType
-import com.example.ui.components.AdultMoneyCard
 import com.example.ui.components.BalanceHeroCard
-import com.example.ui.components.EmergencyFundCard
 import com.example.ui.components.FunkyEmptyState
-import com.example.ui.components.formatMoney
 import com.example.ui.viewmodel.DashboardSummaryUiState
 import java.util.Locale
 
@@ -85,57 +82,7 @@ fun HomeScreen(
             currency = currency
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Savings Breakdown: Adult Money vs Emergency Fund
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("home_savings_section"),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "SAVINGS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = 1.2.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "Total savings: ${formatMoney(currency, summary.totalSavings)} →",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { onNavigateTo("savings") }
-                        .padding(vertical = 4.dp, horizontal = 6.dp)
-                )
-            }
-
-            AdultMoneyCard(
-                balance = summary.adultMoneyBalance,
-                currency = currency,
-                onClick = { onNavigateTo("savings") }
-            )
-
-            // Emergency Fund: visually protected and clearly separate from spendable money
-            EmergencyFundCard(
-                balance = summary.emergencyFundBalance,
-                currency = currency,
-                onClick = { onNavigateTo("savings") }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Recent Activity Section
         Row(

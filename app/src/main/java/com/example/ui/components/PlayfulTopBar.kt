@@ -92,66 +92,29 @@ fun PlayfulTopBar(
                 }
             }
 
-            // Right side: User Switcher
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // Right side: Single Profile Icon
+            val avatarBg = try {
+                Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#7048E8"))
+            } catch (_: Exception) {
+                MaterialTheme.colorScheme.primary
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(avatarBg.copy(alpha = 0.15f))
+                    .clickable { onUserClick() }
+                    .testTag("user_profile_icon"),
+                contentAlignment = Alignment.Center
             ) {
-                // User Profile & Switcher Pill
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable { onUserClick() }
-                        .testTag("user_profile_chip")
-                ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val avatarBg = try {
-                        Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#7048E8"))
-                    } catch (_: Exception) {
-                        MaterialTheme.colorScheme.primary
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(avatarBg.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Person,
-                            contentDescription = null,
-                            tint = avatarBg,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = currentUser?.displayName ?: "Guest",
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.Outlined.SwapHoriz,
-                        contentDescription = "Switch Account",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = "Profile",
+                    tint = avatarBg,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     }
-}
 }
