@@ -31,6 +31,13 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.MonetizationOn
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -278,12 +285,23 @@ fun TransactionsScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { filterType = TransactionType.EXPENSE }
                 ) {
-                    Text(
-                        text = "💸 Expenses ($expenseCount)",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Expenses ($expenseCount)",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
                 // Income
@@ -296,12 +314,23 @@ fun TransactionsScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { filterType = TransactionType.INCOME }
                 ) {
-                    Text(
-                        text = "💰 Income ($incomeCount)",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Payments,
+                            contentDescription = null,
+                            tint = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Income ($incomeCount)",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
 
@@ -430,7 +459,7 @@ fun TransactionsScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
-                        emoji = "🪙",
+                        icon = Icons.Outlined.MonetizationOn,
                         headline = "No transactions found",
                         subtext = if (transactions.isEmpty())
                             "Your money ledger is empty. Tap '+ Add Transaction' to start recording your income and expenses!"
@@ -472,7 +501,7 @@ fun TransactionsScreen(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    // Category Emoji Circle
+                                    // Category Icon Circle
                                     Box(
                                         modifier = Modifier
                                             .size(44.dp)
@@ -485,9 +514,11 @@ fun TransactionsScreen(
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = catInfo.emoji,
-                                            fontSize = 20.sp
+                                        Icon(
+                                            imageVector = catInfo.icon,
+                                            contentDescription = null,
+                                            tint = if (item.type == TransactionType.INCOME) Color(0xFF10B981) else Color(0xFFFF6B6B),
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
 
@@ -526,23 +557,34 @@ fun TransactionsScreen(
                                             modifier = Modifier.padding(top = 2.dp)
                                         ) {
                                             // Payment Method badge
-                                            val methodIcon = when (item.paymentMethod.uppercase()) {
-                                                "CASH" -> "💵 Cash"
-                                                "BANK" -> "🏦 Bank"
-                                                "UPI" -> "📱 UPI"
-                                                else -> "💳 Card"
+                                            val (methodLabel, methodIcon) = when (item.paymentMethod.uppercase()) {
+                                                "CASH" -> "Cash" to Icons.Outlined.Payments
+                                                "BANK" -> "Bank" to Icons.Outlined.AccountBalance
+                                                "UPI" -> "UPI" to Icons.Outlined.Smartphone
+                                                else -> "Card" to Icons.Outlined.CreditCard
                                             }
                                             Surface(
                                                 shape = RoundedCornerShape(6.dp),
                                                 color = MaterialTheme.colorScheme.surfaceVariant,
                                                 modifier = Modifier.padding(vertical = 1.dp)
                                             ) {
-                                                Text(
-                                                    text = methodIcon,
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = methodIcon,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        modifier = Modifier.size(10.dp)
+                                                    )
+                                                    Text(
+                                                        text = methodLabel,
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
                                             }
 
                                             // Recurrence badge
@@ -552,12 +594,23 @@ fun TransactionsScreen(
                                                     color = MaterialTheme.colorScheme.primaryContainer,
                                                     modifier = Modifier.padding(vertical = 1.dp)
                                                 ) {
-                                                    Text(
-                                                        text = "🔁 ${if (item.recurrence == "MONTHLY") "Monthly" else "Weekly"}",
-                                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Outlined.Repeat,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(10.dp)
+                                                        )
+                                                        Text(
+                                                            text = if (item.recurrence == "MONTHLY") "Monthly" else "Weekly",
+                                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }

@@ -34,8 +34,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MenuOpen
+import androidx.compose.material.icons.automirrored.outlined.CompareArrows
+import androidx.compose.material.icons.automirrored.outlined.MenuOpen
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -140,11 +146,16 @@ fun AppShell(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
+                                    .background(MaterialTheme.colorScheme.primaryContainer)
                                     .clickable { showAuthModal = true },
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 22.sp)
+                                Icon(
+                                    imageVector = Icons.Outlined.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             FloatingActionButton(
@@ -153,7 +164,7 @@ fun AppShell(
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.testTag("rail_fab_add")
                             ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Flow")
+                                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Add Flow")
                             }
                         }
                     }
@@ -406,7 +417,12 @@ fun AppShell(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(text = "🤝", fontSize = 22.sp)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.CompareArrows,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Column {
                             Text(text = "Money Flow", fontWeight = FontWeight.Bold)
                             Text(text = "Track debts, IOUs & shared expenses", style = MaterialTheme.typography.bodySmall)
@@ -430,7 +446,12 @@ fun AppShell(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(text = "🐷", fontSize = 22.sp)
+                        Icon(
+                            imageVector = Icons.Outlined.Savings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Column {
                             Text(text = "Savings", fontWeight = FontWeight.Bold)
                             Text(text = "Adult Money & protected Emergency Fund", style = MaterialTheme.typography.bodySmall)
@@ -452,7 +473,12 @@ fun AppShell(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(text = "📊", fontSize = 22.sp)
+                        Icon(
+                            imageVector = Icons.Outlined.BarChart,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Column {
                             Text(text = "Category Budgets", fontWeight = FontWeight.Bold)
                             Text(text = "Manage spending caps & allocations", style = MaterialTheme.typography.bodySmall)
@@ -474,7 +500,12 @@ fun AppShell(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(text = "⚙️", fontSize = 22.sp)
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                         Column {
                             Text(text = "Settings & Profiles", fontWeight = FontWeight.Bold)
                             Text(text = "User data isolation, accounts & specs", style = MaterialTheme.typography.bodySmall)
@@ -496,7 +527,20 @@ fun AppShell(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 22.sp)
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         Column {
                             Text(text = "Switch Profile (${allUsers.size} accounts)", fontWeight = FontWeight.Bold)
                             Text(text = "Current: @${currentUser?.username}", style = MaterialTheme.typography.bodySmall)
@@ -755,7 +799,7 @@ private fun AmoebaFloatingBottomDocker(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = Icons.Default.Add,
+                                    imageVector = Icons.Outlined.Add,
                                     contentDescription = "Add Flow",
                                     tint = Color.White,
                                     modifier = Modifier.size(24.dp)
@@ -777,7 +821,7 @@ private fun AmoebaFloatingBottomDocker(
 
                     // 4. More
                     DockerSlotItem(
-                        icon = Icons.Default.MenuOpen,
+                        icon = Icons.AutoMirrored.Outlined.MenuOpen,
                         contentDescription = "More",
                         isSelected = selectedDockerIndex == 4,
                         onClick = { onOpenMoreMenu() },

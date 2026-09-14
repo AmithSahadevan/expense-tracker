@@ -13,10 +13,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.LockOpen
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -68,7 +75,12 @@ fun AdultMoneyCard(
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "💳", fontSize = 20.sp)
+                        Icon(
+                            imageVector = Icons.Outlined.CreditCard,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -179,7 +191,12 @@ fun EmergencyFundCard(
                             .background(EmergencyShield.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = "🛡️", fontSize = 18.sp)
+                        Icon(
+                            imageVector = Icons.Outlined.Shield,
+                            contentDescription = null,
+                            tint = EmergencyGold,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -193,13 +210,24 @@ fun EmergencyFundCard(
                             color = EmergencyShield.copy(alpha = 0.3f),
                             border = BorderStroke(1.dp, EmergencyShield.copy(alpha = 0.6f))
                         ) {
-                            Text(
-                                text = "🔒 PROTECTED",
-                                fontSize = 8.5.sp,
-                                fontWeight = FontWeight.Black,
-                                color = EmergencyGold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Lock,
+                                    contentDescription = null,
+                                    tint = EmergencyGold,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Text(
+                                    text = "PROTECTED",
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = EmergencyGold
+                                )
+                            }
                         }
                     }
                 }
@@ -222,7 +250,12 @@ fun EmergencyFundCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(text = "⚠️", fontSize = 12.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.WarningAmber,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.8f),
+                        modifier = Modifier.size(12.dp)
+                    )
                     Text(
                         text = "Strictly protected. Never counted as available spending or wishlist money.",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.5.sp),
@@ -255,7 +288,19 @@ fun EmergencyFundCard(
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("emergency_fund_withdraw")
-                        ) { Text("🔓 Withdraw", fontWeight = FontWeight.Bold) }
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.LockOpen,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text("Withdraw", fontWeight = FontWeight.Bold)
+                            }
+                        }
                     }
                 }
             }

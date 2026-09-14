@@ -1,11 +1,18 @@
 package com.example.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -46,29 +53,53 @@ fun PurchasedBadge(modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
     ) {
-        Text(
-            text = "✓ Purchased",
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = "Purchased",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 
-/** "✓ Can afford" or "₹X more needed", always judged against Adult Money only. */
+/** "Can afford" or "₹X more needed", always judged against Adult Money only. */
 @Composable
 fun AffordabilityChip(result: WishlistAffordability, currency: String, modifier: Modifier = Modifier) {
-    val (label, background) = when (result) {
-        is WishlistAffordability.CanAfford -> "✓ Can afford" to CanAffordGreen.copy(alpha = 0.16f)
+    val (label, background, showCheck) = when (result) {
+        is WishlistAffordability.CanAfford -> Triple("Can afford", CanAffordGreen.copy(alpha = 0.16f), true)
         is WishlistAffordability.MoreNeeded ->
-            "${formatMoney(currency, result.amountNeeded)} more needed" to MaterialTheme.colorScheme.surfaceVariant
+            Triple("${formatMoney(currency, result.amountNeeded)} more needed", MaterialTheme.colorScheme.surfaceVariant, false)
     }
     Surface(shape = RoundedCornerShape(8.dp), color = background, modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (showCheck) {
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }

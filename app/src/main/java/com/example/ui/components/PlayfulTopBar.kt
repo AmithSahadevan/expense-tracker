@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,16 +56,21 @@ fun PlayfulTopBar(
             // App Branding
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "💸", fontSize = 20.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
                 Column {
                     Text(
@@ -115,12 +122,14 @@ fun PlayfulTopBar(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(avatarBg),
+                            .background(avatarBg.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = currentUser?.avatarEmoji ?: "⚡",
-                            fontSize = 14.sp
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            tint = avatarBg,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
@@ -135,7 +144,7 @@ fun PlayfulTopBar(
                     }
 
                     Icon(
-                        imageVector = Icons.Default.SwapHoriz,
+                        imageVector = Icons.Outlined.SwapHoriz,
                         contentDescription = "Switch Account",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)

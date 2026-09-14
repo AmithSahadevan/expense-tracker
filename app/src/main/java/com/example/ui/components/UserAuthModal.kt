@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -74,11 +75,9 @@ fun UserAuthModal(
     var newUsername by remember { mutableStateOf("") }
     var newDisplayName by remember { mutableStateOf("") }
     var newEmail by remember { mutableStateOf("") }
-    var selectedEmoji by remember { mutableStateOf("🦊") }
     var selectedColorHex by remember { mutableStateOf("#FF6B6B") }
     var formError by remember { mutableStateOf<String?>(null) }
 
-    val emojis = listOf("🦊", "⚡", "🚀", "💎", "🍕", "🥑", "🎧", "🐱", "🌈", "👾", "🛹", "☕")
     val colors = listOf("#7048E8", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
 
     ModalBottomSheet(
@@ -220,7 +219,12 @@ fun UserAuthModal(
                                         .background(userBg),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = user.avatarEmoji, fontSize = 20.sp)
+                                    Icon(
+                                        imageVector = Icons.Outlined.Person,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
 
                                 Column {
@@ -292,7 +296,7 @@ fun UserAuthModal(
             } else {
                 // Registration Form
                 Text(
-                    text = "CHOOSE AVATAR EMOJI",
+                    text = "AVATAR PREVIEW",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
@@ -301,30 +305,19 @@ fun UserAuthModal(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(Color(android.graphics.Color.parseColor(selectedColorHex))),
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(emojis) { emoji ->
-                        val isSelected = selectedEmoji == emoji
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                    else MaterialTheme.colorScheme.surfaceVariant
-                                )
-                                .border(
-                                    width = if (isSelected) 2.dp else 1.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                    shape = CircleShape
-                                )
-                                .clickable { selectedEmoji = emoji },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = emoji, fontSize = 22.sp)
-                        }
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -347,15 +340,15 @@ fun UserAuthModal(
                         val c = Color(android.graphics.Color.parseColor(hex))
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(c)
-                                .border(
-                                    width = if (isSelected) 3.dp else 0.dp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    shape = CircleShape
-                                )
-                                .clickable { selectedColorHex = hex },
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(c)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 0.dp,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            shape = CircleShape
+                                        )
+                                        .clickable { selectedColorHex = hex },
                             contentAlignment = Alignment.Center
                         ) {
                             if (isSelected) {
@@ -452,11 +445,12 @@ fun UserAuthModal(
                                 formError = "Please enter a valid email"
                                 return@Button
                             }
+                            // We still pass a default emoji to maintain DB compatibility
                             onRegisterUser(
                                 newUsername,
                                 newEmail,
                                 newDisplayName.ifBlank { newUsername },
-                                selectedEmoji,
+                                "🦊",
                                 selectedColorHex
                             )
                             onDismiss()

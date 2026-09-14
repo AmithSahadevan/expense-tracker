@@ -25,7 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -120,7 +123,7 @@ fun MoneyFlowScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
-                        emoji = "🤝",
+                        icon = Icons.Outlined.Handshake,
                         headline = "No debts floating around",
                         subtext = "A rare and beautiful serenity. Neither a borrower nor a lender be (or just record one now!).",
                         actionButtonText = "+ Record IOU or Debt",
@@ -172,9 +175,11 @@ fun MoneyFlowScreen(
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = if (isOwedToMe) "📥" else "📤",
-                                            fontSize = 18.sp
+                                        Icon(
+                                            imageVector = if (isOwedToMe) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward,
+                                            contentDescription = null,
+                                            tint = if (isOwedToMe) Color(0xFF10B981) else Color(0xFFFF6B6B),
+                                            modifier = Modifier.size(20.dp)
                                         )
                                     }
 

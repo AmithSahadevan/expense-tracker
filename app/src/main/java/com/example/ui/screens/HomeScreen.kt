@@ -25,6 +25,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AddCard
+import androidx.compose.material.icons.outlined.Park
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.WavingHand
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
+import com.example.data.model.CategoryRegistry
 import com.example.data.model.TransactionType
 import com.example.ui.components.AdultMoneyCard
 import com.example.ui.components.BalanceHeroCard
@@ -90,14 +97,23 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(
-                    text = "Hey, ${currentUser?.displayName ?: "there"}! 👋",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Black,
-                        fontSize = 24.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Hey, ${currentUser?.displayName ?: "there"}!",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 24.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Outlined.WavingHand,
+                        contentDescription = null,
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
                 Text(
                     text = if (hasTransactions)
                         "Here's your live financial vibe check."
@@ -114,7 +130,12 @@ fun HomeScreen(
                 modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 22.sp)
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
@@ -334,7 +355,7 @@ fun HomeScreen(
 
         if (!hasTransactions) {
             FunkyEmptyState(
-                emoji = "🌱",
+                icon = Icons.Outlined.Park,
                 headline = "Nothing recorded yet",
                 subtext = "Enjoy the clean slate. Track income, expenses, and build your savings cushion.",
                 actionButtonText = "View All Transactions",
@@ -376,9 +397,14 @@ fun HomeScreen(
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = if (item.type == TransactionType.INCOME) "💰" else "💸",
-                                        fontSize = 16.sp
+                                    Icon(
+                                        imageVector = if (item.type == TransactionType.INCOME)
+                                            Icons.Outlined.AddCard
+                                        else
+                                            Icons.Outlined.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = if (item.type == TransactionType.INCOME) Color(0xFF10B981) else Color(0xFFFF6B6B),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                                 Column {
@@ -388,24 +414,48 @@ fun HomeScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text(
-                                            text = item.category,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        if (item.recurrence != "NONE") {
-                                            Text(
-                                                text = "• 🔁 ${item.recurrence.lowercase().replaceFirstChar { it.uppercase() }}",
-                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                                color = MaterialTheme.colorScheme.primary
+                                        val catInfo = CategoryRegistry.getCategoryInfo(item.category, item.type)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = catInfo.icon,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(12.dp)
                                             )
+                                            Text(
+                                                text = item.category,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        if (item.recurrence != "NONE") {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                Text(text = "•", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Repeat,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Text(
+                                                    text = item.recurrence.lowercase().replaceFirstChar { it.uppercase() },
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
 
                             Text(
-                                text = "${if (item.type == TransactionType.INCOME) "+" else "-"}$currency${String.format(Locale.US, "%.2f", item.amount)}",
+                                text = "${if (item.type == TransactionType.INCOME) "+" else "-"}$currency${String.format(Locale.US, "%,.2f", item.amount)}",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
                                 color = if (item.type == TransactionType.INCOME) Color(0xFF10B981) else Color(0xFFFF6B6B)
                             )

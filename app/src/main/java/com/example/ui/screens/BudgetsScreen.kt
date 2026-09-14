@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -108,7 +109,7 @@ fun BudgetsScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
-                        emoji = "📊",
+                        icon = Icons.Outlined.BarChart,
                         headline = "Budgets are untouched",
                         subtext = "Your wallet is currently sighing in relief. Set realistic monthly envelopes for food, fun, or hobbies.",
                         actionButtonText = "+ Set Budget Envelope",

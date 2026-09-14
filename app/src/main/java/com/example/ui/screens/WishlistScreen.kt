@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
@@ -29,9 +31,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -267,7 +274,7 @@ private fun WishlistBrowse(
                 fullWidthItem("empty") {
                     Box(modifier = Modifier.padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
                         FunkyEmptyState(
-                            emoji = "✨",
+                            icon = Icons.Outlined.StarOutline,
                             headline = "Your wishlist is looking lonely",
                             subtext = "That special thing you've been eyeing? Add its name, price and photo link, and we'll track when your Adult Money can cover it.",
                             actionButtonText = "+ Add Wishlist Item",
@@ -309,7 +316,7 @@ private fun WishlistBrowse(
                             text = when (filter) {
                                 WishlistFilter.CAN_AFFORD ->
                                     "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
-                                WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money 🎉"
+                                WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money"
                                 else -> "No items to show."
                             },
                             style = MaterialTheme.typography.bodyMedium,
@@ -353,11 +360,20 @@ private fun WishlistSpendingPowerCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "💳 Current Adult Money",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.CreditCard,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Current Adult Money",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 Text(
                     text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
@@ -371,11 +387,23 @@ private fun WishlistSpendingPowerCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Text(
-                text = "🔒 Your Emergency Fund is protected and never counted toward wishlist items.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "Your Emergency Fund is protected and never counted toward wishlist items.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -410,6 +438,7 @@ private fun WishlistProductCard(
                     modifier = Modifier
                         .matchParentSize()
                         .alpha(if (item.isPurchased) 0.5f else 1f)
+                        .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 )
                 PriorityBadge(
                     priority = item.priority,

@@ -21,6 +21,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,11 +35,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -147,12 +153,23 @@ fun WishlistItemDetail(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "✓ You've marked this as purchased. Move it back to your wishlist to see affordability again.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "You've marked this as purchased. Move it back to your wishlist to see affordability again.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             } else {
                 AffordabilityBreakdownCard(price = item.estimatedCost, adultMoneyBalance = adultMoneyBalance, currency = currency)
@@ -184,7 +201,8 @@ fun WishlistItemDetail(
             item.targetPurchaseDate?.let { target ->
                 DetailSection(
                     label = "TARGET PURCHASE DATE",
-                    body = "🎯 ${dateFormat.format(Date(target))} · ${WishlistDates.describe(target)}"
+                    icon = Icons.Outlined.Savings,
+                    body = "${dateFormat.format(Date(target))} · ${WishlistDates.describe(target)}"
                 )
             }
             if (item.description.isNotBlank()) DetailSection(label = "DESCRIPTION", body = item.description)
@@ -207,7 +225,15 @@ fun WishlistItemDetail(
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("wishlist_detail_toggle_purchased")
-                ) { Text("✓ Mark as purchased", fontWeight = FontWeight.Bold) }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Mark as purchased", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }
@@ -273,11 +299,22 @@ private fun AffordabilityBreakdownCard(price: Double, adultMoneyBalance: Double,
                 }
             }
 
-            Text(
-                text = "🔒 Your Emergency Fund is protected and never used for wishlist purchases.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "Your Emergency Fund is protected and never used for wishlist purchases.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -303,13 +340,23 @@ private fun BreakdownRow(label: String, value: String, emphasized: Boolean = fal
 }
 
 @Composable
-private fun DetailSection(label: String, body: String) {
+private fun DetailSection(label: String, body: String, icon: ImageVector? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(text = body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Text(text = body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }

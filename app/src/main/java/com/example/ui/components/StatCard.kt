@@ -13,8 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDownward
+import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,10 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Locale
 
 @Composable
 fun BalanceHeroCard(
@@ -70,19 +79,30 @@ fun BalanceHeroCard(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
                 ) {
-                    Text(
-                        text = if (balance >= 0) "✨ Positive Cashflow" else "⚠️ Deficit",
+                    Row(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (balance >= 0) Icons.Outlined.AutoAwesome else Icons.Outlined.WarningAmber,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = if (balance >= 0) "Positive Cashflow" else "Deficit",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "$currency${String.format(java.util.Locale.US, "%,.2f", balance)}",
+                text = "$currency${String.format(Locale.US, "%,.2f", balance)}",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontSize = 38.sp,
                     fontWeight = FontWeight.Black,
@@ -125,7 +145,12 @@ fun BalanceHeroCard(
                                 .background(Color(0xFF10B981)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "↓", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowDownward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                         Column {
                             Text(
@@ -134,7 +159,7 @@ fun BalanceHeroCard(
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                             )
                             Text(
-                                text = "+$currency${String.format(java.util.Locale.US, "%,.2f", income)}",
+                                text = "+$currency${String.format(Locale.US, "%,.2f", income)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
@@ -160,7 +185,12 @@ fun BalanceHeroCard(
                                 .background(Color(0xFFFF6B6B)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "↑", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                            Icon(
+                                imageVector = Icons.Outlined.ArrowUpward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                         Column {
                             Text(
@@ -169,7 +199,7 @@ fun BalanceHeroCard(
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                             )
                             Text(
-                                text = "-$currency${String.format(java.util.Locale.US, "%,.2f", expense)}",
+                                text = "-$currency${String.format(Locale.US, "%,.2f", expense)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
@@ -193,13 +223,24 @@ fun BalanceHeroCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.CalendarToday,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Current Month's Spending:",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                        )
+                    }
                     Text(
-                        text = "🗓️ Current Month's Spending:",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
-                    )
-                    Text(
-                        text = "$currency${String.format(java.util.Locale.US, "%,.2f", currentMonthSpending)}",
+                        text = "$currency${String.format(Locale.US, "%,.2f", currentMonthSpending)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
                         color = MaterialTheme.colorScheme.onPrimary
                     )
@@ -214,7 +255,7 @@ fun FunkyFeatureCard(
     title: String,
     tagline: String,
     badgeText: String,
-    emoji: String,
+    icon: ImageVector,
     accentColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -251,7 +292,12 @@ fun FunkyFeatureCard(
                         .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = emoji, fontSize = 22.sp)
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = accentColor,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
 
                 Column {
@@ -292,3 +338,4 @@ fun FunkyFeatureCard(
         }
     }
 }
+
