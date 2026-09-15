@@ -2,47 +2,32 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Funky & Playful Primary Palette
-val ElectricViolet = Color(0xFF6C5CE7)
-val ElectricVioletLight = Color(0xFF8C7AE6)
-val ElectricVioletDark = Color(0xFF4834D4)
+// Ultra-Aesthetic Off-White & Dark Grey Palette
+val OffWhiteBg = Color(0xFFFEF8E8)
+val DarkGrey = Color(0xFF242426)
+val LightGrey = Color(0xFFF4F4F6)
+val MediumGrey = Color(0xFFE5E5EA)
+val BorderGrey = Color(0xFFD1D1D6)
+val DarkText = Color(0xFF1C1C1E)
+val MutedText = Color(0xFF6E6E73)
 
-// Vibrant Accents
+// Vibrant Accents (kept clean and muted for premium aesthetic)
 val PunchyCoral = Color(0xFFFF6B6B)
 val MintGreen = Color(0xFF10B981)
 val SunnyYellow = Color(0xFFFFD166)
 val BubblegumPink = Color(0xFFFD79A8)
 val SkyAzure = Color(0xFF0984E3)
 
-// Emergency Fund "protected vault" tokens (identical in light & dark so the vault always stands apart)
+// Emergency Fund "protected vault" tokens
 val EmergencyVault = Color(0xFF0F172A)
 val EmergencyShield = Color(0xFFF59E0B)
 val EmergencyGold = Color(0xFFFBBF24)
-// Chart series color for Emergency Fund (validated vs light & dark surfaces, paired with primary violet)
 val EmergencyChartAmber = Color(0xFFD97706)
 
-// Light Theme Tokens
-val LightBackground = Color(0xFFF7F8FC)
-val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFECEFF8)
-val LightBorder = Color(0xFFE2E6F2)
-val LightOnBackground = Color(0xFF191825)
-val LightOnSurface = Color(0xFF191825)
-val LightOnSurfaceMuted = Color(0xFF636E72)
-
-// Dark Theme Tokens
-val DarkBackground = Color(0xFF12101D)
-val DarkSurface = Color(0xFF1B182B)
-val DarkSurfaceVariant = Color(0xFF26223D)
-val DarkBorder = Color(0xFF332E52)
-val DarkOnBackground = Color(0xFFF5F6FA)
-val DarkOnSurface = Color(0xFFF5F6FA)
-val DarkOnSurfaceMuted = Color(0xFFA4B0BE)
-
 // Legacy compatibility
-val Purple80 = ElectricVioletLight
-val PurpleGrey80 = DarkBorder
+val Purple80 = DarkGrey
+val PurpleGrey80 = BorderGrey
 val Pink80 = BubblegumPink
-val Purple40 = ElectricViolet
-val PurpleGrey40 = LightOnSurfaceMuted
+val Purple40 = DarkGrey
+val PurpleGrey40 = MutedText
 val Pink40 = PunchyCoral

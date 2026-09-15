@@ -15,7 +15,7 @@ data class UserEntity(
     val email: String,
     val displayName: String,
     val avatarEmoji: String = "⚡",
-    val avatarColorHex: String = "#7048E8",
+    val avatarColorHex: String = "#242426",
     val passwordHash: String = "",
     val currencySymbol: String = "$",
     val monthlySalary: Double = 0.0,

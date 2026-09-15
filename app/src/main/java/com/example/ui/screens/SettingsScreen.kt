@@ -67,7 +67,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val userColor = try {
-        Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#7048E8"))
+        Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#242426"))
     } catch (_: Exception) {
         MaterialTheme.colorScheme.primary
     }

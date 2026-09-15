@@ -78,7 +78,7 @@ fun UserAuthModal(
     var selectedColorHex by remember { mutableStateOf("#FF6B6B") }
     var formError by remember { mutableStateOf<String?>(null) }
 
-    val colors = listOf("#7048E8", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
+    val colors = listOf("#242426", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

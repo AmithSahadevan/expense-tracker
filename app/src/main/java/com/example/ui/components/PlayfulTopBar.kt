@@ -62,7 +62,7 @@ fun PlayfulTopBar(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -94,7 +94,7 @@ fun PlayfulTopBar(
 
             // Right side: Single Profile Icon
             val avatarBg = try {
-                Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#7048E8"))
+                Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#242426"))
             } catch (_: Exception) {
                 MaterialTheme.colorScheme.primary
             }

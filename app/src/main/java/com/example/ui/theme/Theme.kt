@@ -12,49 +12,46 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = ElectricVioletLight,
-    onPrimary = Color.White,
-    primaryContainer = ElectricVioletDark,
-    onPrimaryContainer = Color.White,
+    primary = DarkGrey,
+    onPrimary = OffWhiteBg,
+    primaryContainer = OffWhiteBg,
+    onPrimaryContainer = DarkGrey,
     secondary = PunchyCoral,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFF5A1E28),
-    onSecondaryContainer = Color(0xFFFFD2D9),
     tertiary = MintGreen,
     onTertiary = Color.White,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceMuted,
-    outline = DarkBorder
+    background = DarkGrey,
+    onBackground = OffWhiteBg,
+    surface = Color(0xFF2C2C2E),
+    onSurface = OffWhiteBg,
+    surfaceVariant = Color(0xFF3A3A3C),
+    onSurfaceVariant = MediumGrey,
+    outline = BorderGrey
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = ElectricViolet,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFEDE9FE),
-    onPrimaryContainer = ElectricVioletDark,
+    primary = DarkGrey,
+    onPrimary = OffWhiteBg,
+    primaryContainer = OffWhiteBg,
+    onPrimaryContainer = DarkGrey,
     secondary = PunchyCoral,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE3E3),
-    onSecondaryContainer = Color(0xFF901B2B),
+    secondaryContainer = MediumGrey,
+    onSecondaryContainer = DarkText,
     tertiary = MintGreen,
     onTertiary = Color.White,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceMuted,
-    outline = LightBorder
+    background = OffWhiteBg,
+    onBackground = DarkText,
+    surface = LightGrey,
+    onSurface = DarkText,
+    surfaceVariant = MediumGrey,
+    onSurfaceVariant = MutedText,
+    outline = BorderGrey
 )
 
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Prefer curated playful theme by default over bland system wallpaper dynamic colors
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

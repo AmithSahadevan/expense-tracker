@@ -18,13 +18,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.ui.theme.BubblegumPink
-import com.example.ui.theme.ElectricViolet
+import com.example.ui.theme.DarkGrey
 import com.example.ui.theme.MintGreen
 import com.example.ui.theme.SkyAzure
 import com.example.ui.theme.SunnyYellow
 import kotlin.math.abs
 
-private val placeholderAccents = listOf(ElectricViolet, BubblegumPink, SkyAzure, MintGreen, SunnyYellow)
+private val placeholderAccents = listOf(DarkGrey, BubblegumPink, SkyAzure, MintGreen, SunnyYellow)
 
 /**
  * Product photo loaded from a user-entered image link. Shows a tinted placeholder while there is

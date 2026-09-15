@@ -702,7 +702,7 @@ private fun AmoebaFloatingBottomDocker(
     ) {
         Surface(
             shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            color = MaterialTheme.colorScheme.primary,
             shadowElevation = 10.dp,
             tonalElevation = 6.dp,
             border = BorderStroke(
@@ -799,7 +799,7 @@ private fun AmoebaFloatingBottomDocker(
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             shadowElevation = 5.dp,
                             modifier = Modifier
                                 .size(42.dp)
@@ -811,7 +811,7 @@ private fun AmoebaFloatingBottomDocker(
                                 Icon(
                                     imageVector = Icons.Outlined.Add,
                                     contentDescription = "Add Flow",
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -872,7 +872,7 @@ private fun DockerSlotItem(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
             modifier = Modifier
                 .size(24.dp)
                 .graphicsLayer {
