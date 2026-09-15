@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.CategoryEntity
+import com.example.data.local.entities.MoneyFlowDirection
 import com.example.data.local.entities.MoneyFlowEntity
 import com.example.data.local.entities.SavingsActionType
 import com.example.data.local.entities.SavingsEntity
@@ -13,6 +14,10 @@ import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.SavingsType
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.MoneyFlowCalculator
+import com.example.data.model.MoneyFlowInput
+import com.example.data.model.MoneyFlowSummary
+import com.example.data.model.MoneyFlowValidator
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsCalculator
 import com.example.data.model.SavingsTransactionInput
@@ -50,6 +55,9 @@ data class DashboardSummaryUiState(
     val currentMonthIncome: Double = 0.0,
     val currentMonthSpending: Double = 0.0,
     val currentMonthRemaining: Double = 0.0,
+    // Pending money involving other people. Deliberately NOT part of remainingMoney:
+    // money owed to the user has not arrived, and money the user owes has not left yet.
+    val moneyFlow: MoneyFlowSummary = MoneyFlowSummary(),
     val recentTransactions: List<TransactionItem> = emptyList(),
     val savingsGoalsCount: Int = 0,
     val moneyFlowCount: Int = 0,
@@ -176,11 +184,12 @@ class ExpenseTrackerViewModel(
         val goalsCount: Int,
         val flowCount: Int,
         val wishlistCount: Int,
-        val budgetsCount: Int
+        val budgetsCount: Int,
+        val moneyFlowSummary: MoneyFlowSummary
     )
 
     private val hubCounts = combine(savingsGoals, moneyFlows, wishlist, budgets) { goals, flows, wishListItems, budgetItems ->
-        HubCounts(goals.size, flows.size, wishListItems.size, budgetItems.size)
+        HubCounts(goals.size, flows.size, wishListItems.size, budgetItems.size, MoneyFlowCalculator.summarize(flows))
     }.flowOn(Dispatchers.Default)
 
     private data class SavingsBalances(
@@ -232,6 +241,7 @@ class ExpenseTrackerViewModel(
             recentTransactions = txList.take(5),
             savingsGoalsCount = counts.goalsCount,
             moneyFlowCount = counts.flowCount,
+            moneyFlow = counts.moneyFlowSummary,
             wishlistCount = counts.wishlistCount,
             budgetsCount = counts.budgetsCount
         )
@@ -427,11 +437,31 @@ class ExpenseTrackerViewModel(
         }
     }
 
-    fun addMoneyFlow(person: String, direction: String, amount: Double, notes: String = "") {
+    fun addMoneyFlow(input: MoneyFlowInput) {
         val user = currentUser.value ?: return
+        val clean = cleanMoneyFlowInput(input) ?: return
         viewModelScope.launch {
-            repository.addMoneyFlow(user.id, person, direction, amount, notes)
-            _actionMessage.value = "🤝 Debt/Flow recorded with $person"
+            repository.addMoneyFlow(user.id, clean)
+            val label = if (clean.direction == MoneyFlowDirection.OWED_TO_ME) "owes you" else "is owed"
+            _actionMessage.value = "${clean.personName} $label ${formatMoney(user.currencySymbol, clean.amount)}"
+        }
+    }
+
+    fun updateMoneyFlow(id: Long, input: MoneyFlowInput) {
+        val user = currentUser.value ?: return
+        val clean = cleanMoneyFlowInput(input) ?: return
+        viewModelScope.launch {
+            val updated = repository.updateMoneyFlow(user.id, id, clean)
+            _actionMessage.value = if (updated) "Money flow updated." else "Money flow record not found."
+        }
+    }
+
+    fun deleteMoneyFlow(item: MoneyFlowEntity) {
+        val user = currentUser.value ?: return
+        if (item.userId != user.id) return
+        viewModelScope.launch {
+            repository.deleteMoneyFlow(user.id, item.id)
+            _actionMessage.value = "Removed the record with ${item.personName}."
         }
     }
 
@@ -439,9 +469,19 @@ class ExpenseTrackerViewModel(
         val user = currentUser.value ?: return
         if (item.userId != user.id) return
         viewModelScope.launch {
+            // Settling only flips this record's status: income, expenses and past entries stay untouched.
             repository.setMoneyFlowSettled(user.id, item.id, !item.isSettled)
-            _actionMessage.value = if (!item.isSettled) "Marked as settled!" else "Marked as pending."
+            _actionMessage.value = if (!item.isSettled) "Settled with ${item.personName}." else "Marked as pending again."
         }
+    }
+
+    private fun cleanMoneyFlowInput(input: MoneyFlowInput): MoneyFlowInput? {
+        val clean = MoneyFlowValidator.clean(input)
+        if (clean == null) {
+            val errors = MoneyFlowValidator.validate(input)
+            _actionMessage.value = errors.personName ?: errors.amount
+        }
+        return clean
     }
 
     fun addSavingsGoal(title: String, goalAmount: Double, emoji: String = "🎯") {

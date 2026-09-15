@@ -53,7 +53,7 @@ import com.example.data.local.entities.WishlistItemEntity
 import com.example.data.model.WebLinks
 import com.example.data.model.WishlistAffordability
 import com.example.data.model.WishlistAffordabilityCalculator
-import com.example.data.model.WishlistDates
+import com.example.data.model.RelativeDates
 import com.example.ui.components.AffordabilityChip
 import com.example.ui.components.PriorityBadge
 import com.example.ui.components.ProductImage
@@ -202,7 +202,7 @@ fun WishlistItemDetail(
                 DetailSection(
                     label = "TARGET PURCHASE DATE",
                     icon = Icons.Outlined.Savings,
-                    body = "${dateFormat.format(Date(target))} · ${WishlistDates.describe(target)}"
+                    body = "${dateFormat.format(Date(target))} · ${RelativeDates.describe(target)}"
                 )
             }
             if (item.description.isNotBlank()) DetailSection(label = "DESCRIPTION", body = item.description)

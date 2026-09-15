@@ -133,11 +133,17 @@ interface SavingsDao {
 
 @Dao
 interface MoneyFlowDao {
-    @Query("SELECT * FROM money_flow WHERE userId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM money_flow WHERE userId = :userId ORDER BY date DESC, id DESC")
     fun getMoneyFlowsForUser(userId: Long): Flow<List<MoneyFlowEntity>>
+
+    @Query("SELECT * FROM money_flow WHERE id = :id AND userId = :userId LIMIT 1")
+    suspend fun getMoneyFlowById(id: Long, userId: Long): MoneyFlowEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMoneyFlow(moneyFlow: MoneyFlowEntity): Long
+
+    @Update
+    suspend fun updateMoneyFlow(moneyFlow: MoneyFlowEntity)
 
     @Query("UPDATE money_flow SET isSettled = :isSettled WHERE id = :id AND userId = :userId")
     suspend fun setSettled(id: Long, userId: Long, isSettled: Boolean): Int

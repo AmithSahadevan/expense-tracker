@@ -77,6 +77,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.MoneyFlowInput
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.WishlistItemInput
@@ -119,6 +120,7 @@ fun AppShell(
 
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val moreHubSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(actionMessage) {
         actionMessage?.let { msg ->
@@ -224,7 +226,9 @@ fun AppShell(
                                 onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
                                     viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
                                 },
-                                onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
+                                onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
+                                onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
+                                onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
                                 onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
                                 onAddWishlistItem = { viewModel.addWishlistItem(it) },
                                 onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
@@ -287,7 +291,9 @@ fun AppShell(
                         onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
                             viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
                         },
-                        onAddMoneyFlow = { p, d, a, n -> viewModel.addMoneyFlow(p, d, a, n) },
+                        onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
+                        onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
+                        onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
                         onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
                         onAddWishlistItem = { viewModel.addWishlistItem(it) },
                         onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
@@ -386,6 +392,7 @@ fun AppShell(
     if (showMoreMenuSheet) {
         ModalBottomSheet(
             onDismissRequest = { showMoreMenuSheet = false },
+            sheetState = moreHubSheetState,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
@@ -568,7 +575,9 @@ private fun ScreenRouter(
     onDeleteTransaction: (com.example.data.model.TransactionItem) -> Unit,
     onEditTransaction: (com.example.data.model.TransactionItem) -> Unit,
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
-    onAddMoneyFlow: (String, String, Double, String) -> Unit,
+    onAddMoneyFlow: (MoneyFlowInput) -> Unit,
+    onUpdateMoneyFlow: (Long, MoneyFlowInput) -> Unit,
+    onDeleteMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
     onToggleMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
     onAddWishlistItem: (WishlistItemInput) -> Unit,
     onUpdateWishlistItem: (Long, WishlistItemInput) -> Unit,
@@ -603,6 +612,8 @@ private fun ScreenRouter(
                 currentUser = currentUser,
                 moneyFlows = moneyFlows,
                 onAddMoneyFlow = onAddMoneyFlow,
+                onUpdateMoneyFlow = onUpdateMoneyFlow,
+                onDeleteMoneyFlow = onDeleteMoneyFlow,
                 onToggleSettled = onToggleMoneyFlow
             )
             AppDestination.WISHLIST -> WishlistScreen(

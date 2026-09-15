@@ -48,6 +48,7 @@ import com.example.data.model.CategoryRegistry
 import com.example.data.model.TransactionType
 import com.example.ui.components.BalanceHeroCard
 import com.example.ui.components.FunkyEmptyState
+import com.example.ui.components.MoneyFlowDashboardCard
 import com.example.ui.viewmodel.DashboardSummaryUiState
 import java.util.Locale
 
@@ -81,6 +82,16 @@ fun HomeScreen(
             movedToSavings = summary.movedToSavings,
             currency = currency
         )
+
+        // Pending money with other people, kept separate from Available Money above.
+        if (summary.moneyFlow.hasPending) {
+            Spacer(modifier = Modifier.height(16.dp))
+            MoneyFlowDashboardCard(
+                summary = summary.moneyFlow,
+                currency = currency,
+                onClick = { onNavigateTo("money_flow") }
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

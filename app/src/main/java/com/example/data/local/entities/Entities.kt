@@ -102,6 +102,11 @@ data class SavingsTransactionEntity(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+object MoneyFlowDirection {
+    const val OWED_TO_ME = "OWED_TO_ME"
+    const val I_OWE = "I_OWE"
+}
+
 @Entity(
     tableName = "money_flow",
     indices = [Index(value = ["userId"])]
@@ -112,6 +117,8 @@ data class MoneyFlowEntity(
     val personName: String,
     val direction: String, // OWED_TO_ME, I_OWE
     val amount: Double,
+    // When the money actually changed hands (editable), as opposed to when the record was created.
+    @ColumnInfo(defaultValue = "0") val date: Long = System.currentTimeMillis(),
     val dueDate: Long? = null,
     val isSettled: Boolean = false,
     val notes: String = "",

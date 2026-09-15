@@ -74,29 +74,6 @@ fun BalanceHeroCard(
                     ),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
-
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (balance >= 0) Icons.Outlined.AutoAwesome else Icons.Outlined.WarningAmber,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = if (balance >= 0) "Positive Cashflow" else "Deficit",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))

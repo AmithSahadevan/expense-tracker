@@ -5,7 +5,7 @@ import com.example.data.model.WebLinks
 import com.example.data.model.WishlistAffordability
 import com.example.data.model.WishlistAffordabilityCalculator
 import com.example.data.model.WishlistBrowser
-import com.example.data.model.WishlistDates
+import com.example.data.model.RelativeDates
 import com.example.data.model.WishlistFilter
 import com.example.data.model.WishlistInputValidator
 import com.example.data.model.WishlistItemInput
@@ -142,9 +142,9 @@ class WishlistLogicTest {
         val now = Calendar.getInstance().apply { set(2026, Calendar.SEPTEMBER, 14, 23, 30) }.timeInMillis
         fun day(month: Int, date: Int) = Calendar.getInstance().apply { set(2026, month, date, 0, 5) }.timeInMillis
 
-        assertEquals(0, WishlistDates.daysUntil(day(Calendar.SEPTEMBER, 14), now))
-        assertEquals("tomorrow", WishlistDates.describe(day(Calendar.SEPTEMBER, 15), now))
-        assertEquals("in 17 days", WishlistDates.describe(day(Calendar.OCTOBER, 1), now))
-        assertEquals("3 days ago", WishlistDates.describe(day(Calendar.SEPTEMBER, 11), now))
+        assertEquals(0, RelativeDates.daysUntil(day(Calendar.SEPTEMBER, 14), now))
+        assertEquals("tomorrow", RelativeDates.describe(day(Calendar.SEPTEMBER, 15), now))
+        assertEquals("in 17 days", RelativeDates.describe(day(Calendar.OCTOBER, 1), now))
+        assertEquals("3 days ago", RelativeDates.describe(day(Calendar.SEPTEMBER, 11), now))
     }
 }

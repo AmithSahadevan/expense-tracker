@@ -17,6 +17,7 @@ import com.example.data.local.entities.SavingsEntity
 import com.example.data.local.entities.SavingsGoalEntity
 import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.MoneyFlowInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.WishlistItemInput
@@ -315,26 +316,42 @@ class ExpenseTrackerRepository(
     fun getMoneyFlowsForUser(userId: Long): Flow<List<MoneyFlowEntity>> =
         moneyFlowDao.getMoneyFlowsForUser(userId)
 
-    suspend fun addMoneyFlow(
-        userId: Long,
-        personName: String,
-        direction: String,
-        amount: Double,
-        notes: String = ""
-    ): Long = withContext(Dispatchers.IO) {
+    suspend fun addMoneyFlow(userId: Long, input: MoneyFlowInput): Long = withContext(Dispatchers.IO) {
         moneyFlowDao.insertMoneyFlow(
             MoneyFlowEntity(
                 userId = userId,
-                personName = personName,
-                direction = direction,
-                amount = amount,
-                notes = notes
+                personName = input.personName,
+                direction = input.direction,
+                amount = input.amount,
+                date = input.date,
+                dueDate = input.dueDate,
+                notes = input.notes
             )
         )
     }
 
+    /** Returns false if the record does not exist or belongs to another user. */
+    suspend fun updateMoneyFlow(userId: Long, id: Long, input: MoneyFlowInput): Boolean = withContext(Dispatchers.IO) {
+        val existing = moneyFlowDao.getMoneyFlowById(id, userId) ?: return@withContext false
+        moneyFlowDao.updateMoneyFlow(
+            existing.copy(
+                personName = input.personName,
+                direction = input.direction,
+                amount = input.amount,
+                date = input.date,
+                dueDate = input.dueDate,
+                notes = input.notes
+            )
+        )
+        true
+    }
+
     suspend fun setMoneyFlowSettled(userId: Long, id: Long, settled: Boolean) = withContext(Dispatchers.IO) {
         moneyFlowDao.setSettled(id, userId, settled)
+    }
+
+    suspend fun deleteMoneyFlow(userId: Long, id: Long) = withContext(Dispatchers.IO) {
+        moneyFlowDao.deleteMoneyFlow(id, userId)
     }
 
     // --- Wishlist ---
