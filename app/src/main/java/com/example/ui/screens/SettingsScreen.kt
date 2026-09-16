@@ -66,14 +66,22 @@ fun SettingsScreen(
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val userColor = try {
-        Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#242426"))
-    } catch (_: Exception) {
-        MaterialTheme.colorScheme.primary
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val userColor = remember(currentUser?.avatarColorHex, primaryColor) {
+        val hex = currentUser?.avatarColorHex ?: "#0C0F14"
+        if (hex.lowercase() == "#0c0f14") {
+            primaryColor
+        } else {
+            try {
+                Color(android.graphics.Color.parseColor(hex))
+            } catch (_: Exception) {
+                primaryColor
+            }
+        }
     }
 
     var showSalaryDialog by remember { mutableStateOf(false) }
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
 
     Column(
         modifier = modifier

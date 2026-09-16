@@ -596,7 +596,7 @@ class ExpenseTrackerViewModel(
     private fun rejectIfBalanceWouldGoNegative(removedId: Long?, added: SavingsTransactionEntity?): Boolean {
         val negativeType = SavingsCalculator.typeThatWouldGoNegative(savingsTransactions.value, removedId, added)
             ?: return false
-        val currency = currentUser.value?.currencySymbol ?: "$"
+        val currency = currentUser.value?.currencySymbol ?: "₹"
         val balance = SavingsCalculator.balance(savingsTransactions.value, negativeType)
         _actionMessage.value = "Not enough in ${savingsTypeLabel(negativeType)} " +
             "(balance ${formatMoney(currency, balance)}). Balances can't go below zero."

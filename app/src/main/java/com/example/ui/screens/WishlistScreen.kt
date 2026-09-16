@@ -97,7 +97,7 @@ fun WishlistScreen(
     onLookupProduct: suspend (String) -> ProductLookupResult,
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
     var selectedItemId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showForm by remember { mutableStateOf(false) }

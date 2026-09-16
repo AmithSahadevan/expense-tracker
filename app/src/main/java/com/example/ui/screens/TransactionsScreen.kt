@@ -92,7 +92,7 @@ fun TransactionsScreen(
     onOpenAddTransaction: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<TransactionType?>(null) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }

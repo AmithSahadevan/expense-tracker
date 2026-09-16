@@ -55,7 +55,7 @@ fun BudgetsScreen(
     onAddBudget: (category: String, allocatedAmount: Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     var showAddDialog by remember { mutableStateOf(false) }
     var categoryName by remember { mutableStateOf("") }
     var allocatedAmountText by remember { mutableStateOf("") }

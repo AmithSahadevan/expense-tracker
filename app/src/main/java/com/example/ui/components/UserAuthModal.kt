@@ -78,7 +78,7 @@ fun UserAuthModal(
     var selectedColorHex by remember { mutableStateOf("#FF6B6B") }
     var formError by remember { mutableStateOf<String?>(null) }
 
-    val colors = listOf("#242426", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
+    val colors = listOf("#0C0F14", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -222,7 +222,7 @@ fun UserAuthModal(
                                     Icon(
                                         imageVector = Icons.Outlined.Person,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = if (user.avatarColorHex.lowercase() == "#0c0f14") Color.White else Color.White,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }

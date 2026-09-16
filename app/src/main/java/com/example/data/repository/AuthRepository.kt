@@ -36,7 +36,8 @@ class AuthRepository(
                     email = "alex@expensetracker.fun",
                     displayName = "Alex",
                     avatarEmoji = "⚡",
-                    avatarColorHex = "#242426"
+                    avatarColorHex = "#0C0F14",
+                    currencySymbol = "₹"
                 )
                 val id = userDao.insertUser(defaultUser)
                 val created = userDao.findUserById(id)

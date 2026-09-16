@@ -1,12 +1,8 @@
 package com.example.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +27,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,7 +63,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,6 +94,7 @@ import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.screens.WishlistScreen
 import com.example.ui.viewmodel.ExpenseTrackerViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,7 +114,39 @@ fun AppShell(
     val actionMessage by viewModel.actionMessage.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val pagerDestinations = remember {
+        listOf(
+            AppDestination.SETTINGS,
+            AppDestination.HOME,
+            AppDestination.TRANSACTIONS,
+            AppDestination.WISHLIST,
+            AppDestination.SAVINGS,
+            AppDestination.MONEY_FLOW,
+            AppDestination.BUDGETS
+        )
+    }
+
+    val pagerState = rememberPagerState(initialPage = 1) { pagerDestinations.size }
     var currentDestination by remember { mutableStateOf(AppDestination.HOME) }
+
+    // Sync Pager -> currentDestination
+    LaunchedEffect(pagerState.currentPage) {
+        currentDestination = pagerDestinations[pagerState.currentPage]
+    }
+
+    // Handle "Navigate To" requests from within screens (e.g. "See all -> transactions")
+    val navigateToDestination = { routeName: String ->
+        val dest = AppDestination.entries.find { it.route == routeName }
+        if (dest != null) {
+            val page = pagerDestinations.indexOf(dest)
+            if (page != -1) {
+                scope.launch { pagerState.scrollToPage(page) }
+            }
+        }
+    }
+
     var showAddTransactionSheet by remember { mutableStateOf(false) }
     var editingTransaction by remember { mutableStateOf<com.example.data.model.TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
@@ -173,7 +207,7 @@ fun AppShell(
                     AppDestination.entries.forEach { dest ->
                         NavigationRailItem(
                             selected = currentDestination == dest,
-                            onClick = { currentDestination = dest },
+                            onClick = { navigateToDestination(dest.route) },
                             icon = { Icon(imageVector = dest.icon, contentDescription = dest.title) },
                             label = { Text(dest.title, style = MaterialTheme.typography.labelSmall) },
                             modifier = Modifier.testTag("rail_item_${dest.route}")
@@ -199,7 +233,8 @@ fun AppShell(
                     ) {
                         Box(modifier = Modifier.widthIn(max = 1100.dp)) {
                             ScreenRouter(
-                                destination = currentDestination,
+                                pagerState = pagerState,
+                                pagerDestinations = pagerDestinations,
                                 currentUser = currentUser,
                                 summary = summary,
                                 transactions = transactions,
@@ -208,11 +243,7 @@ fun AppShell(
                                 savingsTransactions = savingsTransactions,
                                 budgets = budgets,
                                 allUsersCount = allUsers.size,
-                                onNavigateTo = { routeName ->
-                                    AppDestination.entries.find { it.route == routeName }?.let {
-                                        currentDestination = it
-                                    }
-                                },
+                                onNavigateTo = navigateToDestination,
                                 onOpenAddTransaction = {
                                     editingTransaction = null
                                     showAddTransactionSheet = true
@@ -264,7 +295,8 @@ fun AppShell(
                         .padding(top = innerPadding.calculateTopPadding())
                 ) {
                     ScreenRouter(
-                        destination = currentDestination,
+                        pagerState = pagerState,
+                        pagerDestinations = pagerDestinations,
                         currentUser = currentUser,
                         summary = summary,
                         transactions = transactions,
@@ -273,11 +305,7 @@ fun AppShell(
                         savingsTransactions = savingsTransactions,
                         budgets = budgets,
                         allUsersCount = allUsers.size,
-                        onNavigateTo = { routeName ->
-                            AppDestination.entries.find { it.route == routeName }?.let {
-                                currentDestination = it
-                            }
-                        },
+                        onNavigateTo = navigateToDestination,
                         onOpenAddTransaction = {
                             editingTransaction = null
                             showAddTransactionSheet = true
@@ -308,7 +336,7 @@ fun AppShell(
 
                     AmoebaFloatingBottomDocker(
                         currentDestination = currentDestination,
-                        onNavigate = { currentDestination = it },
+                        onNavigate = { dest -> navigateToDestination(dest.route) },
                         onOpenAddSheet = { showAddTransactionSheet = true },
                         onOpenMoreMenu = { showMoreMenuSheet = true },
                         modifier = Modifier.align(Alignment.BottomCenter)
@@ -321,7 +349,7 @@ fun AppShell(
     // Add / Edit Transaction Bottom Sheet
     if (showAddTransactionSheet) {
         AddTransactionSheet(
-            currency = currentUser?.currencySymbol ?: "$",
+            currency = currentUser?.currencySymbol ?: "₹",
             sheetState = addSheetState,
             onDismiss = {
                 showAddTransactionSheet = false
@@ -411,7 +439,7 @@ fun AppShell(
 
                 Card(
                     onClick = {
-                        currentDestination = AppDestination.MONEY_FLOW
+                        navigateToDestination(AppDestination.MONEY_FLOW.route)
                         showMoreMenuSheet = false
                     },
                     shape = RoundedCornerShape(16.dp),
@@ -438,7 +466,7 @@ fun AppShell(
 
                 Card(
                     onClick = {
-                        currentDestination = AppDestination.SAVINGS
+                        navigateToDestination(AppDestination.SAVINGS.route)
                         showMoreMenuSheet = false
                     },
                     shape = RoundedCornerShape(16.dp),
@@ -467,7 +495,7 @@ fun AppShell(
 
                 Card(
                     onClick = {
-                        currentDestination = AppDestination.BUDGETS
+                        navigateToDestination(AppDestination.BUDGETS.route)
                         showMoreMenuSheet = false
                     },
                     shape = RoundedCornerShape(16.dp),
@@ -494,7 +522,7 @@ fun AppShell(
 
                 Card(
                     onClick = {
-                        currentDestination = AppDestination.SETTINGS
+                        navigateToDestination(AppDestination.SETTINGS.route)
                         showMoreMenuSheet = false
                     },
                     shape = RoundedCornerShape(16.dp),
@@ -560,7 +588,8 @@ fun AppShell(
 
 @Composable
 private fun ScreenRouter(
-    destination: AppDestination,
+    pagerState: PagerState,
+    pagerDestinations: List<AppDestination>,
     currentUser: com.example.data.local.entities.UserEntity?,
     summary: com.example.ui.viewmodel.DashboardSummaryUiState,
     transactions: List<com.example.data.model.TransactionItem>,
@@ -589,12 +618,14 @@ private fun ScreenRouter(
     onDeleteSavingsTransaction: (Long) -> Unit,
     onAddBudget: (String, Double) -> Unit
 ) {
-    AnimatedContent(
-        targetState = destination,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
-        label = "screen_transition"
-    ) { target ->
-        when (target) {
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxSize(),
+        userScrollEnabled = true,
+        key = { it }
+    ) { pageIndex ->
+        val destination = pagerDestinations[pageIndex]
+        when (destination) {
             AppDestination.HOME -> HomeScreen(
                 currentUser = currentUser,
                 summary = summary,
@@ -619,7 +650,7 @@ private fun ScreenRouter(
             AppDestination.WISHLIST -> WishlistScreen(
                 currentUser = currentUser,
                 wishlistItems = wishlist,
-                adultMoneyBalance = summary.adultMoneyBalance, // Emergency Fund never counts toward wishlist
+                adultMoneyBalance = summary.adultMoneyBalance,
                 onAddWishlistItem = onAddWishlistItem,
                 onUpdateWishlistItem = onUpdateWishlistItem,
                 onDeleteWishlistItem = onDeleteWishlistItem,

@@ -93,17 +93,21 @@ fun PlayfulTopBar(
             }
 
             // Right side: Single Profile Icon
-            val avatarBg = try {
-                Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#242426"))
+            val avatarColor = try {
+                Color(android.graphics.Color.parseColor(currentUser?.avatarColorHex ?: "#0C0F14"))
             } catch (_: Exception) {
                 MaterialTheme.colorScheme.primary
             }
+
+            // If the avatar color is the same as the dark background, use the primary color (Off-White in dark mode)
+            val isDarkBackground = currentUser?.avatarColorHex?.lowercase() == "#0c0f14"
+            val displayColor = if (isDarkBackground) MaterialTheme.colorScheme.primary else avatarColor
 
             Box(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(avatarBg.copy(alpha = 0.15f))
+                    .background(displayColor.copy(alpha = 0.15f))
                     .clickable { onUserClick() }
                     .testTag("user_profile_icon"),
                 contentAlignment = Alignment.Center
@@ -111,7 +115,7 @@ fun PlayfulTopBar(
                 Icon(
                     imageVector = Icons.Outlined.Person,
                     contentDescription = "Profile",
-                    tint = avatarBg,
+                    tint = displayColor,
                     modifier = Modifier.size(22.dp)
                 )
             }

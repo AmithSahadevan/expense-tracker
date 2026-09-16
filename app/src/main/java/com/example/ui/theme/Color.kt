@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // Ultra-Aesthetic Off-White & Dark Grey Palette
 val OffWhiteBg = Color(0xFFFEF8E8)
-val DarkGrey = Color(0xFF242426)
+val DarkGrey = Color(0xFF0C0F14)
 val LightGrey = Color(0xFFF4F4F6)
 val MediumGrey = Color(0xFFE5E5EA)
 val BorderGrey = Color(0xFFD1D1D6)

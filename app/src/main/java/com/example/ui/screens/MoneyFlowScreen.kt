@@ -87,7 +87,7 @@ fun MoneyFlowScreen(
     onToggleSettled: (MoneyFlowEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(MoneyFlowFilter.PENDING) }
     var showForm by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<MoneyFlowEntity?>(null) }

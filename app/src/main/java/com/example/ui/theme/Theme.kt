@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DarkGrey,
+    primary = Color(0xFF1C1F26),
     onPrimary = OffWhiteBg,
     primaryContainer = OffWhiteBg,
     onPrimaryContainer = DarkGrey,
@@ -22,9 +22,9 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Color.White,
     background = DarkGrey,
     onBackground = OffWhiteBg,
-    surface = Color(0xFF2C2C2E),
+    surface = Color(0xFF1C1F26),
     onSurface = OffWhiteBg,
-    surfaceVariant = Color(0xFF3A3A3C),
+    surfaceVariant = Color(0xFF2C2F36),
     onSurfaceVariant = MediumGrey,
     outline = BorderGrey
 )

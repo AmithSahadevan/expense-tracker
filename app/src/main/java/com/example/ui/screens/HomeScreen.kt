@@ -60,7 +60,7 @@ fun HomeScreen(
     onOpenAddTransaction: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     val hasTransactions = summary.recentTransactions.isNotEmpty() || summary.totalIncome > 0 || summary.totalExpense > 0
 
     Column(
@@ -82,16 +82,6 @@ fun HomeScreen(
             movedToSavings = summary.movedToSavings,
             currency = currency
         )
-
-        // Pending money with other people, kept separate from Available Money above.
-        if (summary.moneyFlow.hasPending) {
-            Spacer(modifier = Modifier.height(16.dp))
-            MoneyFlowDashboardCard(
-                summary = summary.moneyFlow,
-                currency = currency,
-                onClick = { onNavigateTo("money_flow") }
-            )
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
 

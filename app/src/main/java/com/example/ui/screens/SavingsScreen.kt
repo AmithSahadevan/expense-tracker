@@ -108,7 +108,7 @@ fun SavingsScreen(
     onDeleteSavingsTransaction: (id: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currency = currentUser?.currencySymbol ?: "$"
+    val currency = currentUser?.currencySymbol ?: "₹"
     var dialogRequest by remember { mutableStateOf<DialogRequest?>(null) }
     var pendingDelete by remember { mutableStateOf<SavingsTransactionEntity?>(null) }
     var historyFilter by remember { mutableStateOf(HistoryFilter.ALL) }
