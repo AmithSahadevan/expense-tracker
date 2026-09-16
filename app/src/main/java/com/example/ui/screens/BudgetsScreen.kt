@@ -151,7 +151,7 @@ fun BudgetsScreen(
                                 }
 
                                 Text(
-                                    text = "$currency${String.format("%.2f", budget.allocatedAmount)}",
+                                    text = "$currency${String.format("%.0f", budget.allocatedAmount)}",
                                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
                                     color = Color(0xFF0984E3)
                                 )

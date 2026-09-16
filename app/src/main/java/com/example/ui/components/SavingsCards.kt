@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.theme.MintGreen
 import com.example.ui.theme.EmergencyGold
 import com.example.ui.theme.EmergencyShield
 import com.example.ui.theme.EmergencyVault
@@ -80,13 +81,13 @@ fun AdultMoneyCard(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            .background(MintGreen.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.CreditCard,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MintGreen,
                             modifier = Modifier.size(20.dp)
                         )
                     }

@@ -164,14 +164,14 @@ fun MoneyFlowForm(
         OutlinedTextField(
             value = amountText,
             onValueChange = { raw ->
-                val cleaned = raw.filter { it.isDigit() || it == '.' }
-                if (cleaned.count { it == '.' } <= 1) amountText = cleaned
+                val cleaned = raw.filter { it.isDigit() }
+                amountText = cleaned
             },
             label = { Text("Amount *") },
             prefix = { Text("$currency ") },
             isError = showErrors && errors.amount != null,
             supportingText = if (showErrors && errors.amount != null) ({ Text(errors.amount) }) else null,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
@@ -228,6 +228,6 @@ fun MoneyFlowForm(
     }
 }
 
-/** "1500" for whole amounts, "1500.5" otherwise; never scientific notation. */
+/** "1500" for whole amounts; never scientific notation. */
 private fun plainAmount(value: Double): String =
-    BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    BigDecimal.valueOf(value).setScale(0, RoundingMode.HALF_UP).toPlainString()

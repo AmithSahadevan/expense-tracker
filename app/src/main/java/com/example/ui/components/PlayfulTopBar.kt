@@ -87,10 +87,9 @@ fun PlayfulTopBar(
                 }
             }
 
-            // Center: App Name
             Text(
                 text = "Kyash",
-                style = MaterialTheme.typography.titleLarge.copy(
+                style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Black,
                     letterSpacing = (-0.5).sp
                 ),

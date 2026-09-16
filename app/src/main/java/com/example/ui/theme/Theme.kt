@@ -13,17 +13,17 @@ import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFF1C1F26),
-    onPrimary = OffWhiteBg,
-    primaryContainer = OffWhiteBg,
+    onPrimary = Color.White,
+    primaryContainer = Color.White,
     onPrimaryContainer = DarkGrey,
     secondary = PunchyCoral,
     onSecondary = Color.White,
     tertiary = MintGreen,
     onTertiary = Color.White,
     background = DarkGrey,
-    onBackground = OffWhiteBg,
+    onBackground = Color.White,
     surface = Color(0xFF1C1F26),
-    onSurface = OffWhiteBg,
+    onSurface = Color.White,
     surfaceVariant = Color(0xFF2C2F36),
     onSurfaceVariant = MediumGrey,
     outline = BorderGrey

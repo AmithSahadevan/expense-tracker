@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.StarOutline
@@ -43,8 +44,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -264,9 +268,7 @@ private fun WishlistBrowse(
             fullWidthItem("spending_power") {
                 WishlistSpendingPowerCard(
                     adultMoneyBalance = adultMoneyBalance,
-                    currency = currency,
-                    wantedCount = canAffordCount + needMoreCount,
-                    canAffordCount = canAffordCount
+                    currency = currency
                 )
             }
 
@@ -286,26 +288,45 @@ private fun WishlistBrowse(
                 }
             } else {
                 fullWidthItem("filters") {
+                    var showFilterMenu by remember { mutableStateOf(false) }
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        WishlistFilter.entries.forEach { option ->
-                            val label = when (option) {
-                                WishlistFilter.ALL -> "${option.label} · ${items.size}"
-                                WishlistFilter.CAN_AFFORD -> "${option.label} · $canAffordCount"
-                                WishlistFilter.NEED_MORE -> "${option.label} · $needMoreCount"
-                                WishlistFilter.HIGHEST_PRICE, WishlistFilter.LOWEST_PRICE -> option.label
+                        Text(
+                            text = "Filter: ${filter.label}",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Box {
+                            IconButton(onClick = { showFilterMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = "Filter Wishlist",
+                                    tint = Color.White
+                                )
                             }
-                            ChoicePill(
-                                label = label,
-                                selected = filter == option,
-                                accent = MaterialTheme.colorScheme.primary,
-                                onClick = { onFilterChange(option) },
-                                modifier = Modifier.testTag("wishlist_filter_${option.name.lowercase()}")
-                            )
+                            DropdownMenu(
+                                expanded = showFilterMenu,
+                                onDismissRequest = { showFilterMenu = false }
+                            ) {
+                                WishlistFilter.entries.forEach { option ->
+                                    val label = when (option) {
+                                        WishlistFilter.ALL -> "${option.label} (${items.size})"
+                                        WishlistFilter.CAN_AFFORD -> "${option.label} ($canAffordCount)"
+                                        WishlistFilter.NEED_MORE -> "${option.label} ($needMoreCount)"
+                                        else -> option.label
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = {
+                                            onFilterChange(option)
+                                            showFilterMenu = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -342,9 +363,7 @@ private fun WishlistBrowse(
 @Composable
 private fun WishlistSpendingPowerCard(
     adultMoneyBalance: Double,
-    currency: String,
-    wantedCount: Int,
-    canAffordCount: Int
+    currency: String
 ) {
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -363,44 +382,20 @@ private fun WishlistSpendingPowerCard(
                     Icon(
                         imageVector = Icons.Outlined.CreditCard,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Current Adult Money",
                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                 }
                 Text(
                     text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            if (wantedCount > 0) {
-                Text(
-                    text = "You can afford $canAffordCount of $wantedCount items you still want",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(12.dp)
-                )
-                Text(
-                    text = "Your Emergency Fund is protected and never counted toward wishlist items.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color.White
                 )
             }
         }
@@ -501,7 +496,7 @@ private fun WishlistProductCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = Color.White,
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         }

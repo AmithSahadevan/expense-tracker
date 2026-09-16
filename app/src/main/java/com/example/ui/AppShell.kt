@@ -465,7 +465,7 @@ fun AppShell(
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.CompareArrows,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
                         Column {
@@ -494,7 +494,7 @@ fun AppShell(
                         Icon(
                             imageVector = Icons.Outlined.Savings,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
                         Column {
@@ -521,7 +521,7 @@ fun AppShell(
                         Icon(
                             imageVector = Icons.Outlined.BarChart,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
                         Column {
@@ -548,7 +548,7 @@ fun AppShell(
                         Icon(
                             imageVector = Icons.Outlined.Settings,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color.White,
                             modifier = Modifier.size(24.dp)
                         )
                         Column {
@@ -582,7 +582,7 @@ fun AppShell(
                             Icon(
                                 imageVector = Icons.Outlined.Person,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -634,7 +634,7 @@ fun AppShell(
             title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    text = "Are you sure you want to remove \"${tx.title}\" (${currentUser?.currencySymbol ?: "₹"}${String.format("%.2f", tx.amount)})? This cannot be undone."
+                    text = "Are you sure you want to remove \"${tx.title}\" (${currentUser?.currencySymbol ?: "₹"}${String.format("%.0f", tx.amount)})? This cannot be undone."
                 )
             },
             confirmButton = {

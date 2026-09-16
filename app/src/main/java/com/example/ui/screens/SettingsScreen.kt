@@ -58,6 +58,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.fillMaxSize
+import com.example.ui.theme.MintGreen
+import com.example.ui.theme.PunchyCoral
+import com.example.ui.theme.SunnyYellow
 import com.example.data.local.entities.UserEntity
 import java.util.Locale
 
@@ -161,13 +164,13 @@ fun SettingsScreen(
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        color = MintGreen.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = "ACTIVE",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MintGreen
                             ),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
@@ -218,13 +221,13 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF10B981).copy(alpha = 0.2f)),
+                                .background(MintGreen.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Payments,
                                 contentDescription = null,
-                                tint = Color(0xFF10B981),
+                                tint = MintGreen,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -245,7 +248,7 @@ fun SettingsScreen(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Salary",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color.White,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -262,7 +265,7 @@ fun SettingsScreen(
                     Column {
                         Text(
                             text = if (currentSalary > 0)
-                                "$currency${String.format(Locale.US, "%,.2f", currentSalary)}"
+                                "$currency${String.format(Locale.US, "%,.0f", currentSalary)}"
                             else
                                 "Not set yet",
                             style = MaterialTheme.typography.headlineSmall.copy(
@@ -277,7 +280,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = Color.White,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
@@ -292,8 +295,8 @@ fun SettingsScreen(
                         onClick = { showSalaryDialog = true },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.primary
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = Color.White
                         ),
                         modifier = Modifier.testTag("set_salary_button")
                     ) {
@@ -335,7 +338,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
                     Column {
@@ -359,7 +362,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.Storage,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
+                        tint = MintGreen,
                         modifier = Modifier.size(24.dp)
                     )
                     Column {
@@ -383,7 +386,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Default.People,
                         contentDescription = null,
-                        tint = Color(0xFFFF9F43),
+                        tint = SunnyYellow,
                         modifier = Modifier.size(24.dp)
                     )
                     Column {
@@ -410,7 +413,7 @@ fun SettingsScreen(
         var salaryInput by remember {
             mutableStateOf(
                 if ((currentUser?.monthlySalary ?: 0.0) > 0.0)
-                    String.format(Locale.US, "%.2f", currentUser!!.monthlySalary)
+                    String.format(Locale.US, "%.0f", currentUser!!.monthlySalary)
                 else
                     ""
             )
@@ -443,14 +446,14 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = salaryInput,
                         onValueChange = {
-                            if (it.count { c -> c == '.' } <= 1 && it.all { c -> c.isDigit() || c == '.' }) {
+                            if (it.all { c -> c.isDigit() }) {
                                 salaryInput = it
                                 inputError = null
                             }
                         },
                         label = { Text("Monthly Salary Amount") },
                         prefix = { Text("$currency ") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth()

@@ -318,14 +318,14 @@ fun WishlistItemForm(
                 OutlinedTextField(
                     value = priceText,
                     onValueChange = { raw ->
-                        val cleaned = raw.filter { it.isDigit() || it == '.' } // accepts pasted "28,000"
-                        if (cleaned.count { it == '.' } <= 1) priceText = cleaned
+                        val cleaned = raw.filter { it.isDigit() }
+                        priceText = cleaned
                     },
                     label = { Text("Price *") },
                     prefix = { Text("$currency ") },
                     isError = showErrors && errors.price != null,
                     supportingText = if (showErrors && errors.price != null) ({ Text(errors.price) }) else null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier
@@ -731,6 +731,6 @@ private fun AffordabilityPreview(price: Double, adultMoneyBalance: Double, curre
     }
 }
 
-/** "28999" for whole amounts, "28999.5" otherwise; never scientific notation. */
+/** "28999" for whole amounts; never scientific notation. */
 private fun plainAmount(value: Double): String =
-    BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString()
+    BigDecimal.valueOf(value).setScale(0, RoundingMode.HALF_UP).toPlainString()

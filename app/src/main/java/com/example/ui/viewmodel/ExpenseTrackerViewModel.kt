@@ -280,7 +280,7 @@ class ExpenseTrackerViewModel(
                     paymentMethod = paymentMethod,
                     recurrence = recurrence
                 )
-                _actionMessage.value = "💸 Expense added: ${user.currencySymbol}${String.format("%.2f", amount)}"
+                _actionMessage.value = "💸 Expense added: ${user.currencySymbol}${String.format("%.0f", amount)}"
             } else {
                 repository.addIncome(
                     userId = user.id,
@@ -292,7 +292,7 @@ class ExpenseTrackerViewModel(
                     paymentMethod = paymentMethod,
                     recurrence = recurrence
                 )
-                _actionMessage.value = "💰 Income logged: ${user.currencySymbol}${String.format("%.2f", amount)}"
+                _actionMessage.value = "💰 Income logged: ${user.currencySymbol}${String.format("%.0f", amount)}"
             }
         }
     }
@@ -355,7 +355,7 @@ class ExpenseTrackerViewModel(
                     recurrence = "MONTHLY"
                 )
             }
-            _actionMessage.value = "Salary set to ${user.currencySymbol}${String.format("%.2f", salary)} (Payday: Day $payday)"
+            _actionMessage.value = "Salary set to ${user.currencySymbol}${String.format("%.0f", salary)} (Payday: Day $payday)"
         }
     }
 

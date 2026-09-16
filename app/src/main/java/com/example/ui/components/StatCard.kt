@@ -78,7 +78,7 @@ fun BalanceHeroCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "$currency${String.format(Locale.US, "%,.2f", balance)}",
+                text = "$currency${String.format(Locale.US, "%,.0f", balance)}",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontSize = 38.sp,
                     fontWeight = FontWeight.Black,
@@ -135,7 +135,7 @@ fun BalanceHeroCard(
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                             )
                             Text(
-                                text = "+$currency${String.format(Locale.US, "%,.2f", income)}",
+                                text = "+$currency${String.format(Locale.US, "%,.0f", income)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
@@ -175,7 +175,7 @@ fun BalanceHeroCard(
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f)
                             )
                             Text(
-                                text = "-$currency${String.format(Locale.US, "%,.2f", expense)}",
+                                text = "-$currency${String.format(Locale.US, "%,.0f", expense)}",
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
@@ -216,7 +216,7 @@ fun BalanceHeroCard(
                         )
                     }
                     Text(
-                        text = "$currency${String.format(Locale.US, "%,.2f", currentMonthSpending)}",
+                        text = "$currency${String.format(Locale.US, "%,.0f", currentMonthSpending)}",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Black),
                         color = MaterialTheme.colorScheme.onPrimary
                     )

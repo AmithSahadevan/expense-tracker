@@ -76,6 +76,7 @@ import com.example.ui.components.ChoicePill
 import com.example.ui.components.DatePickerField
 import com.example.ui.components.EmergencyFundCard
 import com.example.ui.components.formatMoney
+import com.example.ui.theme.MintGreen
 import com.example.ui.theme.EmergencyChartAmber
 import com.example.ui.theme.EmergencyGold
 import com.example.ui.theme.EmergencyShield
@@ -278,7 +279,7 @@ private fun savingsTypeName(type: String) =
     if (type == SavingsType.EMERGENCY_FUND) "Emergency Fund" else "Adult Money"
 
 @Composable
-private fun adultSeriesColor(): Color = MaterialTheme.colorScheme.primary
+private fun adultSeriesColor(): Color = MintGreen
 
 @Composable
 private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency: String) {
@@ -655,7 +656,7 @@ private fun SavingsTransactionDialog(
     var savingsType by remember { mutableStateOf(request.savingsType) }
     var transactionType by remember { mutableStateOf(request.transactionType) }
     var amountText by remember {
-        mutableStateOf(existing?.amount?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() } ?: "")
+        mutableStateOf(existing?.amount?.toLong()?.toString() ?: "")
     }
     var title by remember { mutableStateOf(existing?.title ?: "") }
     var notes by remember { mutableStateOf(existing?.notes ?: "") }
@@ -756,7 +757,7 @@ private fun SavingsTransactionDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = {
-                        if (it.count { c -> c == '.' } <= 1 && it.all { c -> c.isDigit() || c == '.' }) amountText = it
+                        if (it.all { c -> c.isDigit() }) amountText = it
                     },
                     label = { Text("Amount") },
                     prefix = { Text("$currency ") },
@@ -764,7 +765,7 @@ private fun SavingsTransactionDialog(
                         Text(error ?: "$typeName balance: ${formatMoney(currency, balanceWithoutThis)}")
                     },
                     isError = error != null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier

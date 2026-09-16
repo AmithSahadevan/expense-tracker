@@ -31,6 +31,7 @@ import com.example.ui.components.BalanceHeroCard
 import com.example.ui.components.FunkyEmptyState
 import com.example.ui.components.PlayfulTopBar
 import com.example.ui.components.TransactionRowItem
+import com.example.ui.theme.MintGreen
 import com.example.ui.viewmodel.DashboardSummaryUiState
 
 @Composable
@@ -59,7 +60,7 @@ fun HomeScreen(
 
         Column(
             modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 12.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 12.dp)
         ) {
             // Balance Hero Card (Available Money, Income, Expense, Current Month's Spending)
             BalanceHeroCard(
@@ -94,7 +95,7 @@ fun HomeScreen(
                         text = "See all →",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = Color.White
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -114,7 +115,7 @@ fun HomeScreen(
                     actionButtonText = "View All Transactions",
                     onActionClick = { onNavigateTo("transactions") },
                     badgeText = "Fresh Canvas",
-                    accentColor = Color(0xFF10B981)
+                    accentColor = MintGreen
                 )
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

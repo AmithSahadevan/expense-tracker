@@ -102,7 +102,7 @@ fun AddTransactionSheet(
         mutableStateOf(initialItem?.type ?: TransactionType.EXPENSE)
     }
     var amountText by remember(initialItem) {
-        mutableStateOf(if (initialItem != null) String.format(Locale.US, "%.2f", initialItem.amount) else "")
+        mutableStateOf(if (initialItem != null) String.format(Locale.US, "%.0f", initialItem.amount) else "")
     }
     var titleText by remember(initialItem) {
         mutableStateOf(initialItem?.title ?: "")
@@ -282,12 +282,12 @@ fun AddTransactionSheet(
             OutlinedTextField(
                 value = amountText,
                 onValueChange = {
-                    if (it.count { c -> c == '.' } <= 1 && it.all { c -> c.isDigit() || c == '.' }) {
+                    if (it.all { c -> c.isDigit() }) {
                         amountText = it
                         errorMessage = null
                     }
                 },
-                placeholder = { Text("0.00", fontSize = 28.sp, fontWeight = FontWeight.Bold) },
+                placeholder = { Text("0", fontSize = 28.sp, fontWeight = FontWeight.Bold) },
                 prefix = {
                     Text(
                         text = "$currency ",
@@ -298,7 +298,7 @@ fun AddTransactionSheet(
                     )
                 },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Black,
                     fontSize = 28.sp
@@ -326,7 +326,7 @@ fun AddTransactionSheet(
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
                                 val current = amountText.toDoubleOrNull() ?: 0.0
-                                amountText = String.format(Locale.US, "%.2f", current + bump)
+                                amountText = String.format(Locale.US, "%.0f", current + bump)
                             }
                     ) {
                         Text(
