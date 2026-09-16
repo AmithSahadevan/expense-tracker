@@ -55,6 +55,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.fillMaxSize
 import com.example.data.local.entities.UserEntity
 import java.util.Locale
 
@@ -66,16 +69,17 @@ fun SettingsScreen(
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val userColor = remember(currentUser?.avatarColorHex, primaryColor) {
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val userColor = remember(currentUser?.avatarColorHex, onSurface) {
         val hex = currentUser?.avatarColorHex ?: "#0C0F14"
-        if (hex.lowercase() == "#0c0f14") {
-            primaryColor
+        val isDarkAvatar = hex.lowercase() == "#0c0f14" || hex.lowercase() == "#242426"
+        if (isDarkAvatar) {
+            onSurface
         } else {
             try {
                 Color(android.graphics.Color.parseColor(hex))
             } catch (_: Exception) {
-                primaryColor
+                onSurface
             }
         }
     }
@@ -110,7 +114,6 @@ fun SettingsScreen(
         Card(
             shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -130,7 +133,16 @@ fun SettingsScreen(
                                 .background(userColor),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 24.sp)
+                            if (currentUser?.avatarImagePath != null) {
+                                AsyncImage(
+                                    model = "file:///android_asset/${currentUser.avatarImagePath}",
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 24.sp)
+                            }
                         }
 
                         Column {
@@ -185,7 +197,6 @@ fun SettingsScreen(
         Card(
             shape = RoundedCornerShape(22.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("salary_payday_card")
@@ -311,7 +322,6 @@ fun SettingsScreen(
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(

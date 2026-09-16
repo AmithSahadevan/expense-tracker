@@ -49,11 +49,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import com.example.data.local.entities.UserEntity
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.mutableStateListOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +74,8 @@ fun UserAuthModal(
         email: String,
         displayName: String,
         emoji: String,
-        colorHex: String
+        colorHex: String,
+        avatarImagePath: String?
     ) -> Unit
 ) {
     var isRegistering by remember { mutableStateOf(false) }
@@ -78,7 +85,20 @@ fun UserAuthModal(
     var selectedColorHex by remember { mutableStateOf("#FF6B6B") }
     var formError by remember { mutableStateOf<String?>(null) }
 
-    val colors = listOf("#0C0F14", "#FF6B6B", "#10B981", "#FFD166", "#FD79A8", "#0984E3", "#6366F1")
+    val context = LocalContext.current
+    val pfpImages = remember { mutableStateListOf<String>() }
+    var selectedImagePath by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val assets = context.assets.list("pfp")
+            if (assets != null) {
+                pfpImages.clear()
+                pfpImages.addAll(assets.sorted().map { "pfp/$it" })
+            }
+        } catch (_: Exception) {}
+    }
+
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -134,8 +154,7 @@ fun UserAuthModal(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                )
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
@@ -192,10 +211,6 @@ fun UserAuthModal(
                             else
                                 MaterialTheme.colorScheme.surface
                         ),
-                        border = BorderStroke(
-                            width = if (isCurrent) 2.dp else 1.dp,
-                            color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -219,12 +234,21 @@ fun UserAuthModal(
                                         .background(userBg),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Person,
-                                        contentDescription = null,
-                                        tint = if (user.avatarColorHex.lowercase() == "#0c0f14") Color.White else Color.White,
-                                        modifier = Modifier.size(24.dp)
-                                    )
+                                    if (user.avatarImagePath != null) {
+                                        AsyncImage(
+                                            model = "file:///android_asset/${user.avatarImagePath}",
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Person,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
                                 }
 
                                 Column {
@@ -309,21 +333,30 @@ fun UserAuthModal(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(Color(android.graphics.Color.parseColor(selectedColorHex))),
+                        .background(if (selectedImagePath != null) Color.Transparent else Color(android.graphics.Color.parseColor(selectedColorHex))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Person,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(36.dp)
-                    )
+                    if (selectedImagePath != null) {
+                        AsyncImage(
+                            model = "file:///android_asset/$selectedImagePath",
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "CHOOSE ACCENT COLOR",
+                    text = "CHOOSE PROFILE PICTURE",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
@@ -335,29 +368,40 @@ fun UserAuthModal(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(colors) { hex ->
-                        val isSelected = selectedColorHex == hex
-                        val c = Color(android.graphics.Color.parseColor(hex))
+                    items(pfpImages) { path ->
+                        val isSelected = selectedImagePath == path
                         Box(
                             modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(c)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 0.dp,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            shape = CircleShape
-                                        )
-                                        .clickable { selectedColorHex = hex },
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(
+                                    width = if (isSelected) 3.dp else 0.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable { selectedImagePath = path },
                             contentAlignment = Alignment.Center
                         ) {
+                            AsyncImage(
+                                model = "file:///android_asset/$path",
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
                             if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.3f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -451,7 +495,8 @@ fun UserAuthModal(
                                 newEmail,
                                 newDisplayName.ifBlank { newUsername },
                                 "🦊",
-                                selectedColorHex
+                                selectedColorHex,
+                                selectedImagePath
                             )
                             onDismiss()
                         },

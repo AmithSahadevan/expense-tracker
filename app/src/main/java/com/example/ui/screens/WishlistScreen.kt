@@ -349,7 +349,6 @@ private fun WishlistSpendingPowerCard(
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("wishlist_spending_power")
@@ -421,7 +420,6 @@ private fun WishlistProductCard(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("wishlist_card_${item.id}")

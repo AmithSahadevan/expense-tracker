@@ -99,7 +99,6 @@ private fun MoneyFlowTotalTile(
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.35f)),
         // Read as one unit by screen readers: "EXPECTED, 2,000, 1 person owes you".
         modifier = modifier.semantics(mergeDescendants = true) {}
     ) {
@@ -183,7 +182,6 @@ fun MoneyFlowDashboardCard(
         onClick = onClick,
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier
             .fillMaxWidth()
             .testTag("dashboard_money_flow_card")

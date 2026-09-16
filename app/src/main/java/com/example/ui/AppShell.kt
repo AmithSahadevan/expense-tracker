@@ -70,6 +70,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -83,7 +84,6 @@ import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.WishlistItemInput
 import com.example.ui.components.AddTransactionSheet
-import com.example.ui.components.PlayfulTopBar
 import com.example.ui.components.UserAuthModal
 import com.example.ui.navigation.AppDestination
 import com.example.ui.screens.BudgetsScreen
@@ -91,9 +91,27 @@ import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.MoneyFlowScreen
 import com.example.ui.screens.SavingsScreen
 import com.example.ui.screens.SettingsScreen
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.activity.compose.BackHandler
+import com.example.ui.screens.TransactionDetailScreen
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.screens.WishlistScreen
 import com.example.ui.viewmodel.ExpenseTrackerViewModel
+import com.example.data.model.TransactionItem
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.data.local.entities.BudgetEntity
+import com.example.data.local.entities.MoneyFlowEntity
+import com.example.data.local.entities.SavingsTransactionEntity
+import com.example.data.local.entities.UserEntity
+import com.example.data.local.entities.WishlistItemEntity
+import com.example.ui.viewmodel.DashboardSummaryUiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,7 +166,9 @@ fun AppShell(
     }
 
     var showAddTransactionSheet by remember { mutableStateOf(false) }
-    var editingTransaction by remember { mutableStateOf<com.example.data.model.TransactionItem?>(null) }
+    var editingTransaction by remember { mutableStateOf<TransactionItem?>(null) }
+    var viewingTransaction by remember { mutableStateOf<TransactionItem?>(null) }
+    var transactionToDelete by remember { mutableStateOf<TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
     var showMoreMenuSheet by remember { mutableStateOf(false) }
 
@@ -194,7 +214,10 @@ fun AppShell(
                             }
                             Spacer(modifier = Modifier.height(16.dp))
                             FloatingActionButton(
-                                onClick = { showAddTransactionSheet = true },
+                                onClick = { 
+                                    editingTransaction = null
+                                    showAddTransactionSheet = true 
+                                },
                                 containerColor = MaterialTheme.colorScheme.primary,
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.testTag("rail_fab_add")
@@ -217,13 +240,7 @@ fun AppShell(
 
                 // Main Content for Wide Screens
                 Scaffold(
-                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-                    topBar = {
-                        PlayfulTopBar(
-                            currentUser = currentUser,
-                            onUserClick = { showAuthModal = true }
-                        )
-                    }
+                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
                 ) { innerPadding ->
                     Box(
                         modifier = Modifier
@@ -249,10 +266,9 @@ fun AppShell(
                                     showAddTransactionSheet = true
                                 },
                                 onOpenAuthModal = { showAuthModal = true },
-                                onDeleteTransaction = { viewModel.deleteTransaction(it) },
+                                onDeleteTransaction = { transactionToDelete = it },
                                 onEditTransaction = { item ->
-                                    editingTransaction = item
-                                    showAddTransactionSheet = true
+                                    viewingTransaction = item
                                 },
                                 onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
                                     viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
@@ -279,20 +295,12 @@ fun AppShell(
             // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
-                snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-                topBar = {
-                    Column(modifier = Modifier.statusBarsPadding()) {
-                        PlayfulTopBar(
-                            currentUser = currentUser,
-                            onUserClick = { showAuthModal = true }
-                        )
-                    }
-                }
+                snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = innerPadding.calculateTopPadding())
+                        .padding(innerPadding)
                 ) {
                     ScreenRouter(
                         pagerState = pagerState,
@@ -311,10 +319,9 @@ fun AppShell(
                             showAddTransactionSheet = true
                         },
                         onOpenAuthModal = { showAuthModal = true },
-                        onDeleteTransaction = { viewModel.deleteTransaction(it) },
+                        onDeleteTransaction = { transactionToDelete = it },
                         onEditTransaction = { item ->
-                            editingTransaction = item
-                            showAddTransactionSheet = true
+                            viewingTransaction = item
                         },
                         onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
                             viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
@@ -337,7 +344,10 @@ fun AppShell(
                     AmoebaFloatingBottomDocker(
                         currentDestination = currentDestination,
                         onNavigate = { dest -> navigateToDestination(dest.route) },
-                        onOpenAddSheet = { showAddTransactionSheet = true },
+                        onOpenAddSheet = { 
+                            editingTransaction = null
+                            showAddTransactionSheet = true 
+                        },
                         onOpenMoreMenu = { showMoreMenuSheet = true },
                         modifier = Modifier.align(Alignment.BottomCenter)
                     )
@@ -402,13 +412,14 @@ fun AppShell(
             onSwitchUser = { user ->
                 viewModel.switchUser(user)
             },
-            onRegisterUser = { username, email, displayName, emoji, colorHex ->
+            onRegisterUser = { username, email, displayName, emoji, colorHex, imagePath ->
                 viewModel.registerNewUser(
                     username = username,
                     email = email,
                     displayName = displayName,
                     avatarEmoji = emoji,
                     avatarColorHex = colorHex,
+                    avatarImagePath = imagePath,
                     onSuccess = {},
                     onError = {}
                 )
@@ -584,35 +595,96 @@ fun AppShell(
             }
         }
     }
+
+    // Transaction Detail View (Full screen overlay with slide animation)
+    AnimatedContent(
+        targetState = viewingTransaction,
+        transitionSpec = {
+            if (targetState != null) {
+                // Opening details: slide in from right
+                slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 3 }
+            } else {
+                // Closing details: slide out to right
+                slideInHorizontally { -it / 3 } togetherWith slideOutHorizontally { it }
+            }
+        },
+        label = "transaction_detail_transition"
+    ) { tx ->
+        if (tx != null) {
+            BackHandler { viewingTransaction = null }
+            TransactionDetailScreen(
+                item = tx,
+                currency = currentUser?.currencySymbol ?: "₹",
+                onBack = { viewingTransaction = null },
+                onEdit = {
+                    editingTransaction = tx
+                    showAddTransactionSheet = true
+                },
+                onDelete = {
+                    transactionToDelete = tx
+                }
+            )
+        }
+    }
+
+    // Delete Confirmation Dialog
+    transactionToDelete?.let { tx ->
+        AlertDialog(
+            onDismissRequest = { transactionToDelete = null },
+            title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    text = "Are you sure you want to remove \"${tx.title}\" (${currentUser?.currencySymbol ?: "₹"}${String.format("%.2f", tx.amount)})? This cannot be undone."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteTransaction(tx)
+                        transactionToDelete = null
+                        viewingTransaction = null // Close detail if deleting from there
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { transactionToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 private fun ScreenRouter(
     pagerState: PagerState,
     pagerDestinations: List<AppDestination>,
-    currentUser: com.example.data.local.entities.UserEntity?,
-    summary: com.example.ui.viewmodel.DashboardSummaryUiState,
-    transactions: List<com.example.data.model.TransactionItem>,
-    moneyFlows: List<com.example.data.local.entities.MoneyFlowEntity>,
-    wishlist: List<com.example.data.local.entities.WishlistItemEntity>,
-    savingsTransactions: List<com.example.data.local.entities.SavingsTransactionEntity>,
-    budgets: List<com.example.data.local.entities.BudgetEntity>,
+    currentUser: UserEntity?,
+    summary: DashboardSummaryUiState,
+    transactions: List<TransactionItem>,
+    moneyFlows: List<MoneyFlowEntity>,
+    wishlist: List<WishlistItemEntity>,
+    savingsTransactions: List<SavingsTransactionEntity>,
+    budgets: List<BudgetEntity>,
     allUsersCount: Int,
     onNavigateTo: (String) -> Unit,
     onOpenAddTransaction: () -> Unit,
     onOpenAuthModal: () -> Unit,
-    onDeleteTransaction: (com.example.data.model.TransactionItem) -> Unit,
-    onEditTransaction: (com.example.data.model.TransactionItem) -> Unit,
+    onDeleteTransaction: (TransactionItem) -> Unit,
+    onEditTransaction: (TransactionItem) -> Unit,
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
     onAddMoneyFlow: (MoneyFlowInput) -> Unit,
     onUpdateMoneyFlow: (Long, MoneyFlowInput) -> Unit,
-    onDeleteMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
-    onToggleMoneyFlow: (com.example.data.local.entities.MoneyFlowEntity) -> Unit,
+    onDeleteMoneyFlow: (MoneyFlowEntity) -> Unit,
+    onToggleMoneyFlow: (MoneyFlowEntity) -> Unit,
     onAddWishlistItem: (WishlistItemInput) -> Unit,
     onUpdateWishlistItem: (Long, WishlistItemInput) -> Unit,
-    onDeleteWishlistItem: (com.example.data.local.entities.WishlistItemEntity) -> Unit,
+    onDeleteWishlistItem: (WishlistItemEntity) -> Unit,
     onLookupProduct: suspend (String) -> ProductLookupResult,
-    onToggleWishlist: (com.example.data.local.entities.WishlistItemEntity) -> Unit,
+    onToggleWishlist: (WishlistItemEntity) -> Unit,
     onAddSavingsTransaction: (SavingsTransactionInput) -> Unit,
     onUpdateSavingsTransaction: (Long, SavingsTransactionInput) -> Unit,
     onDeleteSavingsTransaction: (Long) -> Unit,
@@ -630,7 +702,9 @@ private fun ScreenRouter(
                 currentUser = currentUser,
                 summary = summary,
                 onNavigateTo = onNavigateTo,
-                onOpenAddTransaction = onOpenAddTransaction
+                onOpenAddTransaction = onOpenAddTransaction,
+                onEditTransaction = onEditTransaction,
+                onOpenAuthModal = onOpenAuthModal
             )
             AppDestination.TRANSACTIONS -> TransactionsScreen(
                 currentUser = currentUser,
@@ -726,6 +800,12 @@ private fun AmoebaFloatingBottomDocker(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color(0xFF0C0F14).copy(alpha = 0.95f)),
+                    startY = 0f
+                )
+            )
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 12.dp)
             .testTag("mobile_bottom_bar"),
@@ -736,10 +816,6 @@ private fun AmoebaFloatingBottomDocker(
             color = MaterialTheme.colorScheme.primary,
             shadowElevation = 10.dp,
             tonalElevation = 6.dp,
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
@@ -785,11 +861,6 @@ private fun AmoebaFloatingBottomDocker(
                         )
                         .background(
                             color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
                             shape = CircleShape
                         )
                 )
@@ -842,7 +913,7 @@ private fun AmoebaFloatingBottomDocker(
                                 Icon(
                                     imageVector = Icons.Outlined.Add,
                                     contentDescription = "Add Flow",
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -878,7 +949,7 @@ private fun AmoebaFloatingBottomDocker(
 
 @Composable
 private fun DockerSlotItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     contentDescription: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -903,7 +974,7 @@ private fun DockerSlotItem(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
             modifier = Modifier
                 .size(24.dp)
                 .graphicsLayer {

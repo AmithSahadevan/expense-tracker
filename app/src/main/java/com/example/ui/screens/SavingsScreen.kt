@@ -287,7 +287,6 @@ private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("total_savings_card")
@@ -384,7 +383,6 @@ private fun ContributionsChartCard(monthly: List<MonthlySavingsContribution>, cu
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("savings_contributions_chart")
@@ -564,10 +562,6 @@ private fun SavingsHistoryRow(
     Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(
-            1.dp,
-            if (isEmergency) EmergencyShield.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant
-        ),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onEdit)
@@ -828,7 +822,6 @@ private fun SavingsTransactionDialog(
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = EmergencyVault,
-                        border = BorderStroke(1.dp, EmergencyShield),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(

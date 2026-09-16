@@ -128,7 +128,6 @@ fun BudgetsScreen(
                         Card(
                             shape = RoundedCornerShape(20.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(

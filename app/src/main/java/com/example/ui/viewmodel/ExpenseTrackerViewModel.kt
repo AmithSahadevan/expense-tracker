@@ -238,7 +238,7 @@ class ExpenseTrackerViewModel(
             currentMonthIncome = monthIncome,
             currentMonthSpending = monthSpending,
             currentMonthRemaining = monthIncome - monthSpending,
-            recentTransactions = txList.take(5),
+            recentTransactions = txList.take(3),
             savingsGoalsCount = counts.goalsCount,
             moneyFlowCount = counts.flowCount,
             moneyFlow = counts.moneyFlowSummary,
@@ -622,6 +622,7 @@ class ExpenseTrackerViewModel(
         displayName: String,
         avatarEmoji: String,
         avatarColorHex: String,
+        avatarImagePath: String? = null,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -631,7 +632,8 @@ class ExpenseTrackerViewModel(
                 email = email,
                 displayName = displayName,
                 avatarEmoji = avatarEmoji,
-                avatarColorHex = avatarColorHex
+                avatarColorHex = avatarColorHex,
+                avatarImagePath = avatarImagePath
             )
             result.onSuccess {
                 _actionMessage.value = "🎉 Welcome aboard, ${it.displayName}!"

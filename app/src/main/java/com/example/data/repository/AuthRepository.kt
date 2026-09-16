@@ -37,12 +37,18 @@ class AuthRepository(
                     displayName = "Alex",
                     avatarEmoji = "⚡",
                     avatarColorHex = "#0C0F14",
+                    avatarImagePath = "pfp/pfp_1.jpg",
                     currencySymbol = "₹"
                 )
                 val id = userDao.insertUser(defaultUser)
                 val created = userDao.findUserById(id)
                 _currentUser.value = created
             } else {
+                val alex = userDao.getUserByUsername("alex")
+                if (alex != null && (alex.avatarImagePath == null || alex.avatarImagePath == "pfp/download.jpg")) {
+                    userDao.updateUser(alex.copy(avatarImagePath = "pfp/pfp_1.jpg"))
+                }
+                
                 val users = userDao.getAllUsers().firstOrNull()
                 if (_currentUser.value == null && !users.isNullOrEmpty()) {
                     _currentUser.value = users.first()
@@ -58,7 +64,8 @@ class AuthRepository(
         email: String,
         displayName: String,
         avatarEmoji: String,
-        avatarColorHex: String
+        avatarColorHex: String,
+        avatarImagePath: String? = null
     ): Result<UserEntity> = withContext(Dispatchers.IO) {
         val cleanUsername = username.trim().lowercase()
         val cleanEmail = email.trim().lowercase()
@@ -80,7 +87,8 @@ class AuthRepository(
             email = cleanEmail,
             displayName = displayName.ifBlank { cleanUsername },
             avatarEmoji = avatarEmoji,
-            avatarColorHex = avatarColorHex
+            avatarColorHex = avatarColorHex,
+            avatarImagePath = avatarImagePath
         )
 
         val id = userDao.insertUser(newUser)

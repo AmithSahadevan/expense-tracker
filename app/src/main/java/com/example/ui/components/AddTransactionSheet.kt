@@ -1,8 +1,6 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +42,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
@@ -325,7 +322,6 @@ fun AddTransactionSheet(
                     Surface(
                         shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
@@ -421,10 +417,6 @@ fun AddTransactionSheet(
                     Surface(
                         shape = RoundedCornerShape(14.dp),
                         color = if (isSelected) catColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) catColor else MaterialTheme.colorScheme.outlineVariant
-                        ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .clickable { selectedCategory = category.name }
@@ -478,10 +470,6 @@ fun AddTransactionSheet(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(
-                        width = if (isToday) 2.dp else 1.dp,
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                    ),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { selectedDate = System.currentTimeMillis() }
@@ -503,10 +491,6 @@ fun AddTransactionSheet(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = if (isYesterday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(
-                        width = if (isYesterday) 2.dp else 1.dp,
-                        color = if (isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                    ),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
@@ -526,10 +510,6 @@ fun AddTransactionSheet(
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = if (!isToday && !isYesterday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(
-                        width = if (!isToday && !isYesterday) 2.dp else 1.dp,
-                        color = if (!isToday && !isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                    ),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { showDatePickerDialog = true }
@@ -608,10 +588,6 @@ fun AddTransactionSheet(
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        ),
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
@@ -666,10 +642,6 @@ fun AddTransactionSheet(
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        ),
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
@@ -832,7 +804,7 @@ fun AddTransactionSheet(
                                     .clickable { newCatColor = colHex }
                                     .then(
                                         if (newCatColor == colHex)
-                                            Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                            Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
                                         else
                                             Modifier
                                     )

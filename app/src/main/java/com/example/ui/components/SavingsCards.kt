@@ -1,7 +1,7 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +50,16 @@ fun AdultMoneyCard(
     onAdd: (() -> Unit)? = null,
     onWithdraw: (() -> Unit)? = null
 ) {
-    val content: @Composable () -> Unit = {
+    Card(
+        onClick = onClick ?: {},
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("adult_money_card"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        )
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -72,7 +80,7 @@ fun AdultMoneyCard(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -92,13 +100,13 @@ fun AdultMoneyCard(
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                             ) {
                                 Text(
                                     text = "DISCRETIONARY",
                                     fontSize = 8.5.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
@@ -114,7 +122,7 @@ fun AdultMoneyCard(
                 Text(
                     text = formatMoney(currency, balance),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.testTag("adult_money_balance")
                 )
             }
@@ -131,9 +139,13 @@ fun AdultMoneyCard(
                         ) { Text("+ Add", fontWeight = FontWeight.Bold) }
                     }
                     if (onWithdraw != null) {
-                        OutlinedButton(
+                        Button(
                             onClick = onWithdraw,
                             shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("adult_money_withdraw")
@@ -142,18 +154,6 @@ fun AdultMoneyCard(
                 }
             }
         }
-    }
-
-    val cardModifier = modifier
-        .fillMaxWidth()
-        .testTag("adult_money_card")
-    val shape = RoundedCornerShape(20.dp)
-    val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
-    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-    if (onClick != null) {
-        Card(onClick = onClick, shape = shape, colors = colors, border = border, modifier = cardModifier) { content() }
-    } else {
-        Card(shape = shape, colors = colors, border = border, modifier = cardModifier) { content() }
     }
 }
 
@@ -167,7 +167,14 @@ fun EmergencyFundCard(
     onAdd: (() -> Unit)? = null,
     onWithdraw: (() -> Unit)? = null
 ) {
-    val content: @Composable () -> Unit = {
+    Card(
+        onClick = onClick ?: {},
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("emergency_fund_card"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = EmergencyVault)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -207,8 +214,7 @@ fun EmergencyFundCard(
                         Spacer(modifier = Modifier.width(6.dp))
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = EmergencyShield.copy(alpha = 0.3f),
-                            border = BorderStroke(1.dp, EmergencyShield.copy(alpha = 0.6f))
+                            color = EmergencyShield.copy(alpha = 0.3f)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -280,11 +286,13 @@ fun EmergencyFundCard(
                         ) { Text("+ Add", fontWeight = FontWeight.Bold) }
                     }
                     if (onWithdraw != null) {
-                        OutlinedButton(
+                        Button(
                             onClick = onWithdraw,
                             shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, EmergencyShield.copy(alpha = 0.6f)),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = EmergencyGold),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White.copy(alpha = 0.1f),
+                                contentColor = EmergencyGold
+                            ),
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("emergency_fund_withdraw")
@@ -305,17 +313,5 @@ fun EmergencyFundCard(
                 }
             }
         }
-    }
-
-    val cardModifier = modifier
-        .fillMaxWidth()
-        .testTag("emergency_fund_card")
-    val shape = RoundedCornerShape(20.dp)
-    val colors = CardDefaults.cardColors(containerColor = EmergencyVault)
-    val border = BorderStroke(2.dp, EmergencyShield)
-    if (onClick != null) {
-        Card(onClick = onClick, shape = shape, colors = colors, border = border, modifier = cardModifier) { content() }
-    } else {
-        Card(shape = shape, colors = colors, border = border, modifier = cardModifier) { content() }
     }
 }

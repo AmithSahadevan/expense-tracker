@@ -654,7 +654,6 @@ private fun LookupFoundBanner(result: ProductLookupResult.Found, currency: Strin
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("wishlist_lookup_found")

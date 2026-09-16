@@ -1,8 +1,10 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,13 +18,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -31,28 +33,25 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.MonetizationOn
 import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,8 +61,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
@@ -71,18 +73,15 @@ import com.example.data.model.CategoryRegistry
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.ui.components.FunkyEmptyState
+import com.example.ui.components.TransactionRowItem
+import com.example.ui.components.toColor
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.TreeMap
 
-enum class DateFilter(val label: String) {
-    ALL("All Time"),
-    THIS_MONTH("This Month"),
-    LAST_MONTH("Last Month"),
-    THIS_YEAR("This Year")
-}
-
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
     currentUser: UserEntity?,
@@ -95,85 +94,42 @@ fun TransactionsScreen(
     val currency = currentUser?.currencySymbol ?: "₹"
     var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<TransactionType?>(null) }
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var selectedDateFilter by remember { mutableStateOf(DateFilter.ALL) }
-    var transactionToDelete by remember { mutableStateOf<TransactionItem?>(null) }
+    var showFilterMenu by remember { mutableStateOf(false) }
 
-    // Unique categories present in the user's transactions
-    val availableCategories = remember(transactions) {
-        transactions.map { it.category }.distinct().sorted()
-    }
-
-    // Date calculations for filtering
-    val calendar = Calendar.getInstance()
-    val currentMonthStart = remember {
-        Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    val lastMonthStart = remember {
-        Calendar.getInstance().apply {
-            add(Calendar.MONTH, -1)
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    val currentYearStart = remember {
-        Calendar.getInstance().apply {
-            set(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-    }
-
-    // Apply Search, Type Filter, Category Filter, and Date Filter
+    // Apply Search and Type Filter
     val filteredList = transactions.filter { item ->
-        // Type filter
         val matchesType = filterType == null || item.type == filterType
-
-        // Search query
         val matchesSearch = searchQuery.isBlank() ||
                 item.title.contains(searchQuery, ignoreCase = true) ||
-                item.category.contains(searchQuery, ignoreCase = true) ||
-                item.notes.contains(searchQuery, ignoreCase = true) ||
-                item.paymentMethod.contains(searchQuery, ignoreCase = true)
-
-        // Category filter
-        val matchesCategory = selectedCategory == null || item.category.equals(selectedCategory, ignoreCase = true)
-
-        // Date filter
-        val matchesDate = when (selectedDateFilter) {
-            DateFilter.ALL -> true
-            DateFilter.THIS_MONTH -> item.date >= currentMonthStart
-            DateFilter.LAST_MONTH -> item.date in lastMonthStart until currentMonthStart
-            DateFilter.THIS_YEAR -> item.date >= currentYearStart
-        }
-
-        matchesType && matchesSearch && matchesCategory && matchesDate
+                item.category.contains(searchQuery, ignoreCase = true)
+        matchesType && matchesSearch
     }
 
-    val totalFilteredIncome = filteredList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
-    val totalFilteredExpense = filteredList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+    // Group by date (ignoring time)
+    val groupedTransactions = remember(filteredList) {
+        val map = TreeMap<Long, MutableList<TransactionItem>>(reverseOrder())
+        filteredList.forEach { item ->
+            val cal = Calendar.getInstance().apply {
+                timeInMillis = item.date
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val dayStart = cal.timeInMillis
+            map.getOrPut(dayStart) { mutableListOf() }.add(item)
+        }
+        map
+    }
 
-    val dateFormat = remember { SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()) }
+    val headerDateFormat = remember { SimpleDateFormat("d MMM EEEE", Locale.getDefault()) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onOpenAddTransaction,
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFFFF6B6B),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier
@@ -193,261 +149,162 @@ fun TransactionsScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Transaction Ledger",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Inflows & outflows for @${currentUser?.username ?: "you"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search by merchant, category, notes...") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            Text(
+                text = "Transactions",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp
                 ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("search_transactions_input")
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Type Filters (All, Expense, Income)
+            // Thin Search Bar with Filter
             Row(
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // All
-                val isAllSelected = filterType == null
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isAllSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                // Custom Thin Search Field
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
                     modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { filterType = null }
-                ) {
-                    Text(
-                        text = "All (${transactions.size})",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (isAllSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
-                }
-
-                // Expenses
-                val isExpenseSelected = filterType == TransactionType.EXPENSE
-                val expenseCount = transactions.count { it.type == TransactionType.EXPENSE }
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isExpenseSelected) Color(0xFFFF6B6B) else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { filterType = TransactionType.EXPENSE }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(16.dp)
+                        .weight(1f)
+                        .height(42.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                        Text(
-                            text = "Expenses ($expenseCount)",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                // Income
-                val isIncomeSelected = filterType == TransactionType.INCOME
-                val incomeCount = transactions.count { it.type == TransactionType.INCOME }
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isIncomeSelected) Color(0xFF10B981) else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable { filterType = TransactionType.INCOME }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Payments,
-                            contentDescription = null,
-                            tint = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "Income ($incomeCount)",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Date Filters Bar (All Time, This Month, Last Month, This Year)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(DateFilter.values()) { df ->
-                    val isSelected = selectedDateFilter == df
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                        border = BorderStroke(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        ),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { selectedDateFilter = df }
-                    ) {
-                        Text(
-                            text = df.label,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
+                        .testTag("search_transactions_input"),
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        TextFieldDefaults.DecorationBox(
+                            value = searchQuery,
+                            innerTextField = innerTextField,
+                            enabled = true,
+                            singleLine = true,
+                            visualTransformation = VisualTransformation.None,
+                            interactionSource = remember { MutableInteractionSource() },
+                            placeholder = {
+                                Text(
+                                    "search",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { searchQuery = "" },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Clear,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
                             ),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                         )
                     }
-                }
-            }
-
-            // Category Filter Bar (if multiple categories exist)
-            if (availableCategories.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    item {
-                        val isAllCat = selectedCategory == null
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isAllCat) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-                            border = BorderStroke(1.dp, if (isAllCat) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable { selectedCategory = null }
-                        ) {
-                            Text(
-                                text = "All Categories",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = if (isAllCat) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                            )
-                        }
-                    }
-
-                    items(availableCategories) { cat ->
-                        val isCatSelected = selectedCategory.equals(cat, ignoreCase = true)
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isCatSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, if (isCatSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable { selectedCategory = cat }
-                        ) {
-                            Text(
-                                text = cat,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                                color = if (isCatSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Filter Summary Pill
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${filteredList.size} ${if (filteredList.size == 1) "entry" else "entries"}",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (totalFilteredIncome > 0) {
-                        Text(
-                            text = "+$currency${String.format(Locale.US, "%.2f", totalFilteredIncome)}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                            color = Color(0xFF10B981)
+
+                Box {
+                    IconButton(
+                        onClick = { showFilterMenu = true },
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(
+                                color = if (filterType != null) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = "Filter",
+                            modifier = Modifier.size(20.dp),
+                            tint = if (filterType != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    if (totalFilteredExpense > 0) {
-                        Text(
-                            text = "-$currency${String.format(Locale.US, "%.2f", totalFilteredExpense)}",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                            color = Color(0xFFFF6B6B)
+
+                    DropdownMenu(
+                        expanded = showFilterMenu,
+                        onDismissRequest = { showFilterMenu = false },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("All Transactions") },
+                            onClick = {
+                                filterType = null
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = null,
+                                    tint = if (filterType == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Expenses Only") },
+                            onClick = {
+                                filterType = TransactionType.EXPENSE
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.AccountBalanceWallet,
+                                    contentDescription = null,
+                                    tint = if (filterType == TransactionType.EXPENSE) Color(0xFFFF6B6B) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Income Only") },
+                            onClick = {
+                                filterType = TransactionType.INCOME
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Payments,
+                                    contentDescription = null,
+                                    tint = if (filterType == TransactionType.INCOME) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Transaction List
             if (filteredList.isEmpty()) {
@@ -473,233 +330,88 @@ fun TransactionsScreen(
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 120.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(filteredList, key = { "${it.type.name}_${it.id}" }) { item ->
-                        val catInfo = CategoryRegistry.getCategoryInfo(item.category, item.type)
-
-                        Card(
-                            shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onEditTransaction(item) }
-                                .testTag("transaction_item_${item.type.name}_${item.id}")
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    // Category Icon Circle
-                                    Box(
-                                        modifier = Modifier
-                                            .size(44.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (item.type == TransactionType.INCOME)
-                                                    Color(0xFF10B981).copy(alpha = 0.15f)
-                                                else
-                                                    Color(0xFFFF6B6B).copy(alpha = 0.15f)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = catInfo.icon,
-                                            contentDescription = null,
-                                            tint = if (item.type == TransactionType.INCOME) Color(0xFF10B981) else Color(0xFFFF6B6B),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-
-                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(
-                                            text = item.title,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = item.category,
-                                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                            Text(
-                                                text = "•",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Text(
-                                                text = dateFormat.format(Date(item.date)),
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-
-                                        // Badges for Payment Method & Recurrence
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        ) {
-                                            // Payment Method badge
-                                            val (methodLabel, methodIcon) = when (item.paymentMethod.uppercase()) {
-                                                "CASH" -> "Cash" to Icons.Outlined.Payments
-                                                "BANK" -> "Bank" to Icons.Outlined.AccountBalance
-                                                "UPI" -> "UPI" to Icons.Outlined.Smartphone
-                                                else -> "Card" to Icons.Outlined.CreditCard
-                                            }
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                                modifier = Modifier.padding(vertical = 1.dp)
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = methodIcon,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        modifier = Modifier.size(10.dp)
-                                                    )
-                                                    Text(
-                                                        text = methodLabel,
-                                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                }
-                                            }
-
-                                            // Recurrence badge
-                                            if (item.recurrence != "NONE") {
-                                                Surface(
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                                    modifier = Modifier.padding(vertical = 1.dp)
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = Icons.Outlined.Repeat,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(10.dp)
-                                                        )
-                                                        Text(
-                                                            text = if (item.recurrence == "MONTHLY") "Monthly" else "Weekly",
-                                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        if (item.notes.isNotBlank()) {
-                                            Text(
-                                                text = "“${item.notes}”",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(top = 2.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = "${if (item.type == TransactionType.INCOME) "+" else "-"}$currency${String.format(Locale.US, "%.2f", item.amount)}",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                                        color = if (item.type == TransactionType.INCOME) Color(0xFF10B981) else Color(0xFFFF6B6B)
-                                    )
-
-                                    // Edit button
-                                    IconButton(
-                                        onClick = { onEditTransaction(item) },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit Transaction",
-                                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-
-                                    // Delete button
-                                    IconButton(
-                                        onClick = { transactionToDelete = item },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.DeleteOutline,
-                                            contentDescription = "Delete",
-                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                }
-                            }
+                    groupedTransactions.forEach { (dayStart, items) ->
+                        // Date Header with Summary
+                        stickyHeader {
+                            DateHeader(
+                                date = Date(dayStart),
+                                dateFormat = headerDateFormat,
+                                dailyIncome = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount },
+                                dailyExpense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+                            )
                         }
-                    }
-                    item {
-                        Spacer(modifier = Modifier.navigationBarsPadding().height(48.dp))
+
+                        items(items, key = { "${it.type.name}_${it.id}" }) { item ->
+                            TransactionRowItem(
+                                item = item,
+                                onEdit = { onEditTransaction(item) }
+                            )
+                        }
+                        
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
         }
     }
+}
 
-    // Delete Confirmation Dialog
-    if (transactionToDelete != null) {
-        val item = transactionToDelete!!
-        AlertDialog(
-            onDismissRequest = { transactionToDelete = null },
-            title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    text = "Are you sure you want to remove \"${item.title}\" ($currency${String.format(Locale.US, "%.2f", item.amount)}) from your ledger? This action cannot be undone."
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDeleteTransaction(item)
-                        transactionToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
+@Composable
+fun DateHeader(
+    date: Date,
+    dateFormat: SimpleDateFormat,
+    dailyIncome: Double,
+    dailyExpense: Double
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(top = 8.dp, bottom = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = dateFormat.format(date),
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (dailyExpense > 0) {
+                    Text(
+                        text = "Expenses: ${String.format(Locale.US, "%,.0f", dailyExpense)}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { transactionToDelete = null }) {
-                    Text("Cancel")
+                if (dailyIncome > 0) {
+                    Text(
+                        text = "Income: ${String.format(Locale.US, "%,.0f", dailyIncome)}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
             }
-        )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
     }
 }

@@ -110,7 +110,7 @@ fun MoneyFlowScreen(
                     editingItem = null
                     showForm = true
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = Color(0xFF10B981),
                 contentColor = Color.White,
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier
@@ -365,7 +365,6 @@ private fun MoneyFlowCard(
                 MaterialTheme.colorScheme.surface
             }
         ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onEdit)

@@ -27,7 +27,6 @@ fun ChoicePill(
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = if (selected) accent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-        border = BorderStroke(1.dp, if (selected) accent else MaterialTheme.colorScheme.outline),
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)

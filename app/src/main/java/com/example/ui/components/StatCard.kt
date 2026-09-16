@@ -55,8 +55,7 @@ fun BalanceHeroCard(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primary
-        ),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f))
+        )
     ) {
         Column(
             modifier = Modifier.padding(22.dp)
@@ -246,8 +245,7 @@ fun FunkyFeatureCard(
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.7f))
+        )
     ) {
         Row(
             modifier = Modifier
