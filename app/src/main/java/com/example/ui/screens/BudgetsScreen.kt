@@ -19,20 +19,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,29 +52,25 @@ fun BudgetsScreen(
     currentUser: UserEntity?,
     budgets: List<BudgetEntity>,
     onAddBudget: (category: String, allocatedAmount: Double) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Set by the dock's add button; the screen opens its add dialog and reports back.
+    addRequested: Boolean = false,
+    onAddRequestHandled: () -> Unit = {}
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var showAddDialog by remember { mutableStateOf(false) }
     var categoryName by remember { mutableStateOf("") }
     var allocatedAmountText by remember { mutableStateOf("") }
 
+    LaunchedEffect(addRequested) {
+        if (addRequested) {
+            showAddDialog = true
+            onAddRequestHandled()
+        }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = Color(0xFF0984E3),
-                contentColor = Color.White,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(bottom = 90.dp, end = 4.dp)
-                    .testTag("fab_add_budget")
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Budget")
-            }
-        },
         modifier = modifier.testTag("budgets_screen")
     ) { innerPadding ->
         Column(

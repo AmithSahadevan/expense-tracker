@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,7 +33,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Lock
@@ -46,7 +44,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -56,6 +53,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,7 +97,10 @@ fun WishlistScreen(
     onDeleteWishlistItem: (WishlistItemEntity) -> Unit,
     onTogglePurchased: (WishlistItemEntity) -> Unit,
     onLookupProduct: suspend (String) -> ProductLookupResult,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Set by the dock's add button; the screen opens its add form and reports back.
+    addRequested: Boolean = false,
+    onAddRequestHandled: () -> Unit = {}
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
@@ -107,6 +108,14 @@ fun WishlistScreen(
     var showForm by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<WishlistItemEntity?>(null) }
     var pendingDelete by remember { mutableStateOf<WishlistItemEntity?>(null) }
+
+    LaunchedEffect(addRequested) {
+        if (addRequested) {
+            editingItem = null
+            showForm = true
+            onAddRequestHandled()
+        }
+    }
     // Hoisted so the list keeps its scroll position after returning from a product's details.
     val gridState = rememberLazyGridState()
 
@@ -218,20 +227,6 @@ private fun WishlistBrowse(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick,
-                containerColor = Color(0xFFFD79A8),
-                contentColor = Color.White,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(bottom = 90.dp, end = 4.dp)
-                    .testTag("fab_add_wishlist")
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Wishlist Item")
-            }
-        },
         modifier = Modifier.testTag("wishlist_screen")
     ) { innerPadding ->
         LazyVerticalGrid(

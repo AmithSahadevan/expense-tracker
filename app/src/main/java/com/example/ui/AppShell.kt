@@ -1,9 +1,13 @@
 package com.example.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -70,9 +74,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -171,6 +183,8 @@ fun AppShell(
     var transactionToDelete by remember { mutableStateOf<TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
     var showMoreMenuSheet by remember { mutableStateOf(false) }
+    // Page whose own add form the dock's add button asked to open; cleared once that page opens it.
+    var dockAddRequest by remember { mutableStateOf<AppDestination?>(null) }
 
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -338,15 +352,28 @@ fun AppShell(
                         onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
                         onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
                         onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                        onAddBudget = { c, a -> viewModel.addBudget(c, a) }
+                        onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                        dockAddRequest = dockAddRequest,
+                        onDockAddRequestHandled = { dockAddRequest = null }
                     )
 
                     AmoebaFloatingBottomDocker(
                         currentDestination = currentDestination,
+                        pageOrder = pagerDestinations,
                         onNavigate = { dest -> navigateToDestination(dest.route) },
-                        onOpenAddSheet = { 
-                            editingTransaction = null
-                            showAddTransactionSheet = true 
+                        onDockAdd = {
+                            when (currentDestination) {
+                                AppDestination.TRANSACTIONS -> {
+                                    editingTransaction = null
+                                    showAddTransactionSheet = true
+                                }
+                                AppDestination.WISHLIST,
+                                AppDestination.MONEY_FLOW,
+                                AppDestination.BUDGETS -> dockAddRequest = currentDestination
+                                AppDestination.HOME,
+                                AppDestination.SAVINGS,
+                                AppDestination.SETTINGS -> Unit
+                            }
                         },
                         onOpenMoreMenu = { showMoreMenuSheet = true },
                         modifier = Modifier.align(Alignment.BottomCenter)
@@ -688,7 +715,9 @@ private fun ScreenRouter(
     onAddSavingsTransaction: (SavingsTransactionInput) -> Unit,
     onUpdateSavingsTransaction: (Long, SavingsTransactionInput) -> Unit,
     onDeleteSavingsTransaction: (Long) -> Unit,
-    onAddBudget: (String, Double) -> Unit
+    onAddBudget: (String, Double) -> Unit,
+    dockAddRequest: AppDestination? = null,
+    onDockAddRequestHandled: () -> Unit = {}
 ) {
     HorizontalPager(
         state = pagerState,
@@ -719,7 +748,9 @@ private fun ScreenRouter(
                 onAddMoneyFlow = onAddMoneyFlow,
                 onUpdateMoneyFlow = onUpdateMoneyFlow,
                 onDeleteMoneyFlow = onDeleteMoneyFlow,
-                onToggleSettled = onToggleMoneyFlow
+                onToggleSettled = onToggleMoneyFlow,
+                addRequested = dockAddRequest == AppDestination.MONEY_FLOW,
+                onAddRequestHandled = onDockAddRequestHandled
             )
             AppDestination.WISHLIST -> WishlistScreen(
                 currentUser = currentUser,
@@ -729,7 +760,9 @@ private fun ScreenRouter(
                 onUpdateWishlistItem = onUpdateWishlistItem,
                 onDeleteWishlistItem = onDeleteWishlistItem,
                 onLookupProduct = onLookupProduct,
-                onTogglePurchased = onToggleWishlist
+                onTogglePurchased = onToggleWishlist,
+                addRequested = dockAddRequest == AppDestination.WISHLIST,
+                onAddRequestHandled = onDockAddRequestHandled
             )
             AppDestination.SAVINGS -> SavingsScreen(
                 currentUser = currentUser,
@@ -743,7 +776,9 @@ private fun ScreenRouter(
             AppDestination.BUDGETS -> BudgetsScreen(
                 currentUser = currentUser,
                 budgets = budgets,
-                onAddBudget = onAddBudget
+                onAddBudget = onAddBudget,
+                addRequested = dockAddRequest == AppDestination.BUDGETS,
+                onAddRequestHandled = onDockAddRequestHandled
             )
             AppDestination.SETTINGS -> SettingsScreen(
                 currentUser = currentUser,
@@ -758,8 +793,9 @@ private fun ScreenRouter(
 @Composable
 private fun AmoebaFloatingBottomDocker(
     currentDestination: AppDestination,
+    pageOrder: List<AppDestination>,
     onNavigate: (AppDestination) -> Unit,
-    onOpenAddSheet: () -> Unit,
+    onDockAdd: () -> Unit,
     onOpenMoreMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -899,25 +935,12 @@ private fun AmoebaFloatingBottomDocker(
                             .fillMaxHeight(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shadowElevation = 5.dp,
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .clickable { onOpenAddSheet() }
-                                .testTag("dock_add_flow_button")
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Add,
-                                    contentDescription = "Add Flow",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
+                        DockAddMorphButton(
+                            currentDestination = currentDestination,
+                            pageOrder = pageOrder,
+                            onClick = onDockAdd,
+                            modifier = Modifier.testTag("dock_add_flow_button")
+                        )
                     }
 
                     // 3. Wishlist
@@ -943,6 +966,100 @@ private fun AmoebaFloatingBottomDocker(
                     )
                 }
             }
+        }
+    }
+}
+
+// Accent of the page's own add FAB; null for pages without one (dock button shows the "O").
+private fun AppDestination.dockAddAccent(): Color? = when (this) {
+    AppDestination.TRANSACTIONS -> Color(0xFFFF6B6B)
+    AppDestination.WISHLIST -> Color(0xFFFD79A8)
+    AppDestination.MONEY_FLOW -> Color(0xFF10B981)
+    AppDestination.BUDGETS -> Color(0xFF0984E3)
+    AppDestination.HOME, AppDestination.SAVINGS, AppDestination.SETTINGS -> null
+}
+
+@Composable
+private fun DockAddMorphButton(
+    currentDestination: AppDestination,
+    pageOrder: List<AppDestination>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = currentDestination.dockAddAccent()
+
+    // Each hop between two pages that both own an add button spins the plus a quarter turn,
+    // clockwise when moving to a page further right in the pager, counter-clockwise when moving left.
+    var plusTurns by remember { mutableIntStateOf(0) }
+    var previousDestination by remember { mutableStateOf(currentDestination) }
+    LaunchedEffect(currentDestination) {
+        if (previousDestination != currentDestination &&
+            accent != null &&
+            previousDestination.dockAddAccent() != null
+        ) {
+            val movingRight = pageOrder.indexOf(currentDestination) > pageOrder.indexOf(previousDestination)
+            plusTurns += if (movingRight) 1 else -1
+        }
+        previousDestination = currentDestination
+    }
+
+    // 0 = hollow "O", 1 = plus-shaped cutout
+    val morph by animateFloatAsState(
+        targetValue = if (accent != null) 1f else 0f,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = 240f),
+        label = "dock_add_morph"
+    )
+    val rotation by animateFloatAsState(
+        targetValue = plusTurns * 90f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 220f),
+        label = "dock_add_rotation"
+    )
+    val tint by animateColorAsState(
+        targetValue = accent ?: Color.White,
+        animationSpec = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+        label = "dock_add_tint"
+    )
+
+    Canvas(
+        modifier = modifier
+            .size(42.dp)
+            .clip(CircleShape)
+            .clickable(enabled = accent != null, onClick = onClick)
+            .semantics { contentDescription = "Add Flow" }
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    ) {
+        drawCircle(color = tint)
+
+        // The hole is two rounded bars. As full circles of holeDiameter they form the "O";
+        // shrinking to long thin bars they become the "+". Thickness eases out faster than
+        // length so the circle pinches into arms rather than just scaling down.
+        val holeDiameter = 32.dp.toPx()
+        val plusLength = 16.dp.toPx()
+        val plusThickness = 3.dp.toPx()
+        val maxHole = size.minDimension - 2.dp.toPx()
+
+        val thicknessProgress = if (morph in 0f..1f) 1f - (1f - morph) * (1f - morph) else morph
+        val thickness = (holeDiameter + (plusThickness - holeDiameter) * thicknessProgress)
+            .coerceIn(0f, maxHole)
+        val length = (holeDiameter + (plusLength - holeDiameter) * morph)
+            .coerceIn(thickness, maxHole)
+        val corner = CornerRadius(thickness / 2f)
+
+        rotate(rotation) {
+            drawRoundRect(
+                color = Color.Black,
+                topLeft = Offset(center.x - length / 2f, center.y - thickness / 2f),
+                size = Size(length, thickness),
+                cornerRadius = corner,
+                blendMode = BlendMode.Clear
+            )
+            drawRoundRect(
+                color = Color.Black,
+                topLeft = Offset(center.x - thickness / 2f, center.y - length / 2f),
+                size = Size(thickness, length),
+                cornerRadius = corner,
+                blendMode = BlendMode.Clear
+            )
         }
     }
 }

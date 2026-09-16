@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -35,7 +34,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,13 +84,24 @@ fun MoneyFlowScreen(
     onUpdateMoneyFlow: (id: Long, input: MoneyFlowInput) -> Unit,
     onDeleteMoneyFlow: (MoneyFlowEntity) -> Unit,
     onToggleSettled: (MoneyFlowEntity) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Set by the dock's add button; the screen opens its add form and reports back.
+    addRequested: Boolean = false,
+    onAddRequestHandled: () -> Unit = {}
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(MoneyFlowFilter.PENDING) }
     var showForm by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<MoneyFlowEntity?>(null) }
     var pendingDelete by remember { mutableStateOf<MoneyFlowEntity?>(null) }
+
+    LaunchedEffect(addRequested) {
+        if (addRequested) {
+            editingItem = null
+            showForm = true
+            onAddRequestHandled()
+        }
+    }
     val dateFormat = remember { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()) }
 
     val summary = remember(moneyFlows) { MoneyFlowCalculator.summarize(moneyFlows) }
@@ -104,23 +114,6 @@ fun MoneyFlowScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    editingItem = null
-                    showForm = true
-                },
-                containerColor = Color(0xFF10B981),
-                contentColor = Color.White,
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(bottom = 90.dp, end = 4.dp)
-                    .testTag("fab_add_money_flow")
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add money flow record")
-            }
-        },
         modifier = modifier.testTag("money_flow_screen")
     ) { innerPadding ->
         LazyColumn(
