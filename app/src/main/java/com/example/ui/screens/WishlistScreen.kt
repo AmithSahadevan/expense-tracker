@@ -77,6 +77,7 @@ import com.example.data.model.WishlistAffordabilityCalculator
 import com.example.data.model.WishlistBrowser
 import com.example.data.model.WishlistFilter
 import com.example.data.model.WishlistItemInput
+import com.example.data.model.WishlistPrice
 import com.example.ui.components.AffordabilityChip
 import com.example.ui.components.ChoicePill
 import com.example.ui.components.FunkyEmptyState
@@ -182,7 +183,10 @@ fun WishlistScreen(
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text("Remove from wishlist?", fontWeight = FontWeight.Bold) },
-            text = { Text("\"${item.title}\" (${formatMoney(currency, item.estimatedCost)}) will be deleted. This can't be undone.") },
+            text = {
+                val priced = if (WishlistPrice.isSet(item.estimatedCost)) " (${formatMoney(currency, item.estimatedCost)})" else ""
+                Text("\"${item.title}\"$priced will be deleted. This can't be undone.")
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -404,6 +408,7 @@ private fun WishlistProductCard(
     currency: String,
     onClick: () -> Unit
 ) {
+    val hasPrice = WishlistPrice.isSet(item.estimatedCost)
     val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
 
     Card(
@@ -454,9 +459,10 @@ private fun WishlistProductCard(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = formatMoney(currency, item.estimatedCost),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = if (hasPrice) formatMoney(currency, item.estimatedCost) else "Price not added",
+                    style = if (hasPrice) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                    else MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = if (hasPrice) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -470,6 +476,12 @@ private fun WishlistProductCard(
                 ) {
                     when {
                         item.isPurchased -> PurchasedBadge()
+                        !hasPrice -> Text(
+                            text = "Add a price to check affordability",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
                         affordability is WishlistAffordability.CanAfford -> {
                             AffordabilityChip(result = affordability, currency = currency)
                             Text(

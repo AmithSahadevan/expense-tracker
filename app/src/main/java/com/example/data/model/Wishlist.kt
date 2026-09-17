@@ -2,7 +2,7 @@ package com.example.data.model
 
 import com.example.data.local.entities.WishlistItemEntity
 
-/** A wishlist product as typed in by the user (add or edit). Nothing is fetched from the product URL. */
+/** A wishlist product being added or edited. [price] is 0 when no price has been added yet. */
 data class WishlistItemInput(
     val title: String,
     val price: Double,
@@ -15,6 +15,11 @@ data class WishlistItemInput(
     val notes: String = "",
     val priority: String = WishlistPriority.MEDIUM
 )
+
+/** A price of 0 means it hasn't been added yet, e.g. the store page didn't show one. */
+object WishlistPrice {
+    fun isSet(price: Double): Boolean = price > 0
+}
 
 object WishlistPriority {
     const val LOW = "LOW"
@@ -65,6 +70,7 @@ object WishlistBrowser {
     /**
      * Filters and orders wishlist items for display, judging affordability with Adult Money only.
      * Items still wanted come before purchased ones; purchased items are neither "can afford" nor "need more".
+     * Items without a price are also in neither group, and come after priced items in the price sorts.
      */
     fun apply(
         items: List<WishlistItemEntity>,
@@ -76,16 +82,21 @@ object WishlistBrowser {
         )
         fun canAfford(item: WishlistItemEntity) =
             WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance) is WishlistAffordability.CanAfford
+        fun isOpenAndPriced(item: WishlistItemEntity) = !item.isPurchased && WishlistPrice.isSet(item.estimatedCost)
 
         return when (filter) {
             WishlistFilter.ALL -> newestFirst.sortedBy { it.isPurchased }
-            WishlistFilter.CAN_AFFORD -> newestFirst.filter { !it.isPurchased && canAfford(it) }
-            WishlistFilter.NEED_MORE -> newestFirst.filter { !it.isPurchased && !canAfford(it) }
+            WishlistFilter.CAN_AFFORD -> newestFirst.filter { isOpenAndPriced(it) && canAfford(it) }
+            WishlistFilter.NEED_MORE -> newestFirst.filter { isOpenAndPriced(it) && !canAfford(it) }
             WishlistFilter.HIGHEST_PRICE -> newestFirst.sortedWith(
-                compareBy<WishlistItemEntity> { it.isPurchased }.thenByDescending { it.estimatedCost }
+                compareBy<WishlistItemEntity> { it.isPurchased }
+                    .thenBy { !WishlistPrice.isSet(it.estimatedCost) }
+                    .thenByDescending { it.estimatedCost }
             )
             WishlistFilter.LOWEST_PRICE -> newestFirst.sortedWith(
-                compareBy<WishlistItemEntity> { it.isPurchased }.thenBy { it.estimatedCost }
+                compareBy<WishlistItemEntity> { it.isPurchased }
+                    .thenBy { !WishlistPrice.isSet(it.estimatedCost) }
+                    .thenBy { it.estimatedCost }
             )
         }
     }
@@ -145,7 +156,7 @@ data class WishlistInputErrors(
 object WishlistInputValidator {
     fun validate(input: WishlistItemInput): WishlistInputErrors = WishlistInputErrors(
         title = if (input.title.isBlank()) "Product name is required" else null,
-        price = if (input.price <= 0) "Enter a price greater than 0" else null,
+        price = if (input.price < 0) "Price can't be negative" else null,
         url = if (WebLinks.normalize(input.url) == null) "Enter a valid link, e.g. amazon.in/…" else null,
         imageUrl = if (WebLinks.normalize(input.imageUrl) == null) "Enter a valid image link" else null
     )

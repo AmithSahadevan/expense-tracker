@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -59,6 +60,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.WishlistItemEntity
 import com.example.data.model.CurrencySymbols
+import com.example.data.model.LinkAddPlan
+import com.example.data.model.LinkAddPlanner
 import com.example.data.model.ProductLookupFailure
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.StoreNames
@@ -81,6 +84,9 @@ private sealed interface LookupStatus {
     data object Loading : LookupStatus
     data class Done(val result: ProductLookupResult) : LookupStatus
 }
+
+/** A link-based add waiting for the user to confirm, because some details couldn't be read. */
+private data class PendingLinkAdd(val plan: LinkAddPlan, val failure: ProductLookupResult.Failed?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,9 +118,10 @@ fun WishlistItemFormSheet(
 }
 
 /**
- * Add or edit a wishlist product. New items start from a pasted link: details are read from the page
- * and shown for review, and if that fails the user fills them in by hand. Nothing is saved without review.
- * [adultMoneyBalance] drives the affordability preview; the Emergency Fund is never used.
+ * Add or edit a wishlist product. New items start from a pasted link: details are read from the page and
+ * the product is added right away. If some details couldn't be read, the user confirms first and can add
+ * them later, or reviews them in the full form. [adultMoneyBalance] drives the affordability preview;
+ * the Emergency Fund is never used.
  */
 @Composable
 fun WishlistItemForm(
@@ -146,8 +153,10 @@ fun WishlistItemForm(
     var dateAdded by remember { mutableStateOf(initialItem?.dateAdded ?: System.currentTimeMillis()) }
     var targetDate by remember { mutableStateOf(initialItem?.targetPurchaseDate) }
     var showErrors by remember { mutableStateOf(false) }
+    var pendingLinkAdd by remember { mutableStateOf<PendingLinkAdd?>(null) }
 
-    fun startLookup(rawLink: String) {
+    /** Reads the link's page. With [addWhenDone] the product is added once read, asking first if details are missing. */
+    fun startLookup(rawLink: String, addWhenDone: Boolean = false) {
         lookupJob?.cancel()
         val link = WebLinks.findInText(rawLink)
         if (link == null) {
@@ -172,9 +181,19 @@ fun WishlistItemForm(
                 product.imageUrl?.let { imageUrl = it }
                 product.description?.let { description = it }
                 product.store?.let { store = it }
-                step = FormStep.DETAILS
+                if (!addWhenDone) step = FormStep.DETAILS
             }
             lookupStatus = LookupStatus.Done(result)
+            if (addWhenDone) {
+                when (result) {
+                    is ProductLookupResult.Found -> {
+                        val plan = LinkAddPlanner.fromLookup(result, currency)
+                        if (plan.isComplete) onSave(plan.input) else pendingLinkAdd = PendingLinkAdd(plan, failure = null)
+                    }
+                    is ProductLookupResult.Failed ->
+                        pendingLinkAdd = PendingLinkAdd(LinkAddPlanner.linkOnly(result.url ?: link), failure = result)
+                }
+            }
         }
     }
 
@@ -211,10 +230,10 @@ fun WishlistItemForm(
                     val pasted = clipboard.getText()?.text.orEmpty().trim()
                     if (pasted.isNotEmpty()) {
                         linkText = pasted
-                        if (WebLinks.findInText(pasted) != null) startLookup(pasted)
+                        if (lookupStatus is LookupStatus.Done) lookupStatus = LookupStatus.Idle
                     }
                 },
-                onFetch = { startLookup(linkText) },
+                onAdd = { startLookup(linkText, addWhenDone = true) },
                 onCancel = ::cancelLookup,
                 onEnterManually = ::enterManually,
                 onDismiss = onDismiss
@@ -321,10 +340,14 @@ fun WishlistItemForm(
                         val cleaned = raw.filter { it.isDigit() }
                         priceText = cleaned
                     },
-                    label = { Text("Price *") },
+                    label = { Text("Price") },
                     prefix = { Text("$currency ") },
                     isError = showErrors && errors.price != null,
-                    supportingText = if (showErrors && errors.price != null) ({ Text(errors.price) }) else null,
+                    supportingText = when {
+                        showErrors && errors.price != null -> ({ Text(errors.price) })
+                        priceText.isBlank() -> ({ Text("Optional. You can add it later.") })
+                        else -> null
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
@@ -463,7 +486,69 @@ fun WishlistItemForm(
 
         Spacer(modifier = Modifier.height(8.dp))
     }
+
+    pendingLinkAdd?.let { pending ->
+        IncompleteDetailsDialog(
+            pending = pending,
+            onAddAnyway = {
+                pendingLinkAdd = null
+                onSave(pending.plan.input)
+            },
+            onReviewDetails = {
+                pendingLinkAdd = null
+                if (pending.failure == null) step = FormStep.DETAILS else enterManually()
+            },
+            onDismiss = { pendingLinkAdd = null }
+        )
+    }
 }
+
+@Composable
+private fun IncompleteDetailsDialog(
+    pending: PendingLinkAdd,
+    onAddAnyway: () -> Unit,
+    onReviewDetails: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val plan = pending.plan
+    val (title, message) = if (pending.failure != null) {
+        "Product details unavailable" to
+            "${failureMessage(pending.failure)} You can still add this link to your wishlist and enter the " +
+            "product details manually at any time."
+    } else {
+        val missing = plan.missingDetails
+        val lines = buildList {
+            if (missing.isNotEmpty()) {
+                add("We couldn't retrieve the ${joinWithAnd(missing)} for this product from ${WebLinks.displayHost(plan.input.url)}.")
+            }
+            addAll(plan.notes)
+            add(
+                if (missing.isNotEmpty()) "You can add it to your wishlist now and fill in the missing details manually at any time."
+                else "You can add it to your wishlist now and edit the details at any time."
+            )
+        }
+        (if (missing.isNotEmpty()) "Some details are incomplete" else "Please review before adding") to lines.joinToString(" ")
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.Bold) },
+        text = { Text(message) },
+        confirmButton = {
+            Button(onClick = onAddAnyway, modifier = Modifier.testTag("wishlist_add_anyway")) { Text("Add Anyway") }
+        },
+        dismissButton = {
+            TextButton(onClick = onReviewDetails, modifier = Modifier.testTag("wishlist_review_details")) {
+                Text("Review Details")
+            }
+        },
+        modifier = Modifier.testTag("wishlist_incomplete_dialog")
+    )
+}
+
+/** ["name", "price", "image"] -> "name, price and image" */
+private fun joinWithAnd(items: List<String>): String =
+    if (items.size <= 1) items.joinToString() else items.dropLast(1).joinToString(", ") + " and " + items.last()
 
 @Composable
 private fun ColumnScope.PasteLinkStep(
@@ -471,7 +556,7 @@ private fun ColumnScope.PasteLinkStep(
     onLinkChange: (String) -> Unit,
     status: LookupStatus,
     onPaste: () -> Unit,
-    onFetch: () -> Unit,
+    onAdd: () -> Unit,
     onCancel: () -> Unit,
     onEnterManually: () -> Unit,
     onDismiss: () -> Unit
@@ -480,7 +565,7 @@ private fun ColumnScope.PasteLinkStep(
 
     FormHeader(
         title = "Add to Wishlist",
-        subtitle = "Paste a product link and we'll fill in the details",
+        subtitle = "Paste a product link to add it to your wishlist",
         onDismiss = onDismiss
     )
 
@@ -504,7 +589,7 @@ private fun ColumnScope.PasteLinkStep(
         enabled = !loading,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
-        keyboardActions = KeyboardActions(onGo = { if (linkText.isNotBlank()) onFetch() }),
+        keyboardActions = KeyboardActions(onGo = { if (linkText.isNotBlank() && !loading) onAdd() }),
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -512,13 +597,13 @@ private fun ColumnScope.PasteLinkStep(
     )
 
     Button(
-        onClick = onFetch,
+        onClick = onAdd,
         enabled = linkText.isNotBlank() && !loading,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .testTag("wishlist_fetch_details")
+            .testTag("wishlist_add_from_link")
     ) {
         if (loading) {
             CircularProgressIndicator(
@@ -529,7 +614,7 @@ private fun ColumnScope.PasteLinkStep(
             Spacer(modifier = Modifier.width(10.dp))
             Text("Reading product page…", fontWeight = FontWeight.Bold)
         } else {
-            Text("Fetch product details", fontWeight = FontWeight.Bold)
+            Text("Add to Wishlist", fontWeight = FontWeight.Bold)
         }
     }
 
@@ -549,7 +634,7 @@ private fun ColumnScope.PasteLinkStep(
         LookupFailureCard(
             failure = failure,
             footer = "You can still add it by entering the details yourself.",
-            onRetry = if (retryable) onFetch else null
+            onRetry = if (retryable) onAdd else null
         )
     }
 

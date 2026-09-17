@@ -53,6 +53,7 @@ import com.example.data.local.entities.WishlistItemEntity
 import com.example.data.model.WebLinks
 import com.example.data.model.WishlistAffordability
 import com.example.data.model.WishlistAffordabilityCalculator
+import com.example.data.model.WishlistPrice
 import com.example.data.model.RelativeDates
 import com.example.ui.components.AffordabilityChip
 import com.example.ui.components.PriorityBadge
@@ -140,11 +141,19 @@ fun WishlistItemDetail(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = formatMoney(currency, item.estimatedCost),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+                if (WishlistPrice.isSet(item.estimatedCost)) {
+                    Text(
+                        text = formatMoney(currency, item.estimatedCost),
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                } else {
+                    Text(
+                        text = "Price not added",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             if (item.isPurchased) {
@@ -171,8 +180,23 @@ fun WishlistItemDetail(
                         )
                     }
                 }
-            } else {
+            } else if (WishlistPrice.isSet(item.estimatedCost)) {
                 AffordabilityBreakdownCard(price = item.estimatedCost, adultMoneyBalance = adultMoneyBalance, currency = currency)
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("wishlist_detail_no_price")
+                ) {
+                    Text(
+                        text = "Add a price by editing this item to see whether you can afford it with Adult Money.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
 
             if (item.url.isNotBlank()) {

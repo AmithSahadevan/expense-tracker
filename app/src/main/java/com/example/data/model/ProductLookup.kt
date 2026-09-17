@@ -103,3 +103,63 @@ object CurrencySymbols {
         return userSymbol.trim() in symbols
     }
 }
+
+/**
+ * What adding a product straight from its link saves, plus anything the user should know first.
+ * Nothing is guessed: details the page didn't provide are left empty for the user to add later.
+ */
+data class LinkAddPlan(
+    val input: WishlistItemInput,
+    /** Details that couldn't be read, e.g. ["price", "image"]. */
+    val missingDetails: List<String>,
+    /** Other things worth checking, as full sentences. */
+    val notes: List<String>
+) {
+    val isComplete: Boolean get() = missingDetails.isEmpty() && notes.isEmpty()
+}
+
+object LinkAddPlanner {
+    fun fromLookup(result: ProductLookupResult.Found, currency: String): LinkAddPlan {
+        val product = result.product
+        val priceMatchesCurrency = CurrencySymbols.matches(product.currencyCode, currency)
+        val price = product.price?.takeIf { priceMatchesCurrency }
+        val store = product.store ?: StoreNames.fromUrl(result.url).orEmpty()
+
+        val missing = buildList {
+            if (product.title == null) add("name")
+            if (price == null) add("price")
+            if (product.imageUrl == null) add("image")
+        }
+        val notes = buildList {
+            if (product.price != null && !priceMatchesCurrency) {
+                add("The price is listed in ${product.currencyCode}, so it wasn't added.")
+            }
+            if (!product.looksLikeProductPage) add("This link may not lead to a product page.")
+        }
+        return LinkAddPlan(
+            input = WishlistItemInput(
+                title = product.title ?: untitled(result.url, store),
+                price = price ?: 0.0,
+                url = result.url,
+                imageUrl = product.imageUrl.orEmpty(),
+                store = store,
+                description = product.description.orEmpty()
+            ),
+            missingDetails = missing,
+            notes = notes
+        )
+    }
+
+    /** Used when the page couldn't be read at all: only the link and the store name are known. */
+    fun linkOnly(url: String): LinkAddPlan {
+        val store = StoreNames.fromUrl(url).orEmpty()
+        return LinkAddPlan(
+            input = WishlistItemInput(title = untitled(url, store), price = 0.0, url = url, store = store),
+            missingDetails = listOf("name", "price", "image"),
+            notes = emptyList()
+        )
+    }
+
+    private fun untitled(url: String, store: String): String =
+        "Product from ${store.ifBlank { WebLinks.displayHost(url) }}"
+}

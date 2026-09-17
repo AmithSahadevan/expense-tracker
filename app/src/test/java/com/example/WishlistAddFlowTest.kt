@@ -1,6 +1,9 @@
 package com.example
 
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -50,13 +53,13 @@ class WishlistAddFlowTest {
         }
     }
 
-    private fun pasteAndFetch(text: String) {
+    private fun pasteAndAdd(text: String) {
         composeTestRule.onNodeWithTag("wishlist_link_input").performTextInput(text)
-        composeTestRule.onNodeWithTag("wishlist_fetch_details").performClick()
+        composeTestRule.onNodeWithTag("wishlist_add_from_link").performClick()
     }
 
     @Test
-    fun pastedLinkIsReadIntoAnEditableReview() {
+    fun completeProductIsAddedStraightFromTheLink() {
         showAddForm { link ->
             ProductLookupResult.Found(
                 link,
@@ -64,6 +67,7 @@ class WishlistAddFlowTest {
                     title = "Sony WH-1000XM5",
                     price = 28_000.0,
                     currencyCode = "INR",
+                    imageUrl = "https://m.media-amazon.com/sony.jpg",
                     description = "Noise cancelling",
                     store = "Amazon",
                     looksLikeProductPage = true
@@ -71,22 +75,12 @@ class WishlistAddFlowTest {
             )
         }
 
-        pasteAndFetch("Look at this https://www.amazon.in/dp/B0C8")
+        pasteAndAdd("Look at this https://www.amazon.in/dp/B0C8")
 
-        composeTestRule.onNodeWithText("Details found on amazon.in", substring = true).assertExists()
-        composeTestRule.onNodeWithText("Couldn't find the image", substring = true).assertExists()
-        composeTestRule.onNodeWithTag("wishlist_form_name").assertTextContains("Sony WH-1000XM5")
-        composeTestRule.onNodeWithTag("wishlist_form_price").assertTextContains("28000")
-        composeTestRule.onNodeWithTag("wishlist_form_store").assertTextContains("Amazon")
-        // Affordability is unchanged: Adult Money only.
-        composeTestRule.onNodeWithText("₹8,000 more needed", substring = true).assertExists()
-
-        composeTestRule.onNodeWithTag("wishlist_form_name").performTextReplacement("Sony XM5 (Black)")
-        composeTestRule.onNodeWithTag("wishlist_form_save").performScrollTo().performClick()
-
+        composeTestRule.onNodeWithTag("wishlist_incomplete_dialog").assertDoesNotExist()
         assertEquals(listOf("https://www.amazon.in/dp/B0C8"), lookedUp)
         val input = saved.single()
-        assertEquals("Sony XM5 (Black)", input.title)
+        assertEquals("Sony WH-1000XM5", input.title)
         assertEquals(28_000.0, input.price, 0.001)
         assertEquals("https://www.amazon.in/dp/B0C8", input.url)
         assertEquals("Amazon", input.store)
@@ -94,19 +88,85 @@ class WishlistAddFlowTest {
     }
 
     @Test
-    fun blockedPageFallsBackToManualEntryKeepingTheLink() {
+    fun incompleteDetailsAskBeforeAddingAnyway() {
+        showAddForm { link ->
+            ProductLookupResult.Found(link, ExtractedProduct(title = "Echo Dot", store = "Amazon", looksLikeProductPage = true))
+        }
+
+        pasteAndAdd("https://www.amazon.in/dp/B0C8")
+
+        composeTestRule.onNodeWithText("Some details are incomplete").assertExists()
+        composeTestRule.onNodeWithText("couldn't retrieve the price and image for this product from amazon.in", substring = true)
+            .assertExists()
+        assertTrue(saved.isEmpty())
+
+        composeTestRule.onNodeWithTag("wishlist_add_anyway").performClick()
+
+        val input = saved.single()
+        assertEquals("Echo Dot", input.title)
+        assertEquals(0.0, input.price, 0.001)
+        assertEquals("https://www.amazon.in/dp/B0C8", input.url)
+    }
+
+    @Test
+    fun reviewDetailsOpensTheEditableForm() {
+        showAddForm { link ->
+            ProductLookupResult.Found(
+                link,
+                ExtractedProduct(title = "Sony WH-1000XM5", price = 28_000.0, currencyCode = "INR", store = "Amazon", looksLikeProductPage = true)
+            )
+        }
+
+        pasteAndAdd("https://www.amazon.in/dp/B0C8")
+        composeTestRule.onNodeWithTag("wishlist_review_details").performClick()
+
+        composeTestRule.onNodeWithText("Couldn't find the image", substring = true).assertExists()
+        composeTestRule.onNodeWithTag("wishlist_form_name").assertTextContains("Sony WH-1000XM5")
+        composeTestRule.onNodeWithTag("wishlist_form_price").assertTextContains("28000")
+        // Affordability is unchanged: Adult Money only.
+        composeTestRule.onNodeWithText("₹8,000 more needed", substring = true).assertExists()
+
+        composeTestRule.onNodeWithTag("wishlist_form_name").performTextReplacement("Sony XM5 (Black)")
+        composeTestRule.onNodeWithTag("wishlist_form_save").performScrollTo().performClick()
+
+        val input = saved.single()
+        assertEquals("Sony XM5 (Black)", input.title)
+        assertEquals(28_000.0, input.price, 0.001)
+        assertEquals("Amazon", input.store)
+    }
+
+    @Test
+    fun blockedPageCanBeAddedAsJustTheLink() {
         showAddForm { link -> ProductLookupResult.Failed(ProductLookupFailure.BLOCKED, link) }
 
-        pasteAndFetch("https://www.amazon.in/dp/B0C8")
+        pasteAndAdd("https://www.amazon.in/dp/B0C8")
 
-        composeTestRule.onNodeWithText("doesn't let apps read its product pages", substring = true).assertExists()
-        composeTestRule.onNodeWithTag("wishlist_lookup_retry").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Product details unavailable").assertExists()
+        composeTestRule.onNode(
+            hasText("doesn't let apps read its product pages", substring = true) and
+                hasAnyAncestor(hasTestTag("wishlist_incomplete_dialog"))
+        ).assertExists()
 
-        composeTestRule.onNodeWithTag("wishlist_enter_manually").performClick()
+        composeTestRule.onNodeWithTag("wishlist_add_anyway").performClick()
+
+        val input = saved.single()
+        assertEquals("Product from Amazon", input.title)
+        assertEquals(0.0, input.price, 0.001)
+        assertEquals("https://www.amazon.in/dp/B0C8", input.url)
+        assertEquals("Amazon", input.store)
+    }
+
+    @Test
+    fun blockedPageCanBeFilledInManuallyKeepingTheLink() {
+        showAddForm { link -> ProductLookupResult.Failed(ProductLookupFailure.BLOCKED, link) }
+
+        pasteAndAdd("https://www.amazon.in/dp/B0C8")
+        composeTestRule.onNodeWithTag("wishlist_review_details").performClick()
+
         composeTestRule.onNodeWithTag("wishlist_form_url").assertTextContains("https://www.amazon.in/dp/B0C8")
         composeTestRule.onNodeWithTag("wishlist_form_store").assertTextContains("Amazon")
 
-        // Nothing is saved until the required details are filled in.
+        // Nothing is saved without a name.
         composeTestRule.onNodeWithTag("wishlist_form_save").performScrollTo().performClick()
         composeTestRule.onNodeWithText("Product name is required").assertExists()
         assertTrue(saved.isEmpty())
@@ -125,45 +185,30 @@ class WishlistAddFlowTest {
     fun invalidLinkIsRejectedWithoutFetching() {
         showAddForm { error("lookup must not run for an invalid link") }
 
-        pasteAndFetch("not a link")
+        pasteAndAdd("not a link")
 
         composeTestRule.onNodeWithText("doesn't look like a web link", substring = true).assertExists()
+        composeTestRule.onNodeWithTag("wishlist_incomplete_dialog").assertDoesNotExist()
         assertTrue(lookedUp.isEmpty())
+        assertTrue(saved.isEmpty())
     }
 
     @Test
-    fun connectionFailureCanBeRetried() {
-        var attempts = 0
-        showAddForm { link ->
-            attempts++
-            if (attempts == 1) {
-                ProductLookupResult.Failed(ProductLookupFailure.NO_CONNECTION, link)
-            } else {
-                ProductLookupResult.Found(link, ExtractedProduct(title = "Kettle", price = 1_999.0, looksLikeProductPage = true))
-            }
-        }
-
-        pasteAndFetch("https://kitchen.example.com/kettle")
-        composeTestRule.onNodeWithText("Couldn't reach that website", substring = true).assertExists()
-
-        composeTestRule.onNodeWithTag("wishlist_lookup_retry").performClick()
-
-        composeTestRule.onNodeWithTag("wishlist_form_name").assertTextContains("Kettle")
-        composeTestRule.onNodeWithText("₹18,001 left after purchase", substring = true).assertExists()
-        assertEquals(2, attempts)
-    }
-
-    @Test
-    fun priceInAnotherCurrencyIsFlaggedForReview() {
+    fun priceInAnotherCurrencyIsLeftOutAndFlagged() {
         showAddForm { link ->
             ProductLookupResult.Found(
                 link,
-                ExtractedProduct(title = "Keyboard", price = 99.0, currencyCode = "USD", looksLikeProductPage = true)
+                ExtractedProduct(
+                    title = "Keyboard", price = 99.0, currencyCode = "USD",
+                    imageUrl = "https://keys.example.com/k.jpg", looksLikeProductPage = true
+                )
             )
         }
 
-        pasteAndFetch("https://keys.example.com/k1")
+        pasteAndAdd("https://keys.example.com/k1")
 
-        composeTestRule.onNodeWithText("lists the price in USD", substring = true).assertExists()
+        composeTestRule.onNodeWithText("listed in USD, so it wasn't added", substring = true).assertExists()
+        composeTestRule.onNodeWithTag("wishlist_add_anyway").performClick()
+        assertEquals(0.0, saved.single().price, 0.001)
     }
 }
