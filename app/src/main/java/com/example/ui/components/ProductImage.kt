@@ -58,7 +58,7 @@ fun ProductImage(
                     .crossfade(true)
                     .build(),
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
+                contentScale = ContentScale.Crop,
                 onSuccess = { loaded = true },
                 onError = { loaded = false },
                 modifier = Modifier.matchParentSize()

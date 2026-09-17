@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,18 +23,19 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyGridScope
-import androidx.compose.foundation.lazy.grid.LazyGridState
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.StarOutline
@@ -63,7 +65,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,6 +93,7 @@ import com.example.ui.components.ProductImage
 import com.example.ui.components.PurchasedBadge
 import com.example.ui.components.WishlistItemFormSheet
 import com.example.ui.components.formatMoney
+import kotlin.random.Random
 
 @Composable
 fun WishlistScreen(
@@ -118,7 +126,7 @@ fun WishlistScreen(
         }
     }
     // Hoisted so the list keeps its scroll position after returning from a product's details.
-    val gridState = rememberLazyGridState()
+    val gridState = rememberLazyStaggeredGridState()
 
     val selectedItem = wishlistItems.find { it.id == selectedItemId }
     BackHandler(enabled = selectedItem != null) { selectedItemId = null }
@@ -204,8 +212,11 @@ fun WishlistScreen(
     }
 }
 
-private fun LazyGridScope.fullWidthItem(key: String, content: @Composable () -> Unit) {
-    item(key = key, span = { GridItemSpan(maxLineSpan) }) { content() }
+private fun LazyStaggeredGridScope.fullWidthItem(
+    key: String,
+    content: @Composable () -> Unit
+) {
+    item(key = key, span = StaggeredGridItemSpan.FullLine) { content() }
 }
 
 @Composable
@@ -215,7 +226,7 @@ private fun WishlistBrowse(
     onFilterChange: (WishlistFilter) -> Unit,
     adultMoneyBalance: Double,
     currency: String,
-    gridState: LazyGridState,
+    gridState: LazyStaggeredGridState,
     onOpenItem: (WishlistItemEntity) -> Unit,
     onAddClick: () -> Unit
 ) {
@@ -233,17 +244,17 @@ private fun WishlistBrowse(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = Modifier.testTag("wishlist_screen")
     ) { innerPadding ->
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 150.dp),
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
             state = gridState,
             contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
+                start = 12.dp,
+                end = 12.dp,
                 top = innerPadding.calculateTopPadding() + 12.dp,
                 bottom = 160.dp
             ),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalItemSpacing = 16.dp,
             modifier = Modifier.fillMaxSize()
         ) {
             fullWidthItem("header") {
@@ -322,7 +333,8 @@ private fun WishlistBrowse(
                                         onClick = {
                                             onFilterChange(option)
                                             showFilterMenu = false
-                                        }
+                                        },
+                                        modifier = Modifier.testTag("wishlist_filter_${option.name.lowercase()}")
                                     )
                                 }
                             }
@@ -349,8 +361,6 @@ private fun WishlistBrowse(
                 items(visibleItems, key = { it.id }) { item ->
                     WishlistProductCard(
                         item = item,
-                        adultMoneyBalance = adultMoneyBalance,
-                        currency = currency,
                         onClick = { onOpenItem(item) }
                     )
                 }
@@ -404,26 +414,28 @@ private fun WishlistSpendingPowerCard(
 @Composable
 private fun WishlistProductCard(
     item: WishlistItemEntity,
-    adultMoneyBalance: Double,
-    currency: String,
     onClick: () -> Unit
 ) {
-    val hasPrice = WishlistPrice.isSet(item.estimatedCost)
-    val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
+    // Pinterest-style variable height logic
+    val randomRatio = remember(item.id) { Random(item.id).nextFloat() * 0.5f + 0.8f }
 
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .testTag("wishlist_card_${item.id}")
     ) {
-        Column {
+        Card(
+            onClick = onClick,
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
+                    .aspectRatio(randomRatio)
             ) {
                 ProductImage(
                     imageUrl = item.imageUrl,
@@ -431,85 +443,60 @@ private fun WishlistProductCard(
                     modifier = Modifier
                         .matchParentSize()
                         .alpha(if (item.isPurchased) 0.5f else 1f)
-                        .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                 )
+                
                 PriorityBadge(
                     priority = item.priority,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(8.dp)
                 )
-            }
-
-            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-                Text(
-                    text = item.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    minLines = 2,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = item.store.ifBlank { "Store not added" },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = if (hasPrice) formatMoney(currency, item.estimatedCost) else "Price not added",
-                    style = if (hasPrice) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
-                    else MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (hasPrice) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Fixed minimum height keeps cards in the same row aligned.
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .heightIn(min = 58.dp)
-                        .testTag("wishlist_status_${item.id}")
-                ) {
-                    when {
-                        item.isPurchased -> PurchasedBadge()
-                        !hasPrice -> Text(
-                            text = "Add a price to check affordability",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                        affordability is WishlistAffordability.CanAfford -> {
-                            AffordabilityChip(result = affordability, currency = currency)
-                            Text(
-                                text = "${formatMoney(currency, affordability.remainingAfterPurchase)} left after purchase",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2
-                            )
-                        }
-                        affordability is WishlistAffordability.MoreNeeded -> {
-                            Text(
-                                text = "${formatMoney(currency, affordability.amountNeeded)} more needed",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 2
-                            )
-                            LinearProgressIndicator(
-                                progress = { affordability.progress },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp),
-                                color = Color.White,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        }
+                
+                if (item.isPurchased) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                    ) {
+                        PurchasedBadge()
                     }
                 }
             }
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 4.dp, vertical = 6.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier
+                    .weight(1f)
+                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                0.8f to Color.Black,
+                                1.0f to Color.Transparent
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+            )
+            Icon(
+                imageVector = Icons.Default.MoreHoriz,
+                contentDescription = "Options",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
