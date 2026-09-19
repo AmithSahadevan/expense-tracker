@@ -147,7 +147,6 @@ fun WishlistItemForm(
     var store by remember { mutableStateOf(initialItem?.store ?: "") }
     var productUrl by remember { mutableStateOf(initialItem?.url ?: "") }
     var imageUrl by remember { mutableStateOf(initialItem?.imageUrl ?: "") }
-    var description by remember { mutableStateOf(initialItem?.description ?: "") }
     var notes by remember { mutableStateOf(initialItem?.notes ?: "") }
     var priority by remember { mutableStateOf(initialItem?.priority ?: WishlistPriority.MEDIUM) }
     var dateAdded by remember { mutableStateOf(initialItem?.dateAdded ?: System.currentTimeMillis()) }
@@ -179,7 +178,6 @@ fun WishlistItemForm(
                 product.title?.let { name = it }
                 product.price?.let { priceText = plainAmount(it) }
                 product.imageUrl?.let { imageUrl = it }
-                product.description?.let { description = it }
                 product.store?.let { store = it }
                 if (!addWhenDone) step = FormStep.DETAILS
             }
@@ -246,7 +244,7 @@ fun WishlistItemForm(
                     url = productUrl,
                     imageUrl = imageUrl,
                     store = store,
-                    description = description,
+                    description = "",
                     dateAdded = dateAdded,
                     targetPurchaseDate = targetDate,
                     notes = notes,
@@ -399,18 +397,6 @@ fun WishlistItemForm(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("wishlist_form_url")
-                )
-
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    placeholder = { Text("Colour, size, model…") },
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    minLines = 2,
-                    maxLines = 4,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Text(

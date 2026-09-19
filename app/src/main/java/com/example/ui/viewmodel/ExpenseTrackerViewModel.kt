@@ -31,10 +31,8 @@ import com.example.data.repository.ExpenseTrackerRepository
 import com.example.ui.components.formatMoney
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -78,9 +76,6 @@ class ExpenseTrackerViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
-
-    private val _actionMessage = MutableStateFlow<String?>(null)
-    val actionMessage: StateFlow<String?> = _actionMessage.asStateFlow()
 
     // --- Isolated Transactions for Active User ---
     val transactions: StateFlow<List<TransactionItem>> = currentUser.flatMapLatest { user ->
@@ -252,7 +247,7 @@ class ExpenseTrackerViewModel(
     )
 
     fun clearActionMessage() {
-        _actionMessage.value = null
+        // No-op
     }
 
     // --- Action Handlers with Strict User Data Association ---
@@ -280,7 +275,6 @@ class ExpenseTrackerViewModel(
                     paymentMethod = paymentMethod,
                     recurrence = recurrence
                 )
-                _actionMessage.value = "💸 Expense added: ${user.currencySymbol}${String.format("%.0f", amount)}"
             } else {
                 repository.addIncome(
                     userId = user.id,
@@ -292,7 +286,6 @@ class ExpenseTrackerViewModel(
                     paymentMethod = paymentMethod,
                     recurrence = recurrence
                 )
-                _actionMessage.value = "💰 Income logged: ${user.currencySymbol}${String.format("%.0f", amount)}"
             }
         }
     }
@@ -335,7 +328,6 @@ class ExpenseTrackerViewModel(
                     recurrence = recurrence
                 )
             }
-            _actionMessage.value = "Transaction updated."
         }
     }
 
@@ -355,7 +347,6 @@ class ExpenseTrackerViewModel(
                     recurrence = "MONTHLY"
                 )
             }
-            _actionMessage.value = "Salary set to ${user.currencySymbol}${String.format("%.0f", salary)} (Payday: Day $payday)"
         }
     }
 
@@ -369,7 +360,6 @@ class ExpenseTrackerViewModel(
                 type = type,
                 colorHex = colorHex
             )
-            _actionMessage.value = "Category \"$name\" created!"
         }
     }
 
@@ -377,7 +367,6 @@ class ExpenseTrackerViewModel(
         val user = currentUser.value ?: return
         viewModelScope.launch {
             repository.deleteCustomCategory(user.id, id)
-            _actionMessage.value = "Category deleted."
         }
     }
 
@@ -386,7 +375,6 @@ class ExpenseTrackerViewModel(
         if (item.userId != user.id) return // Security check
         viewModelScope.launch {
             repository.deleteTransaction(user.id, item.id, item.type)
-            _actionMessage.value = "Transaction removed."
         }
     }
 
@@ -395,7 +383,6 @@ class ExpenseTrackerViewModel(
         val clean = cleanWishlistInput(input) ?: return
         viewModelScope.launch {
             repository.addWishlistItem(user.id, clean)
-            _actionMessage.value = "✨ ${clean.title} added to wishlist!"
         }
     }
 
@@ -403,8 +390,7 @@ class ExpenseTrackerViewModel(
         val user = currentUser.value ?: return
         val clean = cleanWishlistInput(input) ?: return
         viewModelScope.launch {
-            val updated = repository.updateWishlistItem(user.id, id, clean)
-            _actionMessage.value = if (updated) "Wishlist item updated." else "Wishlist item not found."
+            repository.updateWishlistItem(user.id, id, clean)
         }
     }
 
@@ -416,17 +402,11 @@ class ExpenseTrackerViewModel(
         if (item.userId != user.id) return
         viewModelScope.launch {
             repository.deleteWishlistItem(user.id, item.id)
-            _actionMessage.value = "Removed \"${item.title}\" from wishlist."
         }
     }
 
     private fun cleanWishlistInput(input: WishlistItemInput): WishlistItemInput? {
-        val clean = WishlistInputValidator.clean(input)
-        if (clean == null) {
-            val errors = WishlistInputValidator.validate(input)
-            _actionMessage.value = errors.title ?: errors.price ?: errors.url ?: errors.imageUrl
-        }
-        return clean
+        return WishlistInputValidator.clean(input)
     }
 
     fun toggleWishlistItem(item: WishlistItemEntity) {
@@ -442,8 +422,6 @@ class ExpenseTrackerViewModel(
         val clean = cleanMoneyFlowInput(input) ?: return
         viewModelScope.launch {
             repository.addMoneyFlow(user.id, clean)
-            val label = if (clean.direction == MoneyFlowDirection.OWED_TO_ME) "owes you" else "is owed"
-            _actionMessage.value = "${clean.personName} $label ${formatMoney(user.currencySymbol, clean.amount)}"
         }
     }
 
@@ -451,8 +429,7 @@ class ExpenseTrackerViewModel(
         val user = currentUser.value ?: return
         val clean = cleanMoneyFlowInput(input) ?: return
         viewModelScope.launch {
-            val updated = repository.updateMoneyFlow(user.id, id, clean)
-            _actionMessage.value = if (updated) "Money flow updated." else "Money flow record not found."
+            repository.updateMoneyFlow(user.id, id, clean)
         }
     }
 
@@ -461,7 +438,6 @@ class ExpenseTrackerViewModel(
         if (item.userId != user.id) return
         viewModelScope.launch {
             repository.deleteMoneyFlow(user.id, item.id)
-            _actionMessage.value = "Removed the record with ${item.personName}."
         }
     }
 
@@ -471,24 +447,17 @@ class ExpenseTrackerViewModel(
         viewModelScope.launch {
             // Settling only flips this record's status: income, expenses and past entries stay untouched.
             repository.setMoneyFlowSettled(user.id, item.id, !item.isSettled)
-            _actionMessage.value = if (!item.isSettled) "Settled with ${item.personName}." else "Marked as pending again."
         }
     }
 
     private fun cleanMoneyFlowInput(input: MoneyFlowInput): MoneyFlowInput? {
-        val clean = MoneyFlowValidator.clean(input)
-        if (clean == null) {
-            val errors = MoneyFlowValidator.validate(input)
-            _actionMessage.value = errors.personName ?: errors.amount
-        }
-        return clean
+        return MoneyFlowValidator.clean(input)
     }
 
     fun addSavingsGoal(title: String, goalAmount: Double, emoji: String = "🎯") {
         val user = currentUser.value ?: return
         viewModelScope.launch {
             repository.addSavingsGoal(user.id, title, goalAmount, 0.0, emoji)
-            _actionMessage.value = "🎯 Savings goal created: $title"
         }
     }
 
@@ -502,10 +471,8 @@ class ExpenseTrackerViewModel(
         affectsAvailableMoney: Boolean = true
     ) {
         val user = currentUser.value ?: return
-        if (amount <= 0) {
-            _actionMessage.value = "Enter an amount greater than zero."
-            return
-        }
+        if (amount <= 0) return
+
         val candidate = SavingsTransactionEntity(
             userId = user.id,
             savingsType = savingsType,
@@ -528,8 +495,6 @@ class ExpenseTrackerViewModel(
                 date = date,
                 affectsAvailableMoney = affectsAvailableMoney
             )
-            val actionLabel = if (transactionType == SavingsActionType.DEPOSIT) "added to" else "withdrawn from"
-            _actionMessage.value = "${formatMoney(user.currencySymbol, amount)} $actionLabel ${savingsTypeLabel(savingsType)}"
         }
     }
 
@@ -544,10 +509,8 @@ class ExpenseTrackerViewModel(
         affectsAvailableMoney: Boolean = true
     ) {
         val user = currentUser.value ?: return
-        if (amount <= 0) {
-            _actionMessage.value = "Enter an amount greater than zero."
-            return
-        }
+        if (amount <= 0) return
+
         val candidate = SavingsTransactionEntity(
             id = id,
             userId = user.id,
@@ -561,7 +524,7 @@ class ExpenseTrackerViewModel(
         )
         if (rejectIfBalanceWouldGoNegative(removedId = id, added = candidate)) return
         viewModelScope.launch {
-            val updated = repository.updateSavingsTransaction(
+            repository.updateSavingsTransaction(
                 userId = user.id,
                 id = id,
                 savingsType = savingsType,
@@ -572,7 +535,6 @@ class ExpenseTrackerViewModel(
                 date = date,
                 affectsAvailableMoney = affectsAvailableMoney
             )
-            _actionMessage.value = if (updated) "Savings record updated." else "Savings record not found."
         }
     }
 
@@ -589,17 +551,12 @@ class ExpenseTrackerViewModel(
         if (rejectIfBalanceWouldGoNegative(removedId = id, added = null)) return
         viewModelScope.launch {
             repository.deleteSavingsTransaction(user.id, id)
-            _actionMessage.value = "Savings record removed."
         }
     }
 
     private fun rejectIfBalanceWouldGoNegative(removedId: Long?, added: SavingsTransactionEntity?): Boolean {
-        val negativeType = SavingsCalculator.typeThatWouldGoNegative(savingsTransactions.value, removedId, added)
+        SavingsCalculator.typeThatWouldGoNegative(savingsTransactions.value, removedId, added)
             ?: return false
-        val currency = currentUser.value?.currencySymbol ?: "₹"
-        val balance = SavingsCalculator.balance(savingsTransactions.value, negativeType)
-        _actionMessage.value = "Not enough in ${savingsTypeLabel(negativeType)} " +
-            "(balance ${formatMoney(currency, balance)}). Balances can't go below zero."
         return true
     }
 
@@ -610,7 +567,6 @@ class ExpenseTrackerViewModel(
         val user = currentUser.value ?: return
         viewModelScope.launch {
             repository.addBudget(user.id, category, allocatedAmount)
-            _actionMessage.value = "📊 Budget envelope set for $category"
         }
     }
 
@@ -636,7 +592,6 @@ class ExpenseTrackerViewModel(
                 avatarImagePath = avatarImagePath
             )
             result.onSuccess {
-                _actionMessage.value = "🎉 Welcome aboard, ${it.displayName}!"
                 onSuccess()
             }.onFailure {
                 onError(it.message ?: "Could not register user")
@@ -646,7 +601,6 @@ class ExpenseTrackerViewModel(
 
     fun switchUser(user: UserEntity) {
         authRepository.switchUser(user)
-        _actionMessage.value = "Switched account to ${user.displayName}"
     }
 
     fun logout() {

@@ -141,9 +141,7 @@ fun AppShell(
     val wishlist by viewModel.wishlist.collectAsStateWithLifecycle()
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
     val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
-    val actionMessage by viewModel.actionMessage.collectAsStateWithLifecycle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     val pagerDestinations = remember {
@@ -189,13 +187,6 @@ fun AppShell(
     val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val moreHubSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    LaunchedEffect(actionMessage) {
-        actionMessage?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
-            viewModel.clearActionMessage()
-        }
-    }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isWideScreen = maxWidth >= 720.dp
@@ -253,9 +244,7 @@ fun AppShell(
                 }
 
                 // Main Content for Wide Screens
-                Scaffold(
-                    snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-                ) { innerPadding ->
+                Scaffold { innerPadding ->
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -308,8 +297,7 @@ fun AppShell(
         } else {
             // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
             Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+                modifier = Modifier.fillMaxSize()
             ) { innerPadding ->
                 Box(
                     modifier = Modifier

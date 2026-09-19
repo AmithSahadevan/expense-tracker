@@ -2,16 +2,19 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,16 +40,26 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.WishlistItemEntity
@@ -128,11 +141,34 @@ fun WishlistItemDetail(
                     PriorityBadge(item.priority)
                     if (item.isPurchased) PurchasedBadge()
                 }
+                
+                var titleExpanded by remember { mutableStateOf(false) }
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = if (titleExpanded) Int.MAX_VALUE else 2,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier
+                        .clickable { titleExpanded = !titleExpanded }
+                        .then(
+                            if (!titleExpanded) {
+                                Modifier
+                                    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                                    .drawWithContent {
+                                        drawContent()
+                                        drawRect(
+                                            brush = Brush.verticalGradient(
+                                                0.6f to Color.Black,
+                                                1.0f to Color.Transparent
+                                            ),
+                                            blendMode = BlendMode.DstIn
+                                        )
+                                    }
+                            } else Modifier
+                        )
                 )
+
                 Text(
                     text = listOfNotNull(
                         item.store.takeIf { it.isNotBlank() },
@@ -199,26 +235,74 @@ fun WishlistItemDetail(
                 }
             }
 
-            if (item.url.isNotBlank()) {
-                OutlinedButton(
-                    onClick = {
-                        try {
-                            uriHandler.openUri(WebLinks.normalize(item.url) ?: item.url)
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Couldn't open this link", Toast.LENGTH_SHORT).show()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (item.url.isNotBlank()) {
+                    OutlinedButton(
+                        onClick = {
+                            try {
+                                uriHandler.openUri(WebLinks.normalize(item.url) ?: item.url)
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Couldn't open this link", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .testTag("wishlist_detail_open_link")
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "View",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                if (item.isPurchased) {
+                    OutlinedButton(
+                        onClick = onTogglePurchased,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .testTag("wishlist_detail_toggle_purchased")
+                    ) {
+                        Text(
+                            text = "Move Back",
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                } else {
+                    Button(
+                        onClick = onTogglePurchased,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp)
+                            .testTag("wishlist_detail_toggle_purchased")
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(imageVector = Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text(
+                                text = "Purchased",
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
-                    },
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("wishlist_detail_open_link")
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text(
-                        text = "View on ${WebLinks.displayHost(item.url)}",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
+                    }
                 }
             }
 
@@ -229,36 +313,7 @@ fun WishlistItemDetail(
                     body = "${dateFormat.format(Date(target))} · ${RelativeDates.describe(target)}"
                 )
             }
-            if (item.description.isNotBlank()) DetailSection(label = "DESCRIPTION", body = item.description)
             if (item.notes.isNotBlank()) DetailSection(label = "NOTES", body = item.notes)
-
-            if (item.isPurchased) {
-                OutlinedButton(
-                    onClick = onTogglePurchased,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .testTag("wishlist_detail_toggle_purchased")
-                ) { Text("Move back to wishlist", fontWeight = FontWeight.Bold) }
-            } else {
-                Button(
-                    onClick = onTogglePurchased,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .testTag("wishlist_detail_toggle_purchased")
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(imageVector = Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("Mark as purchased", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
         }
     }
 }
@@ -363,14 +418,27 @@ private fun BreakdownRow(label: String, value: String, emphasized: Boolean = fal
 }
 
 @Composable
-private fun DetailSection(label: String, body: String, icon: ImageVector? = null) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun DetailSection(
+    label: String,
+    body: String,
+    icon: ImageVector? = null,
+    collapsable: Boolean = false,
+    initialMaxLines: Int = Int.MAX_VALUE
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.then(if (collapsable) Modifier.clickable { expanded = !expanded } else Modifier)
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.2.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
@@ -379,7 +447,29 @@ private fun DetailSection(label: String, body: String, icon: ImageVector? = null
                     modifier = Modifier.size(16.dp)
                 )
             }
-            Text(text = body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = if (expanded) Int.MAX_VALUE else initialMaxLines,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.then(
+                    if (collapsable && !expanded) {
+                        Modifier
+                            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                            .drawWithContent {
+                                drawContent()
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        0.5f to Color.Black,
+                                        1.0f to Color.Transparent
+                                    ),
+                                    blendMode = BlendMode.DstIn
+                                )
+                            }
+                    } else Modifier
+                )
+            )
         }
     }
 }
