@@ -181,6 +181,7 @@ fun AppShell(
     var transactionToDelete by remember { mutableStateOf<TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
     var showMoreMenuSheet by remember { mutableStateOf(false) }
+    var isWishlistDetailActive by remember { mutableStateOf(false) }
     // Page whose own add form the dock's add button asked to open; cleared once that page opens it.
     var dockAddRequest by remember { mutableStateOf<AppDestination?>(null) }
 
@@ -342,30 +343,34 @@ fun AppShell(
                         onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
                         onAddBudget = { c, a -> viewModel.addBudget(c, a) },
                         dockAddRequest = dockAddRequest,
-                        onDockAddRequestHandled = { dockAddRequest = null }
+                        onDockAddRequestHandled = { dockAddRequest = null },
+                        onWishlistDetailToggle = { isWishlistDetailActive = it }
                     )
 
-                    AmoebaFloatingBottomDocker(
-                        currentDestination = currentDestination,
-                        pageOrder = pagerDestinations,
-                        onNavigate = { dest -> navigateToDestination(dest.route) },
-                        onDockAdd = {
-                            when (currentDestination) {
-                                AppDestination.TRANSACTIONS -> {
-                                    editingTransaction = null
-                                    showAddTransactionSheet = true
+                    val showDock = if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
+                    if (showDock) {
+                        AmoebaFloatingBottomDocker(
+                            currentDestination = currentDestination,
+                            pageOrder = pagerDestinations,
+                            onNavigate = { dest -> navigateToDestination(dest.route) },
+                            onDockAdd = {
+                                when (currentDestination) {
+                                    AppDestination.TRANSACTIONS -> {
+                                        editingTransaction = null
+                                        showAddTransactionSheet = true
+                                    }
+                                    AppDestination.WISHLIST,
+                                    AppDestination.MONEY_FLOW,
+                                    AppDestination.BUDGETS -> dockAddRequest = currentDestination
+                                    AppDestination.HOME,
+                                    AppDestination.SAVINGS,
+                                    AppDestination.SETTINGS -> Unit
                                 }
-                                AppDestination.WISHLIST,
-                                AppDestination.MONEY_FLOW,
-                                AppDestination.BUDGETS -> dockAddRequest = currentDestination
-                                AppDestination.HOME,
-                                AppDestination.SAVINGS,
-                                AppDestination.SETTINGS -> Unit
-                            }
-                        },
-                        onOpenMoreMenu = { showMoreMenuSheet = true },
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
+                            },
+                            onOpenMoreMenu = { showMoreMenuSheet = true },
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
+                    }
                 }
             }
         }
@@ -705,7 +710,8 @@ private fun ScreenRouter(
     onDeleteSavingsTransaction: (Long) -> Unit,
     onAddBudget: (String, Double) -> Unit,
     dockAddRequest: AppDestination? = null,
-    onDockAddRequestHandled: () -> Unit = {}
+    onDockAddRequestHandled: () -> Unit = {},
+    onWishlistDetailToggle: (Boolean) -> Unit = {}
 ) {
     HorizontalPager(
         state = pagerState,
@@ -750,7 +756,8 @@ private fun ScreenRouter(
                 onLookupProduct = onLookupProduct,
                 onTogglePurchased = onToggleWishlist,
                 addRequested = dockAddRequest == AppDestination.WISHLIST,
-                onAddRequestHandled = onDockAddRequestHandled
+                onAddRequestHandled = onDockAddRequestHandled,
+                onDetailViewToggle = onWishlistDetailToggle
             )
             AppDestination.SAVINGS -> SavingsScreen(
                 currentUser = currentUser,

@@ -109,7 +109,8 @@ fun WishlistScreen(
     modifier: Modifier = Modifier,
     // Set by the dock's add button; the screen opens its add form and reports back.
     addRequested: Boolean = false,
-    onAddRequestHandled: () -> Unit = {}
+    onAddRequestHandled: () -> Unit = {},
+    onDetailViewToggle: (Boolean) -> Unit = {}
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
@@ -117,6 +118,10 @@ fun WishlistScreen(
     var showForm by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<WishlistItemEntity?>(null) }
     var pendingDelete by remember { mutableStateOf<WishlistItemEntity?>(null) }
+
+    LaunchedEffect(selectedItemId) {
+        onDetailViewToggle(selectedItemId != null)
+    }
 
     LaunchedEffect(addRequested) {
         if (addRequested) {
@@ -443,13 +448,6 @@ private fun WishlistProductCard(
                     modifier = Modifier
                         .matchParentSize()
                         .alpha(if (item.isPurchased) 0.5f else 1f)
-                )
-                
-                PriorityBadge(
-                    priority = item.priority,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(8.dp)
                 )
                 
                 if (item.isPurchased) {

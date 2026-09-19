@@ -21,26 +21,20 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.WishlistAffordability
 import com.example.data.model.WishlistPriority
 
-private val CanAffordGreen = Color(0xFF10B981)
+private val CanAffordGreen = Color(0xFF55B894)
 
-private fun priorityColor(priority: String): Color = when (priority) {
-    WishlistPriority.MUST_HAVE -> Color(0xFFFF6B6B)
-    WishlistPriority.HIGH -> Color(0xFFFD79A8)
-    else -> Color(0xFF6C5CE7)
-}
-
-/** Priority tag. Uses a solid surface so it stays legible on top of product photos. */
+/** Priority tag. Uses a translucent white surface for a minimalist look. */
 @Composable
 fun PriorityBadge(priority: String, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        color = Color.White.copy(alpha = 0.12f),
         modifier = modifier
     ) {
         Text(
             text = WishlistPriority.label(priority).uppercase(),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp),
-            color = priorityColor(priority),
+            color = Color.White,
             modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
         )
     }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -48,6 +50,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -104,7 +108,7 @@ fun WishlistItemDetail(
                 .widthIn(max = 720.dp)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 120.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -118,7 +122,7 @@ fun WishlistItemDetail(
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = onEdit, modifier = Modifier.testTag("wishlist_detail_edit")) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit product", tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Default.Edit, contentDescription = "Edit product", tint = Color.White)
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.testTag("wishlist_detail_delete")) {
                     Icon(Icons.Default.DeleteOutline, contentDescription = "Delete product", tint = MaterialTheme.colorScheme.error)
@@ -143,25 +147,36 @@ fun WishlistItemDetail(
                 }
                 
                 var titleExpanded by remember { mutableStateOf(false) }
+                var titleOverflowing by remember { mutableStateOf(false) }
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = if (titleExpanded) Int.MAX_VALUE else 2,
                     overflow = TextOverflow.Clip,
+                    onTextLayout = { titleOverflowing = it.hasVisualOverflow },
                     modifier = Modifier
                         .clickable { titleExpanded = !titleExpanded }
                         .then(
-                            if (!titleExpanded) {
+                            if (titleOverflowing && !titleExpanded) {
                                 Modifier
                                     .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                                     .drawWithContent {
                                         drawContent()
+                                        // Top line stays solid
                                         drawRect(
-                                            brush = Brush.verticalGradient(
-                                                0.6f to Color.Black,
+                                            color = Color.Black,
+                                            size = Size(size.width, size.height / 2f),
+                                            blendMode = BlendMode.DstIn
+                                        )
+                                        // Bottom line fades at the end
+                                        drawRect(
+                                            brush = Brush.horizontalGradient(
+                                                0.7f to Color.Black,
                                                 1.0f to Color.Transparent
                                             ),
+                                            topLeft = Offset(0f, size.height / 2f),
+                                            size = Size(size.width, size.height / 2f),
                                             blendMode = BlendMode.DstIn
                                         )
                                     }
@@ -177,19 +192,20 @@ fun WishlistItemDetail(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (WishlistPrice.isSet(item.estimatedCost)) {
-                    Text(
-                        text = formatMoney(currency, item.estimatedCost),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                } else {
-                    Text(
-                        text = "Price not added",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            }
+
+            if (WishlistPrice.isSet(item.estimatedCost)) {
+                Text(
+                    text = formatMoney(currency, item.estimatedCost),
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            } else {
+                Text(
+                    text = "Price not added",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             if (item.isPurchased) {
@@ -217,7 +233,7 @@ fun WishlistItemDetail(
                     }
                 }
             } else if (WishlistPrice.isSet(item.estimatedCost)) {
-                AffordabilityBreakdownCard(price = item.estimatedCost, adultMoneyBalance = adultMoneyBalance, currency = currency)
+                AffordabilityBreakdown(price = item.estimatedCost, adultMoneyBalance = adultMoneyBalance, currency = currency)
             } else {
                 Surface(
                     shape = RoundedCornerShape(16.dp),
@@ -249,6 +265,8 @@ fun WishlistItemDetail(
                             }
                         },
                         shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF54A0FF)),
+                        border = BorderStroke(1.dp, Color(0xFF54A0FF).copy(alpha = 0.5f)),
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp)
@@ -269,6 +287,7 @@ fun WishlistItemDetail(
                     OutlinedButton(
                         onClick = onTogglePurchased,
                         shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp)
@@ -285,6 +304,7 @@ fun WishlistItemDetail(
                     Button(
                         onClick = onTogglePurchased,
                         shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF55B894)),
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp)
@@ -319,76 +339,57 @@ fun WishlistItemDetail(
 }
 
 @Composable
-private fun AffordabilityBreakdownCard(price: Double, adultMoneyBalance: Double, currency: String) {
+private fun AffordabilityBreakdown(price: Double, adultMoneyBalance: Double, currency: String) {
     val result = WishlistAffordabilityCalculator.evaluate(price, adultMoneyBalance)
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("wishlist_affordability_breakdown")
+            .testTag("wishlist_affordability_breakdown"),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Affordability",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Calculated with Adult Money only",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                AffordabilityChip(result = result, currency = currency)
-            }
-
-            BreakdownRow(label = "Current Adult Money", value = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)))
-            BreakdownRow(label = "Product price", value = formatMoney(currency, price))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            when (result) {
-                is WishlistAffordability.CanAfford -> BreakdownRow(
-                    label = "Remaining after purchase",
-                    value = formatMoney(currency, result.remainingAfterPurchase),
-                    emphasized = true
-                )
-                is WishlistAffordability.MoreNeeded -> {
-                    BreakdownRow(label = "More needed", value = formatMoney(currency, result.amountNeeded), emphasized = true)
-                    LinearProgressIndicator(
-                        progress = { result.progress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                    Text(
-                        text = "Your Adult Money covers ${(result.progress * 100).toInt()}% of the price",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(12.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Affordability",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Your Emergency Fund is protected and never used for wishlist purchases.",
+                    text = "Calculated with Adult Money only",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            AffordabilityChip(result = result, currency = currency)
+        }
+
+        BreakdownRow(label = "Current Adult Money", value = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)))
+        BreakdownRow(label = "Product price", value = formatMoney(currency, price))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        when (result) {
+            is WishlistAffordability.CanAfford -> BreakdownRow(
+                label = "Remaining after purchase",
+                value = formatMoney(currency, result.remainingAfterPurchase),
+                emphasized = true
+            )
+            is WishlistAffordability.MoreNeeded -> {
+                BreakdownRow(label = "More needed", value = formatMoney(currency, result.amountNeeded), emphasized = true)
+                LinearProgressIndicator(
+                    progress = { result.progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(CircleShape),
+                    color = Color(0xFF55B894),
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                Text(
+                    text = "Your Adult Money covers ${(result.progress * 100).toInt()}% of the price",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -426,6 +427,7 @@ private fun DetailSection(
     initialMaxLines: Int = Int.MAX_VALUE
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var overflowing by remember { mutableStateOf(false) }
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.then(if (collapsable) Modifier.clickable { expanded = !expanded } else Modifier)
@@ -453,15 +455,16 @@ private fun DetailSection(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = if (expanded) Int.MAX_VALUE else initialMaxLines,
                 overflow = TextOverflow.Clip,
+                onTextLayout = { overflowing = it.hasVisualOverflow },
                 modifier = Modifier.then(
-                    if (collapsable && !expanded) {
+                    if (collapsable && overflowing && !expanded) {
                         Modifier
                             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                             .drawWithContent {
                                 drawContent()
                                 drawRect(
-                                    brush = Brush.verticalGradient(
-                                        0.5f to Color.Black,
+                                    brush = Brush.horizontalGradient(
+                                        0.7f to Color.Black,
                                         1.0f to Color.Transparent
                                     ),
                                     blendMode = BlendMode.DstIn
