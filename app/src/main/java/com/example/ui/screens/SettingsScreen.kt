@@ -26,6 +26,19 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import java.io.InputStreamReader
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -67,11 +80,15 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     currentUser: UserEntity?,
-    allUsersCount: Int,
     onOpenAuthModal: () -> Unit,
     onUpdateSalaryAndPayday: (Double, Int, Boolean) -> Unit,
+    onUpdateCurrency: (String) -> Unit,
+    onExportData: suspend () -> String?,
+    onImportData: suspend (String) -> Boolean,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val onSurface = MaterialTheme.colorScheme.onSurface
     val userColor = remember(currentUser?.avatarColorHex, onSurface) {
         val hex = currentUser?.avatarColorHex ?: "#0C0F14"
@@ -88,7 +105,30 @@ fun SettingsScreen(
     }
 
     var showSalaryDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
     val currency = currentUser?.currencySymbol ?: "₹"
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                try {
+                    context.contentResolver.openInputStream(it)?.use { stream ->
+                        val json = InputStreamReader(stream).readText()
+                        val success = onImportData(json)
+                        if (success) {
+                            Toast.makeText(context, "Data imported successfully!", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, "Import failed. Invalid file.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error reading file", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -162,17 +202,28 @@ fun SettingsScreen(
                         }
                     }
 
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MintGreen.copy(alpha = 0.15f)
+                    IconButton(
+                        onClick = { showCurrencyDialog = true },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
                     ) {
-                        Text(
-                            text = "ACTIVE",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Black,
-                                color = MintGreen
-                            ),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        Icon(
+                            imageVector = Icons.Default.CurrencyExchange,
+                            contentDescription = "Change Currency",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onOpenAuthModal,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = "Switch Profile",
+                            tint = Color.White
                         )
                     }
                 }
@@ -182,14 +233,17 @@ fun SettingsScreen(
                 Button(
                     onClick = onOpenAuthModal,
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("switch_accounts_button")
+                        .testTag("create_account_button")
                 ) {
-                    Icon(imageVector = Icons.Default.SwapHoriz, contentDescription = null)
+                    Icon(imageVector = Icons.Default.People, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Switch Profile or Create Account ($allUsersCount registered)")
+                    Text("Create New Account")
                 }
             }
         }
@@ -311,9 +365,9 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Data Isolation & Security Card
+        // Data Portability Card (Export/Import)
         Text(
-            text = "SECURITY & DATA ISOLATION",
+            text = "DATA MANAGEMENT",
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp
@@ -323,89 +377,102 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier.padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF54A0FF).copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = Color(0xFF54A0FF))
+                    }
                     Column {
-                        Text(
-                            text = "Multi-User Isolation Enforced",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Every transaction, budget, savings goal, and wishlist item holds a verified userId foreign key. Queries are strictly parameterized so no user sees another's financial records.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(text = "Backup & Portability", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(text = "Export your data for Excel or move it between devices", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Storage,
-                        contentDescription = null,
-                        tint = MintGreen,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Local SQLite Room Database",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Zero cloud tracking or third-party telemetry. Designed modularly so a remote backend API or cloud sync can be connected in future steps.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                val json = onExportData()
+                                if (json != null) {
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, json)
+                                        type = "application/json"
+                                    }
+                                    val shareIntent = Intent.createChooser(sendIntent, "Export Data")
+                                    context.startActivity(shareIntent)
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Export")
                     }
-                }
 
-                Row(
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.People,
-                        contentDescription = null,
-                        tint = SunnyYellow,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Open Source Ready",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Clean architecture separating UI components, Screen pages, Data layers, Room entities, and ViewModel state.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Button(
+                        onClick = { importLauncher.launch("application/json") },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Import")
                     }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(30.dp))
+    }
+
+    // Currency Change Dialog
+    if (showCurrencyDialog) {
+        var symbolInput by remember { mutableStateOf(currency) }
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            title = { Text("Change Currency Symbol") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Enter the currency icon/symbol you want to use (e.g. $, €, £, ₹). This is visual only.", style = MaterialTheme.typography.bodySmall)
+                    OutlinedTextField(
+                        value = symbolInput,
+                        onValueChange = { symbolInput = it },
+                        label = { Text("Currency Symbol") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    onUpdateCurrency(symbolInput)
+                    showCurrencyDialog = false
+                }) { Text("Update") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     // Salary & Payday Edit Dialog

@@ -43,6 +43,9 @@ interface UserDao {
     @Query("UPDATE users SET monthlySalary = :salary, paydayDayOfMonth = :payday WHERE id = :userId")
     suspend fun updateSalaryAndPayday(userId: Long, salary: Double, payday: Int)
 
+    @Query("UPDATE users SET currencySymbol = :symbol WHERE id = :userId")
+    suspend fun updateCurrency(userId: Long, symbol: String)
+
     @Query("SELECT COUNT(*) FROM users")
     suspend fun getUserCount(): Int
 }
@@ -69,8 +72,14 @@ interface TransactionDao {
     suspend fun deleteExpense(id: Long, userId: Long): Int
 
     // --- Income ---
+    @Query("SELECT * FROM expenses WHERE userId = :userId ORDER BY date DESC")
+    suspend fun getExpensesListForUser(userId: Long): List<ExpenseEntity>
+
     @Query("SELECT * FROM income WHERE userId = :userId ORDER BY date DESC")
     fun getIncomeForUser(userId: Long): Flow<List<IncomeEntity>>
+
+    @Query("SELECT * FROM income WHERE userId = :userId ORDER BY date DESC")
+    suspend fun getIncomeListForUser(userId: Long): List<IncomeEntity>
 
     @Query("SELECT SUM(amount) FROM income WHERE userId = :userId")
     fun getTotalIncomeForUser(userId: Long): Flow<Double?>
@@ -96,6 +105,9 @@ interface SavingsDao {
     @Query("SELECT * FROM savings_goals WHERE userId = :userId ORDER BY createdAt DESC")
     fun getSavingsGoalsForUser(userId: Long): Flow<List<SavingsGoalEntity>>
 
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId ORDER BY createdAt DESC")
+    suspend fun getSavingsGoalsListForUser(userId: Long): List<SavingsGoalEntity>
+
     @Query("SELECT SUM(currentAmount) FROM savings WHERE userId = :userId")
     fun getTotalSavingsForUser(userId: Long): Flow<Double?>
 
@@ -114,6 +126,9 @@ interface SavingsDao {
     // --- Adult Money & Emergency Fund Transactions ---
     @Query("SELECT * FROM savings_transactions WHERE userId = :userId ORDER BY date DESC, id DESC")
     fun getSavingsTransactionsForUser(userId: Long): Flow<List<SavingsTransactionEntity>>
+
+    @Query("SELECT * FROM savings_transactions WHERE userId = :userId ORDER BY date DESC, id DESC")
+    suspend fun getSavingsTransactionsListForUser(userId: Long): List<SavingsTransactionEntity>
 
     @Query("SELECT * FROM savings_transactions WHERE userId = :userId AND savingsType = :type ORDER BY date DESC, id DESC")
     fun getSavingsTransactionsByType(userId: Long, type: String): Flow<List<SavingsTransactionEntity>>
@@ -136,6 +151,9 @@ interface MoneyFlowDao {
     @Query("SELECT * FROM money_flow WHERE userId = :userId ORDER BY date DESC, id DESC")
     fun getMoneyFlowsForUser(userId: Long): Flow<List<MoneyFlowEntity>>
 
+    @Query("SELECT * FROM money_flow WHERE userId = :userId ORDER BY date DESC, id DESC")
+    suspend fun getMoneyFlowsListForUser(userId: Long): List<MoneyFlowEntity>
+
     @Query("SELECT * FROM money_flow WHERE id = :id AND userId = :userId LIMIT 1")
     suspend fun getMoneyFlowById(id: Long, userId: Long): MoneyFlowEntity?
 
@@ -156,6 +174,9 @@ interface MoneyFlowDao {
 interface WishlistDao {
     @Query("SELECT * FROM wishlist_items WHERE userId = :userId ORDER BY dateAdded DESC, id DESC")
     fun getWishlistForUser(userId: Long): Flow<List<WishlistItemEntity>>
+
+    @Query("SELECT * FROM wishlist_items WHERE userId = :userId ORDER BY dateAdded DESC, id DESC")
+    suspend fun getWishlistListForUser(userId: Long): List<WishlistItemEntity>
 
     @Query("SELECT * FROM wishlist_items WHERE id = :id AND userId = :userId LIMIT 1")
     suspend fun getWishlistItemById(id: Long, userId: Long): WishlistItemEntity?
@@ -178,6 +199,9 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE userId = :userId ORDER BY createdAt DESC")
     fun getBudgetsForUser(userId: Long): Flow<List<BudgetEntity>>
 
+    @Query("SELECT * FROM budgets WHERE userId = :userId ORDER BY createdAt DESC")
+    suspend fun getBudgetsListForUser(userId: Long): List<BudgetEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity): Long
 
@@ -192,6 +216,9 @@ interface BudgetDao {
 interface CategoryDao {
     @Query("SELECT * FROM custom_categories WHERE userId = :userId ORDER BY name ASC")
     fun getCustomCategoriesForUser(userId: Long): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM custom_categories WHERE userId = :userId ORDER BY name ASC")
+    suspend fun getCustomCategoriesListForUser(userId: Long): List<CategoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryEntity): Long

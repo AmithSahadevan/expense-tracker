@@ -289,7 +289,10 @@ fun AppShell(
                                 onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
                                 onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
                                 onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                                onAddBudget = { c, a -> viewModel.addBudget(c, a) }
+                                onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                                onUpdateCurrency = { viewModel.updateCurrency(it) },
+                                onExportData = viewModel::exportUserDataToJson,
+                                onImportData = viewModel::importUserDataFromJson
                             )
                         }
                     }
@@ -342,6 +345,9 @@ fun AppShell(
                         onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
                         onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
                         onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                        onUpdateCurrency = { viewModel.updateCurrency(it) },
+                        onExportData = viewModel::exportUserDataToJson,
+                        onImportData = viewModel::importUserDataFromJson,
                         dockAddRequest = dockAddRequest,
                         onDockAddRequestHandled = { dockAddRequest = null },
                         onWishlistDetailToggle = { isWishlistDetailActive = it }
@@ -709,6 +715,9 @@ private fun ScreenRouter(
     onUpdateSavingsTransaction: (Long, SavingsTransactionInput) -> Unit,
     onDeleteSavingsTransaction: (Long) -> Unit,
     onAddBudget: (String, Double) -> Unit,
+    onUpdateCurrency: (String) -> Unit,
+    onExportData: suspend () -> String?,
+    onImportData: suspend (String) -> Boolean,
     dockAddRequest: AppDestination? = null,
     onDockAddRequestHandled: () -> Unit = {},
     onWishlistDetailToggle: (Boolean) -> Unit = {}
@@ -777,9 +786,11 @@ private fun ScreenRouter(
             )
             AppDestination.SETTINGS -> SettingsScreen(
                 currentUser = currentUser,
-                allUsersCount = allUsersCount,
                 onOpenAuthModal = onOpenAuthModal,
-                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday
+                onUpdateSalaryAndPayday = onUpdateSalaryAndPayday,
+                onUpdateCurrency = onUpdateCurrency,
+                onExportData = onExportData,
+                onImportData = onImportData
             )
         }
     }

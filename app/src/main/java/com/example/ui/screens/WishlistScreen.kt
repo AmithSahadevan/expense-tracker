@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,9 +34,14 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.StarOutline
@@ -46,6 +52,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -54,6 +61,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,9 +78,12 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,8 +107,6 @@ import com.example.ui.components.formatMoney
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
@@ -252,6 +261,7 @@ private fun LazyStaggeredGridScope.fullWidthItem(
     item(key = key, span = StaggeredGridItemSpan.FullLine) { content() }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WishlistBrowse(
     items: List<WishlistItemEntity>,
@@ -266,9 +276,17 @@ private fun WishlistBrowse(
     onOpenItem: (WishlistItemEntity) -> Unit,
     onAddClick: () -> Unit
 ) {
-    val visibleItems = remember(items, filter, adultMoneyBalance) {
-        WishlistBrowser.apply(items, filter, adultMoneyBalance)
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    
+    val filteredItems = remember(items, filter, adultMoneyBalance, searchQuery) {
+        val baseFiltered = WishlistBrowser.apply(items, filter, adultMoneyBalance)
+        if (searchQuery.isBlank()) {
+            baseFiltered
+        } else {
+            baseFiltered.filter { it.title.contains(searchQuery, ignoreCase = true) }
+        }
     }
+    
     val canAffordCount = remember(items, adultMoneyBalance) {
         WishlistBrowser.apply(items, WishlistFilter.CAN_AFFORD, adultMoneyBalance).size
     }
@@ -282,17 +300,17 @@ private fun WishlistBrowse(
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(top = innerPadding.calculateTopPadding() + 42.dp, bottom = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (viewMode == WishlistViewMode.GRID) {
+            if (viewMode == WishlistViewMode.GRID) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = innerPadding.calculateTopPadding() + 12.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(
                         onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
-                        modifier = Modifier.align(Alignment.CenterStart)
+                        modifier = Modifier.padding(end = 4.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -300,16 +318,32 @@ private fun WishlistBrowse(
                             tint = Color.White
                         )
                     }
+                    Text(
+                        text = "Wishlist",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
-                
-                Text(
-                    text = "Wishlist",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .padding(top = innerPadding.calculateTopPadding() + 42.dp, bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Wishlist",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
 
             if (items.isEmpty()) {
@@ -332,7 +366,9 @@ private fun WishlistBrowse(
                 ) { mode ->
                     if (mode == WishlistViewMode.GRID) {
                         WishlistGridView(
-                            visibleItems = visibleItems,
+                            visibleItems = filteredItems,
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = { searchQuery = it },
                             filter = filter,
                             onFilterChange = onFilterChange,
                             adultMoneyBalance = adultMoneyBalance,
@@ -361,6 +397,8 @@ private fun WishlistBrowse(
 @Composable
 private fun WishlistGridView(
     visibleItems: List<WishlistItemEntity>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     filter: WishlistFilter,
     onFilterChange: (WishlistFilter) -> Unit,
     adultMoneyBalance: Double,
@@ -393,6 +431,8 @@ private fun WishlistGridView(
 
         fullWidthItem("filters") {
             WishlistFilterRow(
+                searchQuery = searchQuery,
+                onSearchQueryChange = onSearchQueryChange,
                 filter = filter,
                 onFilterChange = onFilterChange,
                 totalCount = totalCount,
@@ -426,8 +466,11 @@ private fun WishlistGridView(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WishlistFilterRow(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     filter: WishlistFilter,
     onFilterChange: (WishlistFilter) -> Unit,
     totalCount: Int,
@@ -439,20 +482,92 @@ private fun WishlistFilterRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.End,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "Filter: ${filter.label}",
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        // Custom Thin Search Field
+        BasicTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .weight(1f)
+                .height(42.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                ),
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = searchQuery,
+                    innerTextField = innerTextField,
+                    enabled = true,
+                    singleLine = true,
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = remember { MutableInteractionSource() },
+                    placeholder = {
+                        Text(
+                            "search",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { onSearchQueryChange("") },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear search",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
+                )
+            }
         )
+
         Box {
-            IconButton(onClick = { showFilterMenu = true }) {
+            IconButton(
+                onClick = { showFilterMenu = true },
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+            ) {
                 Icon(
                     imageVector = Icons.Default.FilterList,
                     contentDescription = "Filter Wishlist",
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             DropdownMenu(
@@ -527,9 +642,9 @@ private fun WishlistCarouselView(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Space reserved for header
-        Spacer(modifier = Modifier.height(100.dp))
+        Spacer(modifier = Modifier.height(80.dp))
         
-        // 1. Area for Cards (Centered between header and dock)
+        // 1. Area for Cards (Centered between header and the button below)
         Box(
             modifier = Modifier.weight(1f),
             contentAlignment = Alignment.Center
@@ -650,7 +765,7 @@ private fun WishlistCarouselView(
 
         // 2. Area for Button (Centered between cards and dock)
         Box(
-            modifier = Modifier.weight(0.6f),
+            modifier = Modifier.weight(0.4f),
             contentAlignment = Alignment.Center
         ) {
             Button(
@@ -667,7 +782,7 @@ private fun WishlistCarouselView(
             }
         }
         
-        // Bottom reservation
+        // 3. Reservation for Dock height
         Spacer(modifier = Modifier.height(100.dp))
     }
 }

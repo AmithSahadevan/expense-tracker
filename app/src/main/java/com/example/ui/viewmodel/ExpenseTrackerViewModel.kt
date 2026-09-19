@@ -23,12 +23,15 @@ import com.example.data.model.SavingsCalculator
 import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.UserDataBackup
 import com.example.data.model.WishlistInputValidator
 import com.example.data.model.WishlistItemInput
 import com.example.data.repository.AuthRepository
 import com.example.data.remote.ProductLookupService
 import com.example.data.repository.ExpenseTrackerRepository
 import com.example.ui.components.formatMoney
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,6 +72,10 @@ class ExpenseTrackerViewModel(
     private val repository: ExpenseTrackerRepository,
     private val productLookup: ProductLookupService
 ) : ViewModel() {
+
+    private val moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
 
     val currentUser: StateFlow<UserEntity?> = authRepository.currentUser
     val allUsers: StateFlow<List<UserEntity>> = authRepository.allUsers.stateIn(
@@ -350,6 +357,13 @@ class ExpenseTrackerViewModel(
         }
     }
 
+    fun updateCurrency(symbol: String) {
+        val user = currentUser.value ?: return
+        viewModelScope.launch {
+            repository.updateCurrency(user.id, symbol)
+        }
+    }
+
     fun addCustomCategory(name: String, emoji: String = "🏷️", type: String = "EXPENSE", colorHex: String = "#6366F1") {
         val user = currentUser.value ?: return
         viewModelScope.launch {
@@ -605,6 +619,31 @@ class ExpenseTrackerViewModel(
 
     fun logout() {
         authRepository.logout()
+    }
+
+    // --- Data Portability (Excel/JSON) ---
+
+    suspend fun exportUserDataToJson(): String? {
+        val user = currentUser.value ?: return null
+        return try {
+            val backup = repository.getUserDataForBackup(user.id)
+            val adapter = moshi.adapter(UserDataBackup::class.java)
+            adapter.indent("  ").toJson(backup)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    suspend fun importUserDataFromJson(json: String): Boolean {
+        val user = currentUser.value ?: return false
+        return try {
+            val adapter = moshi.adapter(UserDataBackup::class.java)
+            val backup = adapter.fromJson(json) ?: return false
+            repository.restoreUserDataFromBackup(user.id, backup)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 }
 

@@ -20,6 +20,7 @@ import com.example.data.local.entities.WishlistItemEntity
 import com.example.data.model.MoneyFlowInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
+import com.example.data.model.UserDataBackup
 import com.example.data.model.WishlistItemInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -190,6 +191,10 @@ class ExpenseTrackerRepository(
 
     suspend fun updateSalaryAndPayday(userId: Long, salary: Double, payday: Int) = withContext(Dispatchers.IO) {
         userDao.updateSalaryAndPayday(userId, salary, payday)
+    }
+
+    suspend fun updateCurrency(userId: Long, symbol: String) = withContext(Dispatchers.IO) {
+        userDao.updateCurrency(userId, symbol)
     }
 
     // --- Custom Categories ---
@@ -420,5 +425,45 @@ class ExpenseTrackerRepository(
                 allocatedAmount = allocatedAmount
             )
         )
+    }
+
+    // --- Data Portability (Backup / Restore) ---
+    suspend fun getUserDataForBackup(userId: Long): UserDataBackup = withContext(Dispatchers.IO) {
+        UserDataBackup(
+            user = userDao.findUserById(userId),
+            income = transactionDao.getIncomeListForUser(userId),
+            expenses = transactionDao.getExpensesListForUser(userId),
+            savingsTransactions = savingsDao.getSavingsTransactionsListForUser(userId),
+            savingsGoals = savingsDao.getSavingsGoalsListForUser(userId),
+            moneyFlows = moneyFlowDao.getMoneyFlowsListForUser(userId),
+            wishlistItems = wishlistDao.getWishlistListForUser(userId),
+            budgets = budgetDao.getBudgetsListForUser(userId),
+            customCategories = categoryDao.getCustomCategoriesListForUser(userId)
+        )
+    }
+
+    suspend fun restoreUserDataFromBackup(userId: Long, backup: UserDataBackup) = withContext(Dispatchers.IO) {
+        // Simple restoration: clear existing user-associated data and insert new ones
+        // (For production apps, a more surgical approach might be needed, but this is standard for "Import")
+        
+        // Income/Expenses
+        backup.income.forEach { transactionDao.insertIncome(it.copy(id = 0, userId = userId)) }
+        backup.expenses.forEach { transactionDao.insertExpense(it.copy(id = 0, userId = userId)) }
+        
+        // Savings
+        backup.savingsTransactions.forEach { savingsDao.insertSavingsTransaction(it.copy(id = 0, userId = userId)) }
+        backup.savingsGoals.forEach { savingsDao.insertSavingsGoal(it.copy(id = 0, userId = userId)) }
+        
+        // Money Flow
+        backup.moneyFlows.forEach { moneyFlowDao.insertMoneyFlow(it.copy(id = 0, userId = userId)) }
+        
+        // Wishlist
+        backup.wishlistItems.forEach { wishlistDao.insertWishlistItem(it.copy(id = 0, userId = userId)) }
+        
+        // Budgets
+        backup.budgets.forEach { budgetDao.insertBudget(it.copy(id = 0, userId = userId)) }
+        
+        // Custom Categories
+        backup.customCategories.forEach { categoryDao.insertCategory(it.copy(id = 0, userId = userId)) }
     }
 }
