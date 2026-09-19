@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -93,7 +93,20 @@ import com.example.ui.components.ProductImage
 import com.example.ui.components.PurchasedBadge
 import com.example.ui.components.WishlistItemFormSheet
 import com.example.ui.components.formatMoney
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.ViewCarousel
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.util.lerp
+import kotlin.math.absoluteValue
 import kotlin.random.Random
+
+enum class WishlistViewMode {
+    CAROUSEL, GRID
+}
 
 @Composable
 fun WishlistScreen(
@@ -114,6 +127,15 @@ fun WishlistScreen(
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
+    var viewMode by rememberSaveable { mutableStateOf(WishlistViewMode.CAROUSEL) }
+
+    val affordableItems = remember(wishlistItems, adultMoneyBalance) {
+        wishlistItems.filter { item ->
+            val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
+            affordability is WishlistAffordability.CanAfford && !item.isPurchased
+        }
+    }
+
     var selectedItemId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showForm by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<WishlistItemEntity?>(null) }
@@ -135,6 +157,9 @@ fun WishlistScreen(
 
     val selectedItem = wishlistItems.find { it.id == selectedItemId }
     BackHandler(enabled = selectedItem != null) { selectedItemId = null }
+    BackHandler(enabled = selectedItem == null && viewMode == WishlistViewMode.GRID) {
+        viewMode = WishlistViewMode.CAROUSEL
+    }
 
     AnimatedContent(
         targetState = selectedItem?.id,
@@ -159,8 +184,11 @@ fun WishlistScreen(
         } else {
             WishlistBrowse(
                 items = wishlistItems,
+                affordableItems = affordableItems,
                 filter = filter,
                 onFilterChange = { filter = it },
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it },
                 adultMoneyBalance = adultMoneyBalance,
                 currency = currency,
                 gridState = gridState,
@@ -227,8 +255,11 @@ private fun LazyStaggeredGridScope.fullWidthItem(
 @Composable
 private fun WishlistBrowse(
     items: List<WishlistItemEntity>,
+    affordableItems: List<WishlistItemEntity>,
     filter: WishlistFilter,
     onFilterChange: (WishlistFilter) -> Unit,
+    viewMode: WishlistViewMode,
+    onViewModeChange: (WishlistViewMode) -> Unit,
     adultMoneyBalance: Double,
     currency: String,
     gridState: LazyStaggeredGridState,
@@ -249,124 +280,199 @@ private fun WishlistBrowse(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = Modifier.testTag("wishlist_screen")
     ) { innerPadding ->
-        LazyVerticalStaggeredGrid(
-            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-            state = gridState,
-            contentPadding = PaddingValues(
-                start = 12.dp,
-                end = 12.dp,
-                top = innerPadding.calculateTopPadding() + 12.dp,
-                bottom = 160.dp
-            ),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalItemSpacing = 16.dp,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            fullWidthItem("header") {
-                Column {
-                    Text(
-                        text = "Wishlist Vault",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Dream big, buy intentionally",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header Section
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .padding(top = innerPadding.calculateTopPadding() + 42.dp, bottom = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (viewMode == WishlistViewMode.GRID) {
+                    IconButton(
+                        onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back to Carousel",
+                            tint = Color.White
+                        )
+                    }
                 }
-            }
-
-            fullWidthItem("spending_power") {
-                WishlistSpendingPowerCard(
-                    adultMoneyBalance = adultMoneyBalance,
-                    currency = currency
+                
+                Text(
+                    text = "Wishlist",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
             if (items.isEmpty()) {
-                fullWidthItem("empty") {
-                    Box(modifier = Modifier.padding(top = 8.dp), contentAlignment = Alignment.TopCenter) {
-                        FunkyEmptyState(
-                            icon = Icons.Outlined.StarOutline,
-                            headline = "Your wishlist is looking lonely",
-                            subtext = "That special thing you've been eyeing? Add its name, price and photo link, and we'll track when your Adult Money can cover it.",
-                            actionButtonText = "+ Add Wishlist Item",
-                            onActionClick = onAddClick,
-                            badgeText = "Blank Shelf",
-                            accentColor = Color(0xFFFD79A8)
-                        )
-                    }
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    FunkyEmptyState(
+                        icon = Icons.Outlined.StarOutline,
+                        headline = "Your wishlist is looking lonely",
+                        subtext = "That special thing you've been eyeing? Add its name, price and photo link, and we'll track when your Adult Money can cover it.",
+                        actionButtonText = "+ Add Wishlist Item",
+                        onActionClick = onAddClick,
+                        badgeText = "Blank Shelf",
+                        accentColor = Color(0xFFFD79A8)
+                    )
                 }
             } else {
-                fullWidthItem("filters") {
-                    var showFilterMenu by remember { mutableStateOf(false) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Filter: ${filter.label}",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                AnimatedContent(
+                    targetState = viewMode,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "view_mode_transition"
+                ) { mode ->
+                    if (mode == WishlistViewMode.GRID) {
+                        WishlistGridView(
+                            visibleItems = visibleItems,
+                            filter = filter,
+                            onFilterChange = onFilterChange,
+                            adultMoneyBalance = adultMoneyBalance,
+                            currency = currency,
+                            gridState = gridState,
+                            onOpenItem = onOpenItem,
+                            totalCount = items.size,
+                            canAffordCount = canAffordCount,
+                            needMoreCount = needMoreCount
                         )
-                        Box {
-                            IconButton(onClick = { showFilterMenu = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.FilterList,
-                                    contentDescription = "Filter Wishlist",
-                                    tint = Color.White
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showFilterMenu,
-                                onDismissRequest = { showFilterMenu = false }
-                            ) {
-                                WishlistFilter.entries.forEach { option ->
-                                    val label = when (option) {
-                                        WishlistFilter.ALL -> "${option.label} (${items.size})"
-                                        WishlistFilter.CAN_AFFORD -> "${option.label} ($canAffordCount)"
-                                        WishlistFilter.NEED_MORE -> "${option.label} ($needMoreCount)"
-                                        else -> option.label
-                                    }
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = {
-                                            onFilterChange(option)
-                                            showFilterMenu = false
-                                        },
-                                        modifier = Modifier.testTag("wishlist_filter_${option.name.lowercase()}")
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (visibleItems.isEmpty()) {
-                    fullWidthItem("filter_empty") {
-                        Text(
-                            text = when (filter) {
-                                WishlistFilter.CAN_AFFORD ->
-                                    "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
-                                WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money"
-                                else -> "No items to show."
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(vertical = 24.dp)
+                    } else {
+                        WishlistCarouselView(
+                            items = affordableItems,
+                            adultMoneyBalance = adultMoneyBalance,
+                            currency = currency,
+                            onOpenItem = onOpenItem,
+                            onViewAll = { onViewModeChange(WishlistViewMode.GRID) }
                         )
                     }
                 }
+            }
+        }
+    }
+}
 
-                items(visibleItems, key = { it.id }) { item ->
-                    WishlistProductCard(
-                        item = item,
-                        onClick = { onOpenItem(item) }
+@Composable
+private fun WishlistGridView(
+    visibleItems: List<WishlistItemEntity>,
+    filter: WishlistFilter,
+    onFilterChange: (WishlistFilter) -> Unit,
+    adultMoneyBalance: Double,
+    currency: String,
+    gridState: LazyStaggeredGridState,
+    onOpenItem: (WishlistItemEntity) -> Unit,
+    totalCount: Int,
+    canAffordCount: Int,
+    needMoreCount: Int
+) {
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+        state = gridState,
+        contentPadding = PaddingValues(
+            start = 12.dp,
+            end = 12.dp,
+            top = 8.dp,
+            bottom = 160.dp
+        ),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalItemSpacing = 16.dp,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        fullWidthItem("spending_power") {
+            WishlistSpendingPowerCard(
+                adultMoneyBalance = adultMoneyBalance,
+                currency = currency
+            )
+        }
+
+        fullWidthItem("filters") {
+            WishlistFilterRow(
+                filter = filter,
+                onFilterChange = onFilterChange,
+                totalCount = totalCount,
+                canAffordCount = canAffordCount,
+                needMoreCount = needMoreCount
+            )
+        }
+
+        if (visibleItems.isEmpty()) {
+            fullWidthItem("filter_empty") {
+                Text(
+                    text = when (filter) {
+                        WishlistFilter.CAN_AFFORD ->
+                            "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
+                        WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money"
+                        else -> "No items to show."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(24.dp)
+                )
+            }
+        }
+
+        items(visibleItems, key = { it.id }) { item ->
+            WishlistProductCard(
+                item = item,
+                onClick = { onOpenItem(item) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun WishlistFilterRow(
+    filter: WishlistFilter,
+    onFilterChange: (WishlistFilter) -> Unit,
+    totalCount: Int,
+    canAffordCount: Int,
+    needMoreCount: Int
+) {
+    var showFilterMenu by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Filter: ${filter.label}",
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Box {
+            IconButton(onClick = { showFilterMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.FilterList,
+                    contentDescription = "Filter Wishlist",
+                    tint = Color.White
+                )
+            }
+            DropdownMenu(
+                expanded = showFilterMenu,
+                onDismissRequest = { showFilterMenu = false }
+            ) {
+                WishlistFilter.entries.forEach { option ->
+                    val label = when (option) {
+                        WishlistFilter.ALL -> "${option.label} ($totalCount)"
+                        WishlistFilter.CAN_AFFORD -> "${option.label} ($canAffordCount)"
+                        WishlistFilter.NEED_MORE -> "${option.label} ($needMoreCount)"
+                        else -> option.label
+                    }
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            onFilterChange(option)
+                            showFilterMenu = false
+                        },
+                        modifier = Modifier.testTag("wishlist_filter_${option.name.lowercase()}")
                     )
                 }
             }
@@ -375,42 +481,291 @@ private fun WishlistBrowse(
 }
 
 @Composable
+private fun WishlistCarouselView(
+    items: List<WishlistItemEntity>,
+    adultMoneyBalance: Double,
+    currency: String,
+    onOpenItem: (WishlistItemEntity) -> Unit,
+    onViewAll: () -> Unit
+) {
+    if (items.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Nothing matches your Adult Money yet",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Save more to unlock items on your wishlist",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Button(
+                    onClick = onViewAll,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFD79A8)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("View All", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        return
+    }
+
+    // Large number for infinite-like scrolling start at a middle multiple
+    val initialPage = items.size * 50
+    val pagerState = rememberPagerState(initialPage = initialPage) { items.size * 100 }
+    
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Space reserved for header
+        Spacer(modifier = Modifier.height(100.dp))
+        
+        // 1. Area for Cards (Centered between header and dock)
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                contentPadding = PaddingValues(horizontal = 92.dp),
+                beyondViewportPageCount = 3,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                val itemIndex = page % items.size
+                val item = items[itemIndex]
+                
+                val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
+                val absOffset = pageOffset.absoluteValue.coerceIn(0f, 1.5f)
+
+                Card(
+                    onClick = { onOpenItem(item) },
+                    shape = RoundedCornerShape(32.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = lerp(0.dp, 16.dp, (1f - absOffset).coerceAtLeast(0f))),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.85f)
+                        .graphicsLayer {
+                            val scale = lerp(0.68f, 1f, (1f - absOffset).coerceAtLeast(0f))
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = lerp(0.3f, 1f, (1f - absOffset).coerceAtLeast(0f))
+                            translationY = absOffset * 60f
+                            rotationZ = -pageOffset * 10f
+                        }
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        ProductImage(
+                            imageUrl = item.imageUrl,
+                            productName = item.title,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .alpha(if (item.isPurchased) 0.5f else 1f)
+                        )
+                        
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                                        startY = 300f
+                                    )
+                                )
+                        )
+                        
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(24.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = item.title,
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                color = Color.White,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            
+                            if (WishlistPrice.isSet(item.estimatedCost)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = formatMoney(currency, item.estimatedCost),
+                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = Color.White
+                                    )
+                                    
+                                    if (!item.isPurchased) {
+                                        val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
+                                        when (affordability) {
+                                            is WishlistAffordability.CanAfford -> {
+                                                Surface(
+                                                    color = Color(0xFF55B894).copy(alpha = 0.2f),
+                                                    shape = CircleShape,
+                                                    border = BorderStroke(1.dp, Color(0xFF55B894).copy(alpha = 0.5f))
+                                                ) {
+                                                    Text(
+                                                        text = "READY",
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                                        color = Color(0xFF55B894),
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                            is WishlistAffordability.MoreNeeded -> {
+                                                LinearProgressIndicator(
+                                                    progress = { affordability.progress },
+                                                    modifier = Modifier
+                                                        .width(60.dp)
+                                                        .height(6.6.dp)
+                                                        .clip(CircleShape),
+                                                    color = Color(0xFF55B894),
+                                                    trackColor = Color.White.copy(alpha = 0.2f)
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        PurchasedBadge()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Area for Button (Centered between cards and dock)
+        Box(
+            modifier = Modifier.weight(0.6f),
+            contentAlignment = Alignment.Center
+        ) {
+            Button(
+                onClick = onViewAll,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFD79A8)),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.height(48.dp).padding(horizontal = 32.dp)
+            ) {
+                Text(
+                    text = "View All",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+            }
+        }
+        
+        // Bottom reservation
+        Spacer(modifier = Modifier.height(100.dp))
+    }
+}
+
+@Composable
 private fun WishlistSpendingPowerCard(
     adultMoneyBalance: Double,
-    currency: String
+    currency: String,
+    modifier: Modifier = Modifier,
+    isHero: Boolean = false
 ) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("wishlist_spending_power")
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    if (isHero) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .testTag("wishlist_spending_power_hero"),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(22.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "CURRENT ADULT MONEY",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            letterSpacing = 1.5.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    )
                     Icon(
                         imageVector = Icons.Outlined.CreditCard,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+
+                Text(
+                    text = "Spendable Adult Money · Ready for items",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                )
+            }
+        }
+    } else {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+            modifier = modifier
+                .fillMaxWidth()
+                .testTag("wishlist_spending_power")
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.CreditCard,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Current Adult Money",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
+                        )
+                    }
                     Text(
-                        text = "Current Adult Money",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                         color = Color.White
                     )
                 }
-                Text(
-                    text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                    color = Color.White
-                )
             }
         }
     }
