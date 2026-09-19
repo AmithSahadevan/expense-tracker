@@ -667,10 +667,12 @@ private fun WishlistCarouselView(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = lerp(0.dp, 16.dp, (1f - absOffset).coerceAtLeast(0f))),
                     modifier = Modifier
+                        .padding(vertical = 12.dp) // Provide padding inside the pager row so the scaled card doesn't hit container bounds
                         .fillMaxWidth()
                         .aspectRatio(0.85f)
                         .graphicsLayer {
-                            val scale = lerp(0.68f, 1f, (1f - absOffset).coerceAtLeast(0f))
+                            // Increase the focused card's maximum scale from 1.0f to 1.25f, keeping background cards at 0.68f
+                            val scale = lerp(0.68f, 1.25f, (1f - absOffset).coerceAtLeast(0f))
                             scaleX = scale
                             scaleY = scale
                             alpha = lerp(0.3f, 1f, (1f - absOffset).coerceAtLeast(0f))

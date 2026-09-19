@@ -51,20 +51,16 @@ fun AdultMoneyCard(
     onAdd: (() -> Unit)? = null,
     onWithdraw: (() -> Unit)? = null
 ) {
-    Card(
-        onClick = onClick ?: {},
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("adult_money_card"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-        )
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .testTag("adult_money_card")
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
@@ -168,18 +164,16 @@ fun EmergencyFundCard(
     onAdd: (() -> Unit)? = null,
     onWithdraw: (() -> Unit)? = null
 ) {
-    Card(
-        onClick = onClick ?: {},
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("emergency_fund_card"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = EmergencyVault)
+            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .testTag("emergency_fund_card")
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(

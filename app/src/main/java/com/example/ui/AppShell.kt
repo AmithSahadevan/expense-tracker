@@ -301,12 +301,37 @@ fun AppShell(
         } else {
             // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
             Scaffold(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                bottomBar = {
+                    val showDock = if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
+                    if (showDock) {
+                        AmoebaBottomDock(
+                            currentDestination = currentDestination,
+                            pageOrder = pagerDestinations,
+                            onNavigate = { dest -> navigateToDestination(dest.route) },
+                            onDockAdd = {
+                                when (currentDestination) {
+                                    AppDestination.TRANSACTIONS -> {
+                                        editingTransaction = null
+                                        showAddTransactionSheet = true
+                                    }
+                                    AppDestination.WISHLIST,
+                                    AppDestination.MONEY_FLOW,
+                                    AppDestination.BUDGETS -> dockAddRequest = currentDestination
+                                    AppDestination.HOME,
+                                    AppDestination.SAVINGS,
+                                    AppDestination.SETTINGS -> Unit
+                                }
+                            },
+                            onOpenMoreMenu = { showMoreMenuSheet = true }
+                        )
+                    }
+                }
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding)
+                        .padding(top = innerPadding.calculateTopPadding()) // Only respect top padding
                 ) {
                     ScreenRouter(
                         pagerState = pagerState,
@@ -352,31 +377,6 @@ fun AppShell(
                         onDockAddRequestHandled = { dockAddRequest = null },
                         onWishlistDetailToggle = { isWishlistDetailActive = it }
                     )
-
-                    val showDock = if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
-                    if (showDock) {
-                        AmoebaFloatingBottomDocker(
-                            currentDestination = currentDestination,
-                            pageOrder = pagerDestinations,
-                            onNavigate = { dest -> navigateToDestination(dest.route) },
-                            onDockAdd = {
-                                when (currentDestination) {
-                                    AppDestination.TRANSACTIONS -> {
-                                        editingTransaction = null
-                                        showAddTransactionSheet = true
-                                    }
-                                    AppDestination.WISHLIST,
-                                    AppDestination.MONEY_FLOW,
-                                    AppDestination.BUDGETS -> dockAddRequest = currentDestination
-                                    AppDestination.HOME,
-                                    AppDestination.SAVINGS,
-                                    AppDestination.SETTINGS -> Unit
-                                }
-                            },
-                            onOpenMoreMenu = { showMoreMenuSheet = true },
-                            modifier = Modifier.align(Alignment.BottomCenter)
-                        )
-                    }
                 }
             }
         }
@@ -797,7 +797,7 @@ private fun ScreenRouter(
 }
 
 @Composable
-private fun AmoebaFloatingBottomDocker(
+private fun AmoebaBottomDock(
     currentDestination: AppDestination,
     pageOrder: List<AppDestination>,
     onNavigate: (AppDestination) -> Unit,
@@ -819,8 +819,6 @@ private fun AmoebaFloatingBottomDocker(
         previousIndex = selectedDockerIndex
     }
 
-    // Dynamic dual spring: the leading edge travels ahead with higher stiffness,
-    // while the trailing edge lags behind, stretching the bubble horizontally like an amoeba in transit.
     val animLeft by animateFloatAsState(
         targetValue = selectedDockerIndex.toFloat(),
         animationSpec = spring(
@@ -839,49 +837,31 @@ private fun AmoebaFloatingBottomDocker(
         label = "amoeba_right"
     )
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color(0xFF0C0F14).copy(alpha = 0.95f)),
-                    startY = 0f
-                )
-            )
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .testTag("mobile_bottom_bar"),
-        contentAlignment = Alignment.Center
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primary,
+        tonalElevation = 4.dp
     ) {
-        Surface(
-            shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.primary,
-            shadowElevation = 10.dp,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(32.dp))
-        ) {
+        // Full width container that includes system navigation bar area
+        Column(modifier = Modifier.fillMaxWidth()) {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(66.dp),
+                    .height(56.dp), // Standard WhatsApp-like bottom bar height
                 contentAlignment = Alignment.CenterStart
             ) {
                 val density = LocalDensity.current
                 val slotWidthPx = with(density) { (maxWidth / 5).toPx() }
-                val bubbleBaseDiameterPx = with(density) { 46.dp.toPx() }
+                val bubbleBaseDiameterPx = with(density) { 42.dp.toPx() } // Smaller bubble
                 val bubbleRadiusPx = bubbleBaseDiameterPx / 2f
 
                 val minSlot = minOf(animLeft, animRight)
                 val maxSlot = maxOf(animLeft, animRight)
                 val stretch = maxSlot - minSlot
 
-                // Calculate fluid amoeba boundaries
                 val leftPx = (minSlot + 0.5f) * slotWidthPx - bubbleRadiusPx
                 val rightPx = (maxSlot + 0.5f) * slotWidthPx + bubbleRadiusPx
                 val bubbleWidthPx = (rightPx - leftPx).coerceAtLeast(bubbleBaseDiameterPx)
-                // Volume preservation: subtle squash in height as horizontal stretch increases
                 val squashFactor = (1f - (stretch * 0.12f)).coerceIn(0.78f, 1.0f)
                 val bubbleHeightPx = bubbleBaseDiameterPx * squashFactor
 
@@ -889,56 +869,37 @@ private fun AmoebaFloatingBottomDocker(
                 val bubbleWidthDp = with(density) { bubbleWidthPx.toDp() }
                 val bubbleHeightDp = with(density) { bubbleHeightPx.toDp() }
 
-                // 1. Organic Amoeba Bubble Indicator
                 Box(
                     modifier = Modifier
                         .offset(x = bubbleLeftDp)
                         .size(width = bubbleWidthDp, height = bubbleHeightDp)
                         .align(Alignment.CenterStart)
-                        .shadow(
-                            elevation = 3.dp,
-                            shape = CircleShape,
-                            ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                            spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
-                        )
                         .background(
                             color = MaterialTheme.colorScheme.primaryContainer,
                             shape = CircleShape
                         )
                 )
 
-                // 2. Interactive Docker Icons
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 0. Home
                     DockerSlotItem(
                         icon = AppDestination.HOME.icon,
                         contentDescription = AppDestination.HOME.title,
                         isSelected = selectedDockerIndex == 0,
                         onClick = { onNavigate(AppDestination.HOME) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("nav_item_home")
+                        modifier = Modifier.weight(1f).testTag("nav_item_home")
                     )
-
-                    // 1. Transactions
                     DockerSlotItem(
                         icon = AppDestination.TRANSACTIONS.icon,
                         contentDescription = AppDestination.TRANSACTIONS.title,
                         isSelected = selectedDockerIndex == 1,
                         onClick = { onNavigate(AppDestination.TRANSACTIONS) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("nav_item_transactions")
+                        modifier = Modifier.weight(1f).testTag("nav_item_transactions")
                     )
-
-                    // 2. Middle: Add Flow (+) Action Button
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                         contentAlignment = Alignment.Center
                     ) {
                         DockAddMorphButton(
@@ -948,30 +909,24 @@ private fun AmoebaFloatingBottomDocker(
                             modifier = Modifier.testTag("dock_add_flow_button")
                         )
                     }
-
-                    // 3. Wishlist
                     DockerSlotItem(
                         icon = AppDestination.WISHLIST.icon,
                         contentDescription = AppDestination.WISHLIST.title,
                         isSelected = selectedDockerIndex == 3,
                         onClick = { onNavigate(AppDestination.WISHLIST) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("nav_item_wishlist")
+                        modifier = Modifier.weight(1f).testTag("nav_item_wishlist")
                     )
-
-                    // 4. More
                     DockerSlotItem(
                         icon = Icons.AutoMirrored.Outlined.MenuOpen,
                         contentDescription = "More",
                         isSelected = selectedDockerIndex == 4,
                         onClick = { onOpenMoreMenu() },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("nav_item_more")
+                        modifier = Modifier.weight(1f).testTag("nav_item_more")
                     )
                 }
             }
+            // Push content up to respect system bars but keep Surface background below
+            Spacer(modifier = Modifier.navigationBarsPadding())
         }
     }
 }

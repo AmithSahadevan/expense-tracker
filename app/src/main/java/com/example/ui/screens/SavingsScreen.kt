@@ -381,14 +381,12 @@ private fun ContributionsChartCard(monthly: List<MonthlySavingsContribution>, cu
     val highlightColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
     val hasData = monthly.any { it.adultMoney != 0.0 || it.emergencyFund != 0.0 }
 
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("savings_contributions_chart")
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Column {
                 Text(
                     text = "Contributions over time",
