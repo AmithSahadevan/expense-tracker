@@ -39,6 +39,7 @@ import android.widget.Toast
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -107,6 +108,28 @@ fun SettingsScreen(
     var showSalaryDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     val currency = currentUser?.currencySymbol ?: "₹"
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                try {
+                    val json = onExportData()
+                    if (json != null) {
+                        context.contentResolver.openOutputStream(it)?.use { stream ->
+                            OutputStreamWriter(stream).use { writer ->
+                                writer.write(json)
+                            }
+                        }
+                        Toast.makeText(context, "Data exported successfully!", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -405,18 +428,8 @@ fun SettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
                         onClick = {
-                            scope.launch {
-                                val json = onExportData()
-                                if (json != null) {
-                                    val sendIntent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, json)
-                                        type = "application/json"
-                                    }
-                                    val shareIntent = Intent.createChooser(sendIntent, "Export Data")
-                                    context.startActivity(shareIntent)
-                                }
-                            }
+                            val fileName = "expense_tracker_backup_${System.currentTimeMillis()}.json"
+                            exportLauncher.launch(fileName)
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
