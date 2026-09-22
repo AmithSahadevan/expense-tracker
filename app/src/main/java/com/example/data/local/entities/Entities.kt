@@ -147,6 +147,14 @@ data class WishlistItemEntity(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+object BudgetScope {
+    /** The single month-wide envelope covering every expense. */
+    const val OVERALL = "OVERALL"
+
+    /** An envelope for one expense category. */
+    const val CATEGORY = "CATEGORY"
+}
+
 @Entity(
     tableName = "budgets",
     indices = [Index(value = ["userId"])]
@@ -154,10 +162,14 @@ data class WishlistItemEntity(
 data class BudgetEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val userId: Long,
+    // Ignored while scope is OVERALL.
     val category: String,
     val allocatedAmount: Double,
     val period: String = "MONTHLY", // MONTHLY, WEEKLY
+    // Legacy column, kept so older backups still restore. Spend is always recomputed from
+    // recorded expenses (see BudgetCalculator) and never read back from here.
     val spentAmount: Double = 0.0,
+    @ColumnInfo(defaultValue = BudgetScope.CATEGORY) val scope: String = BudgetScope.CATEGORY,
     val createdAt: Long = System.currentTimeMillis()
 )
 
@@ -174,6 +186,26 @@ data class SavingsGoalEntity(
     val targetDate: Long? = null,
     val emoji: String = "🎯",
     val notes: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * One movement of money into (DEPOSIT) or back out of (WITHDRAWAL) a savings goal, reusing
+ * [SavingsActionType]. Goals earmark Adult Money, so a contribution never moves money between
+ * the savings pools: it only records how much of the discretionary pool a goal has claimed.
+ */
+@Entity(
+    tableName = "goal_contributions",
+    indices = [Index(value = ["userId"]), Index(value = ["goalId"])]
+)
+data class GoalContributionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val goalId: Long,
+    val transactionType: String, // DEPOSIT or WITHDRAWAL
+    val amount: Double,
+    val note: String = "",
+    val date: Long = System.currentTimeMillis(),
     val createdAt: Long = System.currentTimeMillis()
 )
 

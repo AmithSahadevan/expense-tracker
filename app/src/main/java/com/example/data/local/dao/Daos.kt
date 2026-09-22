@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.CategoryEntity
 import com.example.data.local.entities.ExpenseEntity
+import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.IncomeEntity
 import com.example.data.local.entities.MoneyFlowEntity
 import com.example.data.local.entities.SavingsEntity
@@ -129,8 +130,33 @@ interface SavingsDao {
     @Query("DELETE FROM savings WHERE id = :id AND userId = :userId")
     suspend fun deleteSavings(id: Long, userId: Long): Int
 
+    @Query("SELECT * FROM savings_goals WHERE id = :id AND userId = :userId LIMIT 1")
+    suspend fun getSavingsGoalById(id: Long, userId: Long): SavingsGoalEntity?
+
+    @Update
+    suspend fun updateSavingsGoal(goal: SavingsGoalEntity)
+
     @Query("DELETE FROM savings_goals WHERE id = :id AND userId = :userId")
     suspend fun deleteSavingsGoal(id: Long, userId: Long): Int
+
+    // --- Goal contribution ledger ---
+    @Query("SELECT * FROM goal_contributions WHERE userId = :userId ORDER BY date DESC, id DESC")
+    fun getGoalContributionsForUser(userId: Long): Flow<List<GoalContributionEntity>>
+
+    @Query("SELECT * FROM goal_contributions WHERE userId = :userId ORDER BY date DESC, id DESC")
+    suspend fun getGoalContributionsListForUser(userId: Long): List<GoalContributionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGoalContribution(contribution: GoalContributionEntity): Long
+
+    @Query("DELETE FROM goal_contributions WHERE id = :id AND userId = :userId")
+    suspend fun deleteGoalContribution(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM goal_contributions WHERE goalId = :goalId AND userId = :userId")
+    suspend fun deleteContributionsForGoal(goalId: Long, userId: Long): Int
+
+    @Query("DELETE FROM goal_contributions WHERE userId = :userId")
+    suspend fun deleteAllGoalContributionsForUser(userId: Long)
 
     // --- Adult Money & Emergency Fund Transactions ---
     @Query("SELECT * FROM savings_transactions WHERE userId = :userId ORDER BY date DESC, id DESC")
@@ -226,8 +252,14 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE userId = :userId ORDER BY createdAt DESC")
     suspend fun getBudgetsListForUser(userId: Long): List<BudgetEntity>
 
+    @Query("SELECT * FROM budgets WHERE id = :id AND userId = :userId LIMIT 1")
+    suspend fun getBudgetById(id: Long, userId: Long): BudgetEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBudget(budget: BudgetEntity): Long
+
+    @Update
+    suspend fun updateBudget(budget: BudgetEntity)
 
     @Query("UPDATE budgets SET spentAmount = :spent WHERE id = :id AND userId = :userId")
     suspend fun updateSpent(id: Long, userId: Long, spent: Double): Int

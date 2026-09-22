@@ -16,6 +16,7 @@ import com.example.data.local.dao.WishlistDao
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.CategoryEntity
 import com.example.data.local.entities.ExpenseEntity
+import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.IncomeEntity
 import com.example.data.local.entities.MoneyFlowEntity
 import com.example.data.local.entities.SavingsEntity
@@ -35,9 +36,10 @@ import com.example.data.local.entities.WishlistItemEntity
         WishlistItemEntity::class,
         BudgetEntity::class,
         SavingsGoalEntity::class,
-        CategoryEntity::class
+        CategoryEntity::class,
+        GoalContributionEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -97,6 +99,29 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Budgets gain an overall/category scope, and savings goals gain a contribution ledger.
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE budgets ADD COLUMN scope TEXT NOT NULL DEFAULT 'CATEGORY'")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `goal_contributions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `userId` INTEGER NOT NULL,
+                        `goalId` INTEGER NOT NULL,
+                        `transactionType` TEXT NOT NULL,
+                        `amount` REAL NOT NULL,
+                        `note` TEXT NOT NULL,
+                        `date` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_goal_contributions_userId` ON `goal_contributions` (`userId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_goal_contributions_goalId` ON `goal_contributions` (`goalId`)")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -104,7 +129,14 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "expense_tracker_db"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
+                    )
                     .fallbackToDestructiveMigration()
                     .fallbackToDestructiveMigrationOnDowngrade()
                     .build()

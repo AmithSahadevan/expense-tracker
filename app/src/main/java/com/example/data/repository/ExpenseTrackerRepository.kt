@@ -9,15 +9,20 @@ import com.example.data.local.dao.TransactionDao
 import com.example.data.local.dao.UserDao
 import com.example.data.local.dao.WishlistDao
 import com.example.data.local.entities.BudgetEntity
+import com.example.data.local.entities.BudgetScope
 import com.example.data.local.entities.CategoryEntity
 import com.example.data.local.entities.ExpenseEntity
+import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.IncomeEntity
 import com.example.data.local.entities.MoneyFlowEntity
+import com.example.data.local.entities.SavingsActionType
 import com.example.data.local.entities.SavingsEntity
 import com.example.data.local.entities.SavingsGoalEntity
 import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.BudgetInput
 import com.example.data.model.MoneyFlowInput
+import com.example.data.model.SavingsGoalInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
 import com.example.data.model.UserDataBackup
@@ -299,22 +304,88 @@ class ExpenseTrackerRepository(
         savingsDao.deleteSavingsTransaction(id, userId)
     }
 
+    // --- Savings goals ---
+    fun getGoalContributionsForUser(userId: Long): Flow<List<GoalContributionEntity>> =
+        savingsDao.getGoalContributionsForUser(userId)
+
     suspend fun addSavingsGoal(
         userId: Long,
-        title: String,
-        goalAmount: Double,
-        savedAmount: Double = 0.0,
-        emoji: String = "🎯"
+        input: SavingsGoalInput,
+        startingAmount: Double = 0.0
     ): Long = withContext(Dispatchers.IO) {
-        savingsDao.insertSavingsGoal(
+        val goalId = savingsDao.insertSavingsGoal(
             SavingsGoalEntity(
                 userId = userId,
-                title = title,
-                goalAmount = goalAmount,
-                savedAmount = savedAmount,
-                emoji = emoji
+                title = input.title,
+                goalAmount = input.targetAmount,
+                savedAmount = 0.0,
+                targetDate = input.targetDate,
+                emoji = input.emoji,
+                notes = input.description
             )
         )
+        // Money the goal starts with is logged like any other contribution, so the ledger
+        // stays the single source of truth for what a goal holds.
+        if (startingAmount > 0) {
+            savingsDao.insertGoalContribution(
+                GoalContributionEntity(
+                    userId = userId,
+                    goalId = goalId,
+                    transactionType = SavingsActionType.DEPOSIT,
+                    amount = startingAmount,
+                    note = "Starting amount"
+                )
+            )
+        }
+        goalId
+    }
+
+    /** Returns false if the goal does not exist or belongs to another user. */
+    suspend fun updateSavingsGoal(
+        userId: Long,
+        id: Long,
+        input: SavingsGoalInput
+    ): Boolean = withContext(Dispatchers.IO) {
+        val existing = savingsDao.getSavingsGoalById(id, userId) ?: return@withContext false
+        savingsDao.updateSavingsGoal(
+            existing.copy(
+                title = input.title,
+                goalAmount = input.targetAmount,
+                targetDate = input.targetDate,
+                emoji = input.emoji,
+                notes = input.description
+            )
+        )
+        true
+    }
+
+    suspend fun deleteSavingsGoal(userId: Long, id: Long) = withContext(Dispatchers.IO) {
+        savingsDao.deleteContributionsForGoal(id, userId)
+        savingsDao.deleteSavingsGoal(id, userId)
+    }
+
+    suspend fun addGoalContribution(
+        userId: Long,
+        goalId: Long,
+        transactionType: String,
+        amount: Double,
+        note: String = "",
+        date: Long = System.currentTimeMillis()
+    ): Long = withContext(Dispatchers.IO) {
+        savingsDao.insertGoalContribution(
+            GoalContributionEntity(
+                userId = userId,
+                goalId = goalId,
+                transactionType = transactionType,
+                amount = amount,
+                note = note,
+                date = date
+            )
+        )
+    }
+
+    suspend fun deleteGoalContribution(userId: Long, id: Long) = withContext(Dispatchers.IO) {
+        savingsDao.deleteGoalContribution(id, userId)
     }
 
     // --- Money Flow (Debts / IOUs) ---
@@ -413,18 +484,32 @@ class ExpenseTrackerRepository(
     fun getBudgetsForUser(userId: Long): Flow<List<BudgetEntity>> =
         budgetDao.getBudgetsForUser(userId)
 
-    suspend fun addBudget(
-        userId: Long,
-        category: String,
-        allocatedAmount: Double
-    ): Long = withContext(Dispatchers.IO) {
+    suspend fun addBudget(userId: Long, input: BudgetInput): Long = withContext(Dispatchers.IO) {
         budgetDao.insertBudget(
             BudgetEntity(
                 userId = userId,
-                category = category,
-                allocatedAmount = allocatedAmount
+                category = if (input.isOverall) BudgetScope.OVERALL else input.category,
+                allocatedAmount = input.allocatedAmount,
+                scope = input.scope
             )
         )
+    }
+
+    /** Returns false if the budget does not exist or belongs to another user. */
+    suspend fun updateBudget(userId: Long, id: Long, input: BudgetInput): Boolean = withContext(Dispatchers.IO) {
+        val existing = budgetDao.getBudgetById(id, userId) ?: return@withContext false
+        budgetDao.updateBudget(
+            existing.copy(
+                category = if (input.isOverall) BudgetScope.OVERALL else input.category,
+                allocatedAmount = input.allocatedAmount,
+                scope = input.scope
+            )
+        )
+        true
+    }
+
+    suspend fun deleteBudget(userId: Long, id: Long) = withContext(Dispatchers.IO) {
+        budgetDao.deleteBudget(id, userId)
     }
 
     // --- Data Portability (Backup / Restore) ---
@@ -435,6 +520,7 @@ class ExpenseTrackerRepository(
             expenses = transactionDao.getExpensesListForUser(userId),
             savingsTransactions = savingsDao.getSavingsTransactionsListForUser(userId),
             savingsGoals = savingsDao.getSavingsGoalsListForUser(userId),
+            goalContributions = savingsDao.getGoalContributionsListForUser(userId),
             moneyFlows = moneyFlowDao.getMoneyFlowsListForUser(userId),
             wishlistItems = wishlistDao.getWishlistListForUser(userId),
             budgets = budgetDao.getBudgetsListForUser(userId),
@@ -452,7 +538,15 @@ class ExpenseTrackerRepository(
         
         // Savings
         backup.savingsTransactions.forEach { savingsDao.insertSavingsTransaction(it.copy(id = 0, userId = userId)) }
-        backup.savingsGoals.forEach { savingsDao.insertSavingsGoal(it.copy(id = 0, userId = userId)) }
+        // Contributions reference their goal by id, so each goal's new id is carried across.
+        val goalIdMap = mutableMapOf<Long, Long>()
+        backup.savingsGoals.forEach { goal ->
+            goalIdMap[goal.id] = savingsDao.insertSavingsGoal(goal.copy(id = 0, userId = userId))
+        }
+        backup.goalContributions.forEach { contribution ->
+            val goalId = goalIdMap[contribution.goalId] ?: return@forEach
+            savingsDao.insertGoalContribution(contribution.copy(id = 0, userId = userId, goalId = goalId))
+        }
         
         // Money Flow
         backup.moneyFlows.forEach { moneyFlowDao.insertMoneyFlow(it.copy(id = 0, userId = userId)) }
@@ -472,6 +566,7 @@ class ExpenseTrackerRepository(
         transactionDao.deleteAllIncomeForUser(userId)
         savingsDao.deleteAllSavingsForUser(userId)
         savingsDao.deleteAllSavingsGoalsForUser(userId)
+        savingsDao.deleteAllGoalContributionsForUser(userId)
         savingsDao.deleteAllSavingsTransactionsForUser(userId)
         moneyFlowDao.deleteAllMoneyFlowsForUser(userId)
         wishlistDao.deleteAllWishlistItemsForUser(userId)

@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
+import com.example.data.model.BudgetsSummary
+import com.example.data.model.GoalsSummary
 import com.example.data.model.TransactionItem
 import com.example.ui.components.BalanceHeroCard
 import com.example.ui.components.FunkyEmptyState
@@ -38,6 +40,8 @@ import com.example.ui.viewmodel.DashboardSummaryUiState
 fun HomeScreen(
     currentUser: UserEntity?,
     summary: DashboardSummaryUiState,
+    budgetsSummary: BudgetsSummary = BudgetsSummary(),
+    goalsSummary: GoalsSummary = GoalsSummary(),
     onNavigateTo: (String) -> Unit,
     onOpenAddTransaction: () -> Unit = {},
     onEditTransaction: (TransactionItem) -> Unit = {},

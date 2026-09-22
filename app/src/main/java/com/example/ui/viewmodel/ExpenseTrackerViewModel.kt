@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.CategoryEntity
+import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.MoneyFlowDirection
 import com.example.data.local.entities.MoneyFlowEntity
 import com.example.data.local.entities.SavingsActionType
@@ -14,12 +15,20 @@ import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.SavingsType
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.model.BudgetCalculator
+import com.example.data.model.BudgetInput
+import com.example.data.model.BudgetValidator
+import com.example.data.model.BudgetsSummary
+import com.example.data.model.GoalsSummary
 import com.example.data.model.MoneyFlowCalculator
 import com.example.data.model.MoneyFlowInput
 import com.example.data.model.MoneyFlowSummary
 import com.example.data.model.MoneyFlowValidator
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsCalculator
+import com.example.data.model.SavingsGoalCalculator
+import com.example.data.model.SavingsGoalInput
+import com.example.data.model.SavingsGoalValidator
 import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.TransactionItem
 import com.example.data.model.TransactionType
@@ -180,6 +189,39 @@ class ExpenseTrackerViewModel(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+
+    val goalContributions: StateFlow<List<GoalContributionEntity>> = currentUser.flatMapLatest { user ->
+        if (user != null) repository.getGoalContributionsForUser(user.id) else flowOf(emptyList())
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    /** Budget envelopes measured against the expenses actually recorded this month. */
+    val budgetsSummary: StateFlow<BudgetsSummary> = combine(budgets, transactions) { budgetList, txList ->
+        BudgetCalculator.summarize(budgetList, txList)
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = BudgetsSummary()
+    )
+
+    /**
+     * Goals with their progress, funded from Adult Money alone. [emergencyFundBalance] is
+     * deliberately not part of this: protected savings never count toward a discretionary goal.
+     */
+    val goalsSummary: StateFlow<GoalsSummary> = combine(
+        savingsGoals,
+        goalContributions,
+        adultMoneyBalance
+    ) { goals, contributions, adultMoney ->
+        SavingsGoalCalculator.summarize(goals, contributions, adultMoney)
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = GoalsSummary()
     )
 
     private data class HubCounts(
@@ -468,10 +510,64 @@ class ExpenseTrackerViewModel(
         return MoneyFlowValidator.clean(input)
     }
 
-    fun addSavingsGoal(title: String, goalAmount: Double, emoji: String = "🎯") {
+    fun addSavingsGoal(input: SavingsGoalInput, startingAmount: Double = 0.0) {
+        val user = currentUser.value ?: return
+        val clean = SavingsGoalValidator.clean(input) ?: return
+        // A goal may only ever be seeded with Adult Money that no other goal has claimed.
+        val room = goalsSummary.value.funding.unallocated
+        viewModelScope.launch {
+            repository.addSavingsGoal(user.id, clean, startingAmount.coerceIn(0.0, room.coerceAtLeast(0.0)))
+        }
+    }
+
+    fun updateSavingsGoal(id: Long, input: SavingsGoalInput) {
+        val user = currentUser.value ?: return
+        val clean = SavingsGoalValidator.clean(input) ?: return
+        viewModelScope.launch {
+            repository.updateSavingsGoal(user.id, id, clean)
+        }
+    }
+
+    fun deleteSavingsGoal(id: Long) {
         val user = currentUser.value ?: return
         viewModelScope.launch {
-            repository.addSavingsGoal(user.id, title, goalAmount, 0.0, emoji)
+            repository.deleteSavingsGoal(user.id, id)
+        }
+    }
+
+    /**
+     * Moves money into or out of a goal's earmark. Returns the reason it was refused, or null
+     * on success: a deposit can never exceed the unallocated Adult Money, and a withdrawal can
+     * never exceed what the goal holds.
+     */
+    fun contributeToGoal(
+        goalId: Long,
+        transactionType: String,
+        amount: Double,
+        note: String = "",
+        date: Long = System.currentTimeMillis()
+    ): String? {
+        val user = currentUser.value ?: return "No account is signed in"
+        val summary = goalsSummary.value
+        val goal = summary.goals.find { it.id == goalId } ?: return "That goal no longer exists"
+        val rejection = SavingsGoalCalculator.rejectionFor(
+            amount = amount,
+            funding = summary.funding,
+            isWithdrawal = transactionType == SavingsActionType.WITHDRAWAL,
+            goalBalance = goal.currentAmount,
+            currency = user.currencySymbol
+        )
+        if (rejection != null) return rejection
+        viewModelScope.launch {
+            repository.addGoalContribution(user.id, goalId, transactionType, amount, note, date)
+        }
+        return null
+    }
+
+    fun deleteGoalContribution(id: Long) {
+        val user = currentUser.value ?: return
+        viewModelScope.launch {
+            repository.deleteGoalContribution(user.id, id)
         }
     }
 
@@ -577,10 +673,26 @@ class ExpenseTrackerViewModel(
     private fun savingsTypeLabel(savingsType: String): String =
         if (savingsType == SavingsType.EMERGENCY_FUND) "Emergency Fund" else "Adult Money"
 
-    fun addBudget(category: String, allocatedAmount: Double) {
+    fun addBudget(input: BudgetInput) {
+        val user = currentUser.value ?: return
+        val clean = BudgetValidator.clean(input, budgets.value) ?: return
+        viewModelScope.launch {
+            repository.addBudget(user.id, clean)
+        }
+    }
+
+    fun updateBudget(id: Long, input: BudgetInput) {
+        val user = currentUser.value ?: return
+        val clean = BudgetValidator.clean(input, budgets.value, editingId = id) ?: return
+        viewModelScope.launch {
+            repository.updateBudget(user.id, id, clean)
+        }
+    }
+
+    fun deleteBudget(id: Long) {
         val user = currentUser.value ?: return
         viewModelScope.launch {
-            repository.addBudget(user.id, category, allocatedAmount)
+            repository.deleteBudget(user.id, id)
         }
     }
 

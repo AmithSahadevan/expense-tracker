@@ -86,6 +86,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -620,6 +621,14 @@ private fun WishlistFilterRow(
     }
 }
 
+// Carousel geometry. The centre card is drawn scaled up beyond its layout bounds, so
+// these are shared between the card itself and the track that has to make room for it.
+private val CarouselSidePadding = 92.dp
+private val CarouselSectionGap = 26.dp
+private const val CarouselCardAspect = 0.85f
+private const val CarouselCenterScale = 1.25f
+private const val CarouselSideScale = 0.68f
+
 @Composable
 private fun WishlistCarouselView(
     items: List<WishlistItemEntity>,
@@ -687,15 +696,26 @@ private fun WishlistCarouselView(
         }
     }
     
+    // The centre card renders at CarouselCenterScale, past its own layout bounds, so the
+    // track reserves the *scaled* height. Without that the card overlaps the button below
+    // and the aspect-ratio squeeze crops the product photo at the top and bottom.
+    val configuration = LocalConfiguration.current
+    val cardWidth = (configuration.screenWidthDp.dp - CarouselSidePadding * 2).coerceAtLeast(140.dp)
+    val cardHeight = cardWidth / CarouselCardAspect
+    val centerScale = (configuration.screenHeightDp.dp * 0.46f / cardHeight)
+        .coerceIn(1f, CarouselCenterScale)
+    val cardOverflow = cardHeight * (centerScale - 1f) / 2f
+    val trackHeight = cardHeight * centerScale + 4.dp
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Reduced spacer so carousel sits higher near the top
-        Spacer(modifier = Modifier.height(10.dp))
+        // Clears the screen title so the carousel starts below it.
+        Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "itemsReadyForPurchase",
+            text = "${items.size} ITEMS READY",
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp
@@ -703,18 +723,18 @@ private fun WishlistCarouselView(
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
         )
         
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Swipable Carousel Area
+        // 1. Swipable carousel, on a track tall enough to hold the scaled centre card.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(270.dp),
+                .height(trackHeight),
             contentAlignment = Alignment.Center
         ) {
             HorizontalPager(
                 state = pagerState,
-                contentPadding = PaddingValues(horizontal = 92.dp),
+                contentPadding = PaddingValues(horizontal = CarouselSidePadding),
                 beyondViewportPageCount = 3,
                 modifier = Modifier.fillMaxWidth()
             ) { page ->
@@ -730,11 +750,14 @@ private fun WishlistCarouselView(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = lerp(0.dp, 16.dp, (1f - absOffset).coerceAtLeast(0f))),
                     modifier = Modifier
-                        .padding(vertical = 12.dp)
+                        // A lazy scroll container clips its cross axis only 30dp past its
+                        // own height, so the page reserves the overflow the scale creates.
+                        // Without this the pager shaves the card's rounded top and bottom.
+                        .padding(vertical = cardOverflow)
                         .fillMaxWidth()
-                        .aspectRatio(0.85f)
+                        .height(cardHeight)
                         .graphicsLayer {
-                            val scale = lerp(0.68f, 1.25f, (1f - absOffset).coerceAtLeast(0f))
+                            val scale = lerp(CarouselSideScale, centerScale, (1f - absOffset).coerceAtLeast(0f))
                             scaleX = scale
                             scaleY = scale
                             alpha = lerp(0.3f, 1f, (1f - absOffset).coerceAtLeast(0f))
@@ -827,20 +850,18 @@ private fun WishlistCarouselView(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(CarouselSectionGap))
 
-        // 2. Small Pink Button directly below cards with clear separation
+        // 2. "View All" gets its own row below the cards instead of sitting on top of them.
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Button(
                 onClick = onViewAll,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFD79A8),
-                    contentColor = Color.White
+                    containerColor = Color.White,
+                    contentColor = Color.Black
                 ),
                 shape = RoundedCornerShape(10.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
@@ -854,14 +875,14 @@ private fun WishlistCarouselView(
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp
                     ),
-                    color = Color.White
+                    color = Color.Black
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(CarouselSectionGap))
 
-        // 3. Scaled-Down Low-Opacity Non-Interactive Pinterest Grid Preview below the button
+        // 3. Scaled-down, low-opacity, non-interactive Pinterest grid preview below the button.
         Box(
             modifier = Modifier
                 .fillMaxWidth()

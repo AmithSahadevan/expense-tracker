@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,20 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,26 +40,38 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.UserEntity
+import com.example.data.model.BudgetInput
+import com.example.data.model.BudgetsSummary
+import com.example.ui.components.BudgetAlertBanner
+import com.example.ui.components.BudgetFormSheet
+import com.example.ui.components.CategoryBudgetCard
 import com.example.ui.components.FunkyEmptyState
+import com.example.ui.components.OverallBudgetCard
+import com.example.ui.components.formatMoney
+
+private data class BudgetFormRequest(val existing: BudgetEntity?)
 
 @Composable
 fun BudgetsScreen(
     currentUser: UserEntity?,
     budgets: List<BudgetEntity>,
-    onAddBudget: (category: String, allocatedAmount: Double) -> Unit,
+    summary: BudgetsSummary,
+    suggestedCategories: List<String>,
+    onAddBudget: (BudgetInput) -> Unit,
+    onUpdateBudget: (Long, BudgetInput) -> Unit,
+    onDeleteBudget: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    // Set by the dock's add button; the screen opens its add dialog and reports back.
+    // Set by the dock's add button; the screen opens its own form and reports back.
     addRequested: Boolean = false,
     onAddRequestHandled: () -> Unit = {}
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
-    var showAddDialog by remember { mutableStateOf(false) }
-    var categoryName by remember { mutableStateOf("") }
-    var allocatedAmountText by remember { mutableStateOf("") }
+    var formRequest by remember { mutableStateOf<BudgetFormRequest?>(null) }
+    var pendingDelete by remember { mutableStateOf<BudgetEntity?>(null) }
 
     LaunchedEffect(addRequested) {
         if (addRequested) {
-            showAddDialog = true
+            formRequest = BudgetFormRequest(existing = null)
             onAddRequestHandled()
         }
     }
@@ -77,33 +84,40 @@ fun BudgetsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
-            Text(
-                text = "Category Budgets",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp)) {
+                Text(
+                    text = "Budgets",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "${summary.monthLabel} · ${formatMoney(currency, summary.monthSpent)} spent so far",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (budgets.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp)
                         .padding(top = 20.dp, bottom = 140.dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
                         icon = Icons.Outlined.BarChart,
                         headline = "Budgets are untouched",
-                        subtext = "Your wallet is currently sighing in relief. Set realistic monthly envelopes for food, fun, or hobbies.",
-                        actionButtonText = "+ Set Budget Envelope",
-                        onActionClick = { showAddDialog = true },
+                        subtext = "Cap a category — Food, Fuel, Subscriptions — or the whole month, and every expense you record counts against it automatically.",
+                        actionButtonText = "+ Set a Budget",
+                        onActionClick = { formRequest = BudgetFormRequest(existing = null) },
                         badgeText = "Untracked",
                         accentColor = Color(0xFF0984E3)
                     )
@@ -111,105 +125,125 @@ fun BudgetsScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 120.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(budgets, key = { it.id }) { budget ->
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                    if (summary.alertCount > 0) {
+                        item(key = "alerts") {
+                            BudgetAlertBanner(summary = summary, currency = currency)
+                        }
+                    }
+
+                    summary.overall?.let { overall ->
+                        item(key = "overall_${overall.id}") {
+                            OverallBudgetCard(
+                                progress = overall,
+                                currency = currency,
+                                monthLabel = summary.monthLabel,
+                                daysLeft = summary.daysLeftInMonth,
+                                onClick = { formRequest = BudgetFormRequest(existing = overall.budget) }
+                            )
+                        }
+                    }
+
+                    if (summary.categories.isNotEmpty()) {
+                        item(key = "categories_header") {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(18.dp),
+                                    .padding(top = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(
-                                        text = budget.category,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "${budget.period.lowercase().replaceFirstChar { it.uppercase() }} allocation",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
                                 Text(
-                                    text = "$currency${String.format("%.0f", budget.allocatedAmount)}",
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                                    color = Color(0xFF0984E3)
+                                    text = "CATEGORY BUDGETS",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 1.2.sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${formatMoney(currency, summary.categorySpent)} of ${formatMoney(currency, summary.categoryAllocated)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
-                    item {
-                        Spacer(modifier = Modifier.navigationBarsPadding().height(48.dp))
+
+                    items(summary.categories, key = { it.id }) { progress ->
+                        CategoryBudgetCard(
+                            progress = progress,
+                            currency = currency,
+                            onClick = { formRequest = BudgetFormRequest(existing = progress.budget) }
+                        )
+                    }
+
+                    item(key = "add_budget") {
+                        Button(
+                            onClick = { formRequest = BudgetFormRequest(existing = null) },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("budget_add_button")
+                        ) {
+                            Text("+ Add Budget", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    item(key = "bottom_spacer") {
+                        Spacer(modifier = Modifier.navigationBarsPadding().height(96.dp))
                     }
                 }
             }
         }
     }
 
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = {
-                Text(
-                    text = "New Budget Envelope",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black)
-                )
+    formRequest?.let { request ->
+        BudgetFormSheet(
+            initialBudget = request.existing,
+            existingBudgets = budgets,
+            suggestedCategories = suggestedCategories,
+            currency = currency,
+            onDismiss = { formRequest = null },
+            onSave = { input ->
+                val existing = request.existing
+                if (existing != null) onUpdateBudget(existing.id, input) else onAddBudget(input)
+                formRequest = null
             },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = categoryName,
-                        onValueChange = { categoryName = it },
-                        label = { Text("Category (e.g. Dining, Coffee, Gaming)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = allocatedAmountText,
-                        onValueChange = { if (it.all { c -> c.isDigit() || c == '.' }) allocatedAmountText = it },
-                        label = { Text("Monthly Cap ($currency)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            onDelete = request.existing?.let { budget ->
+                {
+                    formRequest = null
+                    pendingDelete = budget
                 }
+            }
+        )
+    }
+
+    pendingDelete?.let { budget ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text("Delete this budget?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("The envelope is removed. Your recorded expenses are not touched.")
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        val amount = allocatedAmountText.toDoubleOrNull() ?: 0.0
-                        if (categoryName.isNotBlank() && amount > 0) {
-                            onAddBudget(categoryName, amount)
-                            showAddDialog = false
-                            categoryName = ""
-                            allocatedAmountText = ""
-                        }
+                        onDeleteBudget(budget.id)
+                        pendingDelete = null
                     },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Save Budget")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
             },
             dismissButton = {
-                Button(
-                    onClick = { showAddDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
-                }
+                TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
             }
         )
     }

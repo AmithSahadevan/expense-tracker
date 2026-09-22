@@ -12,6 +12,7 @@ data class UserDataBackup(
     val expenses: List<ExpenseEntity> = emptyList(),
     val savingsTransactions: List<SavingsTransactionEntity> = emptyList(),
     val savingsGoals: List<SavingsGoalEntity> = emptyList(),
+    val goalContributions: List<GoalContributionEntity> = emptyList(),
     val moneyFlows: List<MoneyFlowEntity> = emptyList(),
     val wishlistItems: List<WishlistItemEntity> = emptyList(),
     val budgets: List<BudgetEntity> = emptyList(),

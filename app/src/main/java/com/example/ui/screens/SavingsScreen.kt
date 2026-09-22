@@ -68,13 +68,20 @@ import com.example.data.local.entities.SavingsActionType
 import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.SavingsType
 import com.example.data.local.entities.UserEntity
+import com.example.data.local.entities.SavingsGoalEntity
+import com.example.data.model.GoalsSummary
 import com.example.data.model.MonthlySavingsContribution
+import com.example.data.model.SavingsGoalInput
 import com.example.data.model.SavingsCalculator
 import com.example.data.model.SavingsTransactionInput
 import com.example.ui.components.AdultMoneyCard
 import com.example.ui.components.ChoicePill
 import com.example.ui.components.DatePickerField
 import com.example.ui.components.EmergencyFundCard
+import com.example.ui.components.GoalContributionSheet
+import com.example.ui.components.GoalFundingCard
+import com.example.ui.components.SavingsGoalCard
+import com.example.ui.components.SavingsGoalFormSheet
 import com.example.ui.components.formatMoney
 import com.example.ui.theme.MintGreen
 import com.example.ui.theme.EmergencyChartAmber
@@ -92,6 +99,8 @@ private enum class HistoryFilter(val label: String, val savingsType: String?) {
     EMERGENCY("Emergency Fund", SavingsType.EMERGENCY_FUND)
 }
 
+private data class GoalFormRequest(val existing: SavingsGoalEntity?)
+
 private data class DialogRequest(
     val existing: SavingsTransactionEntity?,
     val savingsType: String,
@@ -104,15 +113,23 @@ fun SavingsScreen(
     savingsTransactions: List<SavingsTransactionEntity>,
     adultMoneyBalance: Double,
     emergencyFundBalance: Double,
+    goalsSummary: GoalsSummary,
     onAddSavingsTransaction: (SavingsTransactionInput) -> Unit,
     onUpdateSavingsTransaction: (id: Long, input: SavingsTransactionInput) -> Unit,
     onDeleteSavingsTransaction: (id: Long) -> Unit,
+    onAddGoal: (SavingsGoalInput, startingAmount: Double) -> Unit,
+    onUpdateGoal: (id: Long, input: SavingsGoalInput) -> Unit,
+    onDeleteGoal: (id: Long) -> Unit,
+    onContributeToGoal: (goalId: Long, transactionType: String, amount: Double, note: String) -> String?,
     modifier: Modifier = Modifier
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var dialogRequest by remember { mutableStateOf<DialogRequest?>(null) }
     var pendingDelete by remember { mutableStateOf<SavingsTransactionEntity?>(null) }
     var historyFilter by remember { mutableStateOf(HistoryFilter.ALL) }
+    var goalFormRequest by remember { mutableStateOf<GoalFormRequest?>(null) }
+    var contributingTo by remember { mutableStateOf<Long?>(null) }
+    var pendingGoalDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
     val dateFormat = remember { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()) }
 
     val monthly = remember(savingsTransactions) { SavingsCalculator.monthlyContributions(savingsTransactions) }
@@ -168,6 +185,35 @@ fun SavingsScreen(
                 onAdd = { openNew(SavingsType.EMERGENCY_FUND, SavingsActionType.DEPOSIT) },
                 onWithdraw = { openNew(SavingsType.EMERGENCY_FUND, SavingsActionType.WITHDRAWAL) }
             )
+        }
+
+        item {
+            GoalsSectionHeader(
+                goalCount = goalsSummary.goals.size,
+                onAdd = { goalFormRequest = GoalFormRequest(existing = null) }
+            )
+        }
+
+        if (goalsSummary.hasGoals) {
+            item {
+                GoalFundingCard(
+                    funding = goalsSummary.funding,
+                    emergencyFundBalance = emergencyFundBalance,
+                    currency = currency
+                )
+            }
+
+            items(goalsSummary.goals, key = { goal -> "goal_" + goal.id }) { progress ->
+                SavingsGoalCard(
+                    progress = progress,
+                    currency = currency,
+                    onClick = { contributingTo = progress.id }
+                )
+            }
+        } else {
+            item {
+                EmptyGoalsCard(onAdd = { goalFormRequest = GoalFormRequest(existing = null) })
+            }
         }
 
         item {
@@ -244,6 +290,72 @@ fun SavingsScreen(
         )
     }
 
+    goalFormRequest?.let { request ->
+        SavingsGoalFormSheet(
+            initialGoal = request.existing,
+            funding = goalsSummary.funding,
+            currency = currency,
+            onDismiss = { goalFormRequest = null },
+            onSave = { input, startingAmount ->
+                val existing = request.existing
+                if (existing != null) onUpdateGoal(existing.id, input) else onAddGoal(input, startingAmount)
+                goalFormRequest = null
+            },
+            onDelete = request.existing?.let { goal ->
+                {
+                    goalFormRequest = null
+                    pendingGoalDelete = goal
+                }
+            }
+        )
+    }
+
+    contributingTo?.let { goalId ->
+        val progress = goalsSummary.goals.find { it.id == goalId }
+        if (progress == null) {
+            contributingTo = null
+        } else {
+            GoalContributionSheet(
+                progress = progress,
+                funding = goalsSummary.funding,
+                currency = currency,
+                onDismiss = { contributingTo = null },
+                onContribute = { type, amount, note ->
+                    onContributeToGoal(goalId, type, amount, note)
+                },
+                onEdit = {
+                    contributingTo = null
+                    goalFormRequest = GoalFormRequest(existing = progress.goal)
+                }
+            )
+        }
+    }
+
+    pendingGoalDelete?.let { goal ->
+        AlertDialog(
+            onDismissRequest = { pendingGoalDelete = null },
+            title = { Text("Delete this goal?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "\"" + goal.title + "\" and its contribution history are removed. The money goes back " +
+                        "to unallocated Adult Money; your savings balances do not change."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteGoal(goal.id)
+                        pendingGoalDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingGoalDelete = null }) { Text("Cancel") }
+            }
+        )
+    }
+
     pendingDelete?.let { tx ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
@@ -267,6 +379,84 @@ fun SavingsScreen(
                 TextButton(onClick = { pendingDelete = null }) { Text("Cancel") }
             }
         )
+    }
+}
+
+@Composable
+private fun GoalsSectionHeader(goalCount: Int, onAdd: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = "SAVINGS GOALS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (goalCount > 0) {
+                Text(
+                    text = "$goalCount ${if (goalCount == 1) "goal" else "goals"} funded by Adult Money",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        }
+        Button(
+            onClick = onAdd,
+            shape = RoundedCornerShape(10.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = Color.Black
+            ),
+            modifier = Modifier
+                .height(32.dp)
+                .testTag("add_goal_button")
+        ) {
+            Text("+ Goal", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+        }
+    }
+}
+
+@Composable
+private fun EmptyGoalsCard(onAdd: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("goals_empty_card")
+    ) {
+        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Nothing earmarked yet",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "A goal claims part of your Adult Money - a phone, a GPU, a trip - and tracks how close it is. The Emergency Fund stays out of it.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(
+                onClick = onAdd,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color.Black
+                ),
+                modifier = Modifier.testTag("goals_empty_add")
+            ) {
+                Text("+ Create a Goal", fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 

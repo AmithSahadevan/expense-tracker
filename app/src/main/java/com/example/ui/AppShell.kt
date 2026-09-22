@@ -91,8 +91,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.model.BudgetCalculator
+import com.example.data.model.BudgetInput
+import com.example.data.model.BudgetsSummary
+import com.example.data.model.GoalsSummary
 import com.example.data.model.MoneyFlowInput
 import com.example.data.model.ProductLookupResult
+import com.example.data.model.SavingsGoalInput
 import com.example.data.model.SavingsTransactionInput
 import com.example.data.model.WishlistItemInput
 import com.example.ui.components.AddTransactionSheet
@@ -143,6 +148,8 @@ fun AppShell(
     val moneyFlows by viewModel.moneyFlows.collectAsStateWithLifecycle()
     val wishlist by viewModel.wishlist.collectAsStateWithLifecycle()
     val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    val budgetsSummary by viewModel.budgetsSummary.collectAsStateWithLifecycle()
+    val goalsSummary by viewModel.goalsSummary.collectAsStateWithLifecycle()
     val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
@@ -266,6 +273,8 @@ fun AppShell(
                                 wishlist = wishlist,
                                 savingsTransactions = savingsTransactions,
                                 budgets = budgets,
+                                budgetsSummary = budgetsSummary,
+                                goalsSummary = goalsSummary,
                                 allUsersCount = allUsers.size,
                                 onNavigateTo = navigateToDestination,
                                 onOpenAddTransaction = {
@@ -292,7 +301,13 @@ fun AppShell(
                                 onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
                                 onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
                                 onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                                onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                                onAddBudget = { viewModel.addBudget(it) },
+                                onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
+                                onDeleteBudget = { viewModel.deleteBudget(it) },
+                                onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
+                                onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
+                                onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
+                                onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
                                 onUpdateCurrency = { viewModel.updateCurrency(it) },
                                 onExportData = viewModel::exportUserDataToJson,
                                 onImportData = viewModel::importUserDataFromJson,
@@ -349,6 +364,8 @@ fun AppShell(
                         wishlist = wishlist,
                         savingsTransactions = savingsTransactions,
                         budgets = budgets,
+                        budgetsSummary = budgetsSummary,
+                        goalsSummary = goalsSummary,
                         allUsersCount = allUsers.size,
                         onNavigateTo = navigateToDestination,
                         onOpenAddTransaction = {
@@ -375,7 +392,13 @@ fun AppShell(
                         onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
                         onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
                         onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                        onAddBudget = { c, a -> viewModel.addBudget(c, a) },
+                        onAddBudget = { viewModel.addBudget(it) },
+                        onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
+                        onDeleteBudget = { viewModel.deleteBudget(it) },
+                        onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
+                        onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
+                        onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
+                        onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
                         onUpdateCurrency = { viewModel.updateCurrency(it) },
                         onExportData = viewModel::exportUserDataToJson,
                         onImportData = viewModel::importUserDataFromJson,
@@ -702,6 +725,8 @@ private fun ScreenRouter(
     wishlist: List<WishlistItemEntity>,
     savingsTransactions: List<SavingsTransactionEntity>,
     budgets: List<BudgetEntity>,
+    budgetsSummary: BudgetsSummary,
+    goalsSummary: GoalsSummary,
     allUsersCount: Int,
     onNavigateTo: (String) -> Unit,
     onOpenAddTransaction: () -> Unit,
@@ -721,7 +746,13 @@ private fun ScreenRouter(
     onAddSavingsTransaction: (SavingsTransactionInput) -> Unit,
     onUpdateSavingsTransaction: (Long, SavingsTransactionInput) -> Unit,
     onDeleteSavingsTransaction: (Long) -> Unit,
-    onAddBudget: (String, Double) -> Unit,
+    onAddBudget: (BudgetInput) -> Unit,
+    onUpdateBudget: (Long, BudgetInput) -> Unit,
+    onDeleteBudget: (Long) -> Unit,
+    onAddGoal: (SavingsGoalInput, Double) -> Unit,
+    onUpdateGoal: (Long, SavingsGoalInput) -> Unit,
+    onDeleteGoal: (Long) -> Unit,
+    onContributeToGoal: (Long, String, Double, String) -> String?,
     onUpdateCurrency: (String) -> Unit,
     onExportData: suspend () -> String?,
     onImportData: suspend (String) -> Boolean,
@@ -743,6 +774,8 @@ private fun ScreenRouter(
             AppDestination.HOME -> HomeScreen(
                 currentUser = currentUser,
                 summary = summary,
+                budgetsSummary = budgetsSummary,
+                goalsSummary = goalsSummary,
                 onNavigateTo = onNavigateTo,
                 onOpenAddTransaction = onOpenAddTransaction,
                 onEditTransaction = onEditTransaction,
@@ -783,14 +816,23 @@ private fun ScreenRouter(
                 savingsTransactions = savingsTransactions,
                 adultMoneyBalance = summary.adultMoneyBalance,
                 emergencyFundBalance = summary.emergencyFundBalance,
+                goalsSummary = goalsSummary,
                 onAddSavingsTransaction = onAddSavingsTransaction,
                 onUpdateSavingsTransaction = onUpdateSavingsTransaction,
-                onDeleteSavingsTransaction = onDeleteSavingsTransaction
+                onDeleteSavingsTransaction = onDeleteSavingsTransaction,
+                onAddGoal = onAddGoal,
+                onUpdateGoal = onUpdateGoal,
+                onDeleteGoal = onDeleteGoal,
+                onContributeToGoal = onContributeToGoal
             )
             AppDestination.BUDGETS -> BudgetsScreen(
                 currentUser = currentUser,
                 budgets = budgets,
+                summary = budgetsSummary,
+                suggestedCategories = BudgetCalculator.categoriesWithoutBudget(budgets, transactions),
                 onAddBudget = onAddBudget,
+                onUpdateBudget = onUpdateBudget,
+                onDeleteBudget = onDeleteBudget,
                 addRequested = dockAddRequest == AppDestination.BUDGETS,
                 onAddRequestHandled = onDockAddRequestHandled
             )
