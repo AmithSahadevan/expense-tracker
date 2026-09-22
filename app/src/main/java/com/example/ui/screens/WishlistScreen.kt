@@ -2,11 +2,16 @@ package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,6 +84,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
@@ -104,6 +110,8 @@ import com.example.ui.components.ProductImage
 import com.example.ui.components.PurchasedBadge
 import com.example.ui.components.WishlistItemFormSheet
 import com.example.ui.components.formatMoney
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -136,13 +144,19 @@ fun WishlistScreen(
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
     var filter by rememberSaveable { mutableStateOf(WishlistFilter.ALL) }
-    var viewMode by rememberSaveable { mutableStateOf(WishlistViewMode.CAROUSEL) }
 
     val affordableItems = remember(wishlistItems, adultMoneyBalance) {
         wishlistItems.filter { item ->
             val affordability = WishlistAffordabilityCalculator.evaluate(item.estimatedCost, adultMoneyBalance)
             affordability is WishlistAffordability.CanAfford && !item.isPurchased
         }
+    }
+
+    // Default to Carousel only if 2+ items are affordable, otherwise Pinterest Grid.
+    var viewModeOverride by rememberSaveable { mutableStateOf<WishlistViewMode?>(null) }
+    val viewMode = remember(viewModeOverride, affordableItems.size) {
+        if (affordableItems.size < 2) WishlistViewMode.GRID
+        else viewModeOverride ?: WishlistViewMode.CAROUSEL
     }
 
     var selectedItemId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -166,8 +180,8 @@ fun WishlistScreen(
 
     val selectedItem = wishlistItems.find { it.id == selectedItemId }
     BackHandler(enabled = selectedItem != null) { selectedItemId = null }
-    BackHandler(enabled = selectedItem == null && viewMode == WishlistViewMode.GRID) {
-        viewMode = WishlistViewMode.CAROUSEL
+    BackHandler(enabled = selectedItem == null && viewMode == WishlistViewMode.GRID && affordableItems.size >= 2) {
+        viewModeOverride = WishlistViewMode.CAROUSEL
     }
 
     AnimatedContent(
@@ -197,7 +211,7 @@ fun WishlistScreen(
                 filter = filter,
                 onFilterChange = { filter = it },
                 viewMode = viewMode,
-                onViewModeChange = { viewMode = it },
+                onViewModeChange = { viewModeOverride = it },
                 adultMoneyBalance = adultMoneyBalance,
                 currency = currency,
                 gridState = gridState,
@@ -308,15 +322,17 @@ private fun WishlistBrowse(
                         .padding(top = innerPadding.calculateTopPadding() + 12.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
-                        modifier = Modifier.padding(end = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back to Carousel",
-                            tint = Color.White
-                        )
+                    if (affordableItems.size >= 2) {
+                        IconButton(
+                            onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back to Carousel",
+                                tint = Color.White
+                            )
+                        }
                     }
                     Text(
                         text = "Wishlist",
@@ -332,7 +348,7 @@ private fun WishlistBrowse(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp)
-                        .padding(top = innerPadding.calculateTopPadding() + 42.dp, bottom = 8.dp),
+                        .padding(top = innerPadding.calculateTopPadding() + 12.dp, bottom = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -361,7 +377,15 @@ private fun WishlistBrowse(
             } else {
                 AnimatedContent(
                     targetState = viewMode,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    transitionSpec = {
+                        if (targetState == WishlistViewMode.GRID) {
+                            (fadeIn(tween(320, easing = FastOutSlowInEasing)) + slideInVertically(animationSpec = tween(320, easing = FastOutSlowInEasing)) { it / 6 })
+                                .togetherWith(fadeOut(tween(250)))
+                        } else {
+                            (fadeIn(tween(320, easing = FastOutSlowInEasing)) + slideInVertically(animationSpec = tween(320, easing = FastOutSlowInEasing)) { -it / 6 })
+                                .togetherWith(fadeOut(tween(250)))
+                        }
+                    },
                     label = "view_mode_transition"
                 ) { mode ->
                     if (mode == WishlistViewMode.GRID) {
@@ -382,6 +406,7 @@ private fun WishlistBrowse(
                     } else {
                         WishlistCarouselView(
                             items = affordableItems,
+                            allItems = items,
                             adultMoneyBalance = adultMoneyBalance,
                             currency = currency,
                             onOpenItem = onOpenItem,
@@ -598,6 +623,7 @@ private fun WishlistFilterRow(
 @Composable
 private fun WishlistCarouselView(
     items: List<WishlistItemEntity>,
+    allItems: List<WishlistItemEntity> = items,
     adultMoneyBalance: Double,
     currency: String,
     onOpenItem: (WishlistItemEntity) -> Unit,
@@ -623,8 +649,11 @@ private fun WishlistCarouselView(
                 Spacer(modifier = Modifier.height(32.dp))
                 Button(
                     onClick = onViewAll,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFD79A8)),
-                    shape = RoundedCornerShape(16.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("View All", fontWeight = FontWeight.Bold)
                 }
@@ -633,20 +662,54 @@ private fun WishlistCarouselView(
         return
     }
 
-    // Large number for infinite-like scrolling start at a middle multiple
+    // Large number for infinite-like scrolling start at a multiple
     val initialPage = items.size * 50
     val pagerState = rememberPagerState(initialPage = initialPage) { items.size * 100 }
+
+    // Automatic Swipe Logic
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+    var hasInteracted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isDragged) {
+        if (isDragged) {
+            hasInteracted = true
+        } else {
+            // If user swiped manually, wait 5s. Otherwise, standard 2s interval.
+            if (hasInteracted) {
+                delay(5000)
+            } else {
+                delay(2000)
+            }
+            while (true) {
+                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                delay(2000)
+            }
+        }
+    }
     
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Space reserved for header
-        Spacer(modifier = Modifier.height(80.dp))
+        // Reduced spacer so carousel sits higher near the top
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = "itemsReadyForPurchase",
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+        )
         
-        // 1. Area for Cards (Centered between header and the button below)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // 1. Swipable Carousel Area
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(270.dp),
             contentAlignment = Alignment.Center
         ) {
             HorizontalPager(
@@ -663,15 +726,14 @@ private fun WishlistCarouselView(
 
                 Card(
                     onClick = { onOpenItem(item) },
-                    shape = RoundedCornerShape(32.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = lerp(0.dp, 16.dp, (1f - absOffset).coerceAtLeast(0f))),
                     modifier = Modifier
-                        .padding(vertical = 12.dp) // Provide padding inside the pager row so the scaled card doesn't hit container bounds
+                        .padding(vertical = 12.dp)
                         .fillMaxWidth()
                         .aspectRatio(0.85f)
                         .graphicsLayer {
-                            // Increase the focused card's maximum scale from 1.0f to 1.25f, keeping background cards at 0.68f
                             val scale = lerp(0.68f, 1.25f, (1f - absOffset).coerceAtLeast(0f))
                             scaleX = scale
                             scaleY = scale
@@ -708,7 +770,7 @@ private fun WishlistCarouselView(
                         ) {
                             Text(
                                 text = item.title,
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Black),
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
                                 color = Color.White,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
@@ -721,7 +783,7 @@ private fun WishlistCarouselView(
                                 ) {
                                     Text(
                                         text = formatMoney(currency, item.estimatedCost),
-                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                                         color = Color.White
                                     )
                                     
@@ -765,27 +827,88 @@ private fun WishlistCarouselView(
             }
         }
 
-        // 2. Area for Button (Centered between cards and dock)
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // 2. Small Pink Button directly below cards with clear separation
         Box(
-            modifier = Modifier.weight(0.4f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
             contentAlignment = Alignment.Center
         ) {
             Button(
                 onClick = onViewAll,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFD79A8)),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.height(48.dp).padding(horizontal = 32.dp)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFD79A8),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(10.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                modifier = Modifier
+                    .height(30.dp)
+                    .testTag("wishlist_toggle_view_mode")
             ) {
                 Text(
                     text = "View All",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    ),
                     color = Color.White
                 )
             }
         }
-        
-        // 3. Reservation for Dock height
-        Spacer(modifier = Modifier.height(100.dp))
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 3. Scaled-Down Low-Opacity Non-Interactive Pinterest Grid Preview below the button
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .graphicsLayer {
+                    scaleX = 0.82f
+                    scaleY = 0.82f
+                    transformOrigin = TransformOrigin(0.5f, 0f)
+                }
+                .alpha(0.35f)
+        ) {
+            WishlistGridPreview(
+                items = if (allItems.isNotEmpty()) allItems else items
+            )
+
+            // Transparent overlay to consume all touches (rendering preview non-interactive)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun WishlistGridPreview(
+    items: List<WishlistItemEntity>
+) {
+    LazyVerticalStaggeredGrid(
+        columns = StaggeredGridCells.Fixed(2),
+        userScrollEnabled = false,
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 100.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalItemSpacing = 12.dp,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(items.take(6), key = { "preview_${it.id}" }) { item ->
+            WishlistProductCard(
+                item = item,
+                onClick = {}
+            )
+        }
     }
 }
 
@@ -801,7 +924,7 @@ private fun WishlistSpendingPowerCard(
             modifier = modifier
                 .fillMaxWidth()
                 .testTag("wishlist_spending_power_hero"),
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primary
             )
@@ -904,7 +1027,7 @@ private fun WishlistProductCard(
     ) {
         Card(
             onClick = onClick,
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             modifier = Modifier.fillMaxWidth()

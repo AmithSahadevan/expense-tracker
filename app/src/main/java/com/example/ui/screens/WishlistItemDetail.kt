@@ -264,7 +264,7 @@ fun WishlistItemDetail(
                                 Toast.makeText(context, "Couldn't open this link", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF54A0FF)),
                         border = BorderStroke(1.dp, Color(0xFF54A0FF).copy(alpha = 0.5f)),
                         modifier = Modifier
@@ -286,7 +286,7 @@ fun WishlistItemDetail(
                 if (item.isPurchased) {
                     OutlinedButton(
                         onClick = onTogglePurchased,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         modifier = Modifier
                             .weight(1f)
@@ -303,7 +303,7 @@ fun WishlistItemDetail(
                 } else {
                     Button(
                         onClick = onTogglePurchased,
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF55B894)),
                         modifier = Modifier
                             .weight(1f)

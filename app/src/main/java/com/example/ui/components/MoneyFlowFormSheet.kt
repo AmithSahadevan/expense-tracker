@@ -212,7 +212,7 @@ fun MoneyFlowForm(
                 val clean = MoneyFlowValidator.clean(input)
                 if (clean == null) showErrors = true else onSave(clean)
             },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)

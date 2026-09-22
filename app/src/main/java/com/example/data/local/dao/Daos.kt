@@ -48,6 +48,9 @@ interface UserDao {
 
     @Query("SELECT COUNT(*) FROM users")
     suspend fun getUserCount(): Int
+
+    @Query("DELETE FROM users WHERE id = :userId")
+    suspend fun deleteUser(userId: Long)
 }
 
 @Dao
@@ -95,6 +98,12 @@ interface TransactionDao {
 
     @Query("DELETE FROM income WHERE id = :id AND userId = :userId")
     suspend fun deleteIncome(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM expenses WHERE userId = :userId")
+    suspend fun deleteAllExpensesForUser(userId: Long)
+
+    @Query("DELETE FROM income WHERE userId = :userId")
+    suspend fun deleteAllIncomeForUser(userId: Long)
 }
 
 @Dao
@@ -144,6 +153,15 @@ interface SavingsDao {
 
     @Query("DELETE FROM savings_transactions WHERE id = :id AND userId = :userId")
     suspend fun deleteSavingsTransaction(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM savings WHERE userId = :userId")
+    suspend fun deleteAllSavingsForUser(userId: Long)
+
+    @Query("DELETE FROM savings_goals WHERE userId = :userId")
+    suspend fun deleteAllSavingsGoalsForUser(userId: Long)
+
+    @Query("DELETE FROM savings_transactions WHERE userId = :userId")
+    suspend fun deleteAllSavingsTransactionsForUser(userId: Long)
 }
 
 @Dao
@@ -168,6 +186,9 @@ interface MoneyFlowDao {
 
     @Query("DELETE FROM money_flow WHERE id = :id AND userId = :userId")
     suspend fun deleteMoneyFlow(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM money_flow WHERE userId = :userId")
+    suspend fun deleteAllMoneyFlowsForUser(userId: Long)
 }
 
 @Dao
@@ -192,6 +213,9 @@ interface WishlistDao {
 
     @Query("DELETE FROM wishlist_items WHERE id = :id AND userId = :userId")
     suspend fun deleteWishlistItem(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM wishlist_items WHERE userId = :userId")
+    suspend fun deleteAllWishlistItemsForUser(userId: Long)
 }
 
 @Dao
@@ -210,6 +234,9 @@ interface BudgetDao {
 
     @Query("DELETE FROM budgets WHERE id = :id AND userId = :userId")
     suspend fun deleteBudget(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM budgets WHERE userId = :userId")
+    suspend fun deleteAllBudgetsForUser(userId: Long)
 }
 
 @Dao
@@ -225,4 +252,7 @@ interface CategoryDao {
 
     @Query("DELETE FROM custom_categories WHERE id = :id AND userId = :userId")
     suspend fun deleteCategory(id: Long, userId: Long): Int
+
+    @Query("DELETE FROM custom_categories WHERE userId = :userId")
+    suspend fun deleteAllCategoriesForUser(userId: Long)
 }

@@ -715,7 +715,7 @@ fun AddTransactionSheet(
                         recurrence
                     )
                 },
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedType == TransactionType.EXPENSE)
                         Color(0xFFFF6B6B)

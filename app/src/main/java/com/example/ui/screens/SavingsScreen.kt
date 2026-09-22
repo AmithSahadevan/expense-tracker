@@ -141,11 +141,6 @@ fun SavingsScreen(
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
-                    text = "Two separate pots: one to enjoy, one to protect",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
@@ -285,14 +280,12 @@ private fun adultSeriesColor(): Color = MintGreen
 private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency: String) {
     val total = adultMoney + emergencyFund
     val adultColor = adultSeriesColor()
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("total_savings_card")
     ) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = "TOTAL SAVINGS",
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp),
@@ -345,7 +338,7 @@ private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency
                 )
                 LegendAmount(
                     color = EmergencyChartAmber,
-                    label = "🔒 Emergency Fund",
+                    label = "Emergency Fund",
                     sublabel = "Protected · not spendable",
                     amount = formatMoney(currency, emergencyFund),
                     modifier = Modifier.weight(1f)
@@ -392,11 +385,6 @@ private fun ContributionsChartCard(monthly: List<MonthlySavingsContribution>, cu
                     text = "Contributions over time",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Net added per month (deposits minus withdrawals), last 6 months",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -495,20 +483,19 @@ private fun ContributionsChartCard(monthly: List<MonthlySavingsContribution>, cu
                 }
 
                 monthly.getOrNull(selectedIndex)?.let { month ->
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.fillMaxWidth()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                text = month.label,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            ReadoutRow(adultColor, "Adult Money", signedMoney(currency, month.adultMoney))
-                            ReadoutRow(EmergencyChartAmber, "Emergency Fund", signedMoney(currency, month.emergencyFund))
-                        }
+                        Text(
+                            text = month.label,
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ReadoutRow(adultColor, "Adult Money", signedMoney(currency, month.adultMoney))
+                        ReadoutRow(EmergencyChartAmber, "Emergency Fund", signedMoney(currency, month.emergencyFund))
                     }
                 }
             }
@@ -555,88 +542,65 @@ private fun SavingsHistoryRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val isEmergency = transaction.savingsType == SavingsType.EMERGENCY_FUND
     val isDeposit = transaction.transactionType == SavingsActionType.DEPOSIT
 
-    Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onEdit)
-            .testTag("savings_tx_${transaction.id}")
+            .padding(vertical = 8.dp)
+            .testTag("savings_tx_${transaction.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(if (isEmergency) EmergencyVault else MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = if (isEmergency) "🛡️" else "💳", fontSize = 18.sp)
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = transaction.title,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${savingsTypeName(transaction.savingsType)} • ${if (isDeposit) "Deposit" else "Withdrawal"} • $dateText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (!transaction.affectsAvailableMoney) {
-                        Text(
-                            text = if (isDeposit) "Existing savings · not from Available Money" else "Spent directly · not returned to Available Money",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (transaction.notes.isNotBlank()) {
-                        Text(
-                            text = "“${transaction.notes}”",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
+            Text(
+                text = transaction.title,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "${savingsTypeName(transaction.savingsType)} • ${if (isDeposit) "Deposit" else "Withdrawal"} • $dateText",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (!transaction.affectsAvailableMoney) {
                 Text(
-                    text = "${if (isDeposit) "+" else "−"}${formatMoney(currency, transaction.amount)}",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
-                    color = if (isDeposit) Color(0xFF10B981) else Color(0xFFFF6B6B)
+                    text = if (isDeposit) "Existing savings · not from Available Money" else "Spent directly · not returned to Available Money",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit savings record",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteOutline,
-                        contentDescription = "Delete savings record",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
+            }
+            if (transaction.notes.isNotBlank()) {
+                Text(
+                    text = "“${transaction.notes}”",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "${if (isDeposit) "+" else "−"}${formatMoney(currency, transaction.amount)}",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                color = if (isDeposit) Color(0xFF10B981) else Color(0xFFFF6B6B)
+            )
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit savings record",
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = "Delete savings record",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }

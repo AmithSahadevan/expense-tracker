@@ -466,4 +466,16 @@ class ExpenseTrackerRepository(
         // Custom Categories
         backup.customCategories.forEach { categoryDao.insertCategory(it.copy(id = 0, userId = userId)) }
     }
+
+    suspend fun deleteAllUserData(userId: Long) = withContext(Dispatchers.IO) {
+        transactionDao.deleteAllExpensesForUser(userId)
+        transactionDao.deleteAllIncomeForUser(userId)
+        savingsDao.deleteAllSavingsForUser(userId)
+        savingsDao.deleteAllSavingsGoalsForUser(userId)
+        savingsDao.deleteAllSavingsTransactionsForUser(userId)
+        moneyFlowDao.deleteAllMoneyFlowsForUser(userId)
+        wishlistDao.deleteAllWishlistItemsForUser(userId)
+        budgetDao.deleteAllBudgetsForUser(userId)
+        categoryDao.deleteAllCategoriesForUser(userId)
+    }
 }

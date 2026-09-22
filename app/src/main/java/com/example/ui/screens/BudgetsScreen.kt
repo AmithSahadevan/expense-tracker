@@ -87,11 +87,6 @@ fun BudgetsScreen(
                 ),
                 color = MaterialTheme.colorScheme.onBackground
             )
-            Text(
-                text = "Give every dollar a fun job without spreadsheet misery",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -121,7 +116,7 @@ fun BudgetsScreen(
                 ) {
                     items(budgets, key = { it.id }) { budget ->
                         Card(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             modifier = Modifier.fillMaxWidth()
                         ) {

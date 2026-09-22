@@ -72,6 +72,15 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.lazy.LazyRow
+import com.example.data.model.Currencies
+import com.example.data.model.CurrencyInfo
 import com.example.ui.theme.MintGreen
 import com.example.ui.theme.PunchyCoral
 import com.example.ui.theme.SunnyYellow
@@ -86,6 +95,9 @@ fun SettingsScreen(
     onUpdateCurrency: (String) -> Unit,
     onExportData: suspend () -> String?,
     onImportData: suspend (String) -> Boolean,
+    onRemoveAccount: () -> Unit,
+    onUpdateProfile: (String, String, String?) -> Unit,
+    onClearData: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -107,6 +119,9 @@ fun SettingsScreen(
 
     var showSalaryDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showRemoveAccountDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
     val currency = currentUser?.currencySymbol ?: "₹"
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -168,21 +183,14 @@ fun SettingsScreen(
             ),
             color = MaterialTheme.colorScheme.onBackground
         )
-        Text(
-            text = "User data isolation, preferences, and architecture",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Active Account Profile Card
-        Card(
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        // Active Account Profile Card (Flattened)
+        Box(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(vertical = 12.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -225,112 +233,101 @@ fun SettingsScreen(
                         }
                     }
 
-                    IconButton(
-                        onClick = { showCurrencyDialog = true },
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CurrencyExchange,
-                            contentDescription = "Change Currency",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        IconButton(
+                            onClick = { showEditProfileDialog = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Profile",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onOpenAuthModal,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SwapHoriz,
+                                contentDescription = "Switch Profile",
+                                tint = Color.White
+                            )
+                        }
                     }
-
-                    IconButton(
-                        onClick = onOpenAuthModal,
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwapHoriz,
-                            contentDescription = "Switch Profile",
-                            tint = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onOpenAuthModal,
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("create_account_button")
-                ) {
-                    Icon(imageVector = Icons.Default.People, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text("Create New Account")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        // Monthly Salary & Payday Card
-        Card(
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+        // App Preferences (Flattened)
+        Text(
+            text = "APP PREFERENCES",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(text = "Currency", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        val currentInfo = Currencies.all.find { it.symbol == currency }
+                        val displayText = if (currentInfo != null) "${currentInfo.name} (${currentInfo.symbol})" else currency
+                        Text(
+                            text = "Active: $displayText",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Button(
+                        onClick = { showCurrencyDialog = true },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(text = "Change", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    }
+                }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // Monthly Salary & Payday (Flattened)
+        Text(
+            text = "MONTHLY SALARY & PAYDAY",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("salary_payday_card")
         ) {
             Column(
-                modifier = Modifier.padding(18.dp),
+                modifier = Modifier.padding(vertical = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(MintGreen.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Payments,
-                                contentDescription = null,
-                                tint = MintGreen,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        Text(
-                            text = "MONTHLY SALARY & PAYDAY",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { showSalaryDialog = true },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Salary",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-
                 val currentSalary = currentUser?.monthlySalary ?: 0.0
                 val payday = currentUser?.paydayDayOfMonth ?: 1
 
@@ -386,44 +383,23 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        // Data Portability Card (Export/Import)
+        // Data Management (Flattened)
         Text(
-            text = "DATA MANAGEMENT",
+            text = "DATA",
             style = MaterialTheme.typography.labelSmall.copy(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.2.sp
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(10.dp))
 
-        Card(
-            shape = RoundedCornerShape(22.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        Box(
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFF54A0FF).copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(imageVector = Icons.Default.Description, contentDescription = null, tint = Color(0xFF54A0FF))
-                    }
-                    Column {
-                        Text(text = "Backup & Portability", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(text = "Export your data for Excel or move it between devices", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
+            Column(modifier = Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(text = "Backup & Import", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
@@ -437,7 +413,7 @@ fun SettingsScreen(
                     ) {
                         Icon(imageVector = Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Export")
+                        Text("Backup", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
 
                     Button(
@@ -448,28 +424,139 @@ fun SettingsScreen(
                     ) {
                         Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Import")
+                        Text("Import", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
                 }
+                
+                Button(
+                    onClick = { showClearDataDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f),
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Clear All Data", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // Account Lifecycle Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Create New Account
+            Button(
+                onClick = onOpenAuthModal,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("create_account_button")
+            ) {
+                Icon(imageVector = Icons.Default.People, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("New Account", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+            }
+
+            // Remove Account Section
+            Button(
+                onClick = { showRemoveAccountDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Remove Profile", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
             }
         }
 
         Spacer(modifier = Modifier.height(30.dp))
     }
 
-    // Currency Change Dialog
-    if (showCurrencyDialog) {
-        var symbolInput by remember { mutableStateOf(currency) }
+    if (showEditProfileDialog && currentUser != null) {
+        var nameInput by remember { mutableStateOf(currentUser.displayName) }
+        var emailInput by remember { mutableStateOf(currentUser.email) }
+        var selectedPfp by remember { mutableStateOf(currentUser.avatarImagePath) }
+        
+        val pfpImages = remember { (1..10).map { "pfp/pfp_$it.jpg" } }
+
         AlertDialog(
-            onDismissRequest = { showCurrencyDialog = false },
-            title = { Text("Change Currency Symbol") },
+            onDismissRequest = { showEditProfileDialog = false },
+            title = { Text("Edit Profile", fontWeight = FontWeight.Black) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Enter the currency icon/symbol you want to use (e.g. $, €, £, ₹). This is visual only.", style = MaterialTheme.typography.bodySmall)
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // PFP Picker
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(userColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (selectedPfp != null) {
+                                AsyncImage(
+                                    model = "file:///android_asset/$selectedPfp",
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(text = currentUser.avatarEmoji, fontSize = 32.sp)
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(pfpImages) { path ->
+                                val isSelected = selectedPfp == path
+                                Box(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                        .clickable { selectedPfp = path }
+                                        .padding(if (isSelected) 2.dp else 0.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = "file:///android_asset/$path",
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     OutlinedTextField(
-                        value = symbolInput,
-                        onValueChange = { symbolInput = it },
-                        label = { Text("Currency Symbol") },
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Display Name") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = emailInput,
+                        onValueChange = { emailInput = it },
+                        label = { Text("Email Address") },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -477,13 +564,146 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    onUpdateCurrency(symbolInput)
-                    showCurrencyDialog = false
-                }) { Text("Update") }
+                Button(
+                    onClick = {
+                        onUpdateProfile(nameInput, emailInput, selectedPfp)
+                        showEditProfileDialog = false
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Save Changes")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showCurrencyDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showEditProfileDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showClearDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            title = { Text("Clear All Data?", fontWeight = FontWeight.Black) },
+            text = {
+                Text("This will permanently delete ALL transactions, wishlist items, and savings records from this account. Your profile and account settings will remain. This cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onClearData()
+                        showClearDataDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Clear Everything")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDataDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showRemoveAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveAccountDialog = false },
+            title = { Text("Remove Account?", fontWeight = FontWeight.Black) },
+            text = {
+                Text("This will permanently delete your account '@${currentUser?.username}' and ALL its transactions, wishlist items, and savings records. This cannot be undone.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onRemoveAccount()
+                        showRemoveAccountDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete Permanently")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveAccountDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // Currency Change Dialog (Searchable List)
+    if (showCurrencyDialog) {
+        var searchQuery by remember { mutableStateOf("") }
+        var tempSelectedCurrency by remember { 
+            mutableStateOf(Currencies.all.find { it.symbol == currency } ?: Currencies.all.first()) 
+        }
+        
+        val filteredCurrencies = remember(searchQuery) {
+            if (searchQuery.isBlank()) Currencies.all
+            else Currencies.all.filter { 
+                it.name.contains(searchQuery, ignoreCase = true) || 
+                it.code.contains(searchQuery, ignoreCase = true) ||
+                it.symbol.contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            title = { Text("Select Currency", fontWeight = FontWeight.Black) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.heightIn(max = 400.dp)) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search country or code...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(filteredCurrencies) { item ->
+                            val isSelected = tempSelectedCurrency == item
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                    .clickable {
+                                        tempSelectedCurrency = item
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(text = item.flag, fontSize = 20.sp)
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = item.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                        Text(text = item.code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Text(text = item.symbol, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black))
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onUpdateCurrency(tempSelectedCurrency.symbol)
+                        showCurrencyDialog = false
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Choose")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) { Text("Close") }
             }
         )
     }

@@ -448,7 +448,7 @@ fun WishlistItemForm(
                         val clean = WishlistInputValidator.clean(input)
                         if (clean == null) showErrors = true else onSave(clean)
                     },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -585,7 +585,7 @@ private fun ColumnScope.PasteLinkStep(
     Button(
         onClick = onAdd,
         enabled = linkText.isNotBlank() && !loading,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
@@ -638,7 +638,7 @@ private fun ColumnScope.PasteLinkStep(
     OutlinedButton(
         onClick = onEnterManually,
         enabled = !loading,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
@@ -745,7 +745,7 @@ private fun LookupFoundBanner(result: ProductLookupResult.Found, currency: Strin
 @Composable
 private fun LookupFailureCard(failure: ProductLookupResult.Failed, footer: String, onRetry: (() -> Unit)?) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.errorContainer,
         modifier = Modifier
             .fillMaxWidth()

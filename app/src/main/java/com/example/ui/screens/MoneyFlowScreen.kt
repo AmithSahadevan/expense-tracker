@@ -136,22 +136,11 @@ fun MoneyFlowScreen(
                         ),
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    Text(
-                        text = "Money between you and other people",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
             item(key = "totals") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MoneyFlowTotals(summary = summary, currency = currency)
-                    MoneyFlowExclusionNote(
-                        text = "Expected money isn't part of your Available Money until it arrives, and what you owe " +
-                            "stays out of your past expenses until you settle it."
-                    )
-                }
+                MoneyFlowTotals(summary = summary, currency = currency)
             }
 
             if (moneyFlows.isEmpty()) {
@@ -350,7 +339,7 @@ private fun MoneyFlowCard(
     val amountColor = if (item.isSettled) MaterialTheme.colorScheme.onSurfaceVariant else accent
 
     Card(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (item.isSettled) {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)

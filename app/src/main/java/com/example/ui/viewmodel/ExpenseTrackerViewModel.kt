@@ -621,6 +621,19 @@ class ExpenseTrackerViewModel(
         authRepository.logout()
     }
 
+    fun updateProfile(displayName: String, email: String, avatarImagePath: String?) {
+        val user = currentUser.value ?: return
+        viewModelScope.launch {
+            authRepository.updateUser(
+                user.copy(
+                    displayName = displayName,
+                    email = email,
+                    avatarImagePath = avatarImagePath
+                )
+            )
+        }
+    }
+
     // --- Data Portability (Excel/JSON) ---
 
     suspend fun exportUserDataToJson(): String? {
@@ -643,6 +656,23 @@ class ExpenseTrackerViewModel(
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    fun deleteCurrentUser() {
+        val user = currentUser.value ?: return
+        viewModelScope.launch {
+            // 1. Delete all associated data
+            repository.deleteAllUserData(user.id)
+            // 2. Delete the user entity and auto-switch if others exist
+            authRepository.deleteUser(user.id)
+        }
+    }
+
+    fun clearCurrentUserData() {
+        val user = currentUser.value ?: return
+        viewModelScope.launch {
+            repository.deleteAllUserData(user.id)
         }
     }
 }

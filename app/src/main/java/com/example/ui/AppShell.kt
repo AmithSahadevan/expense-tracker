@@ -104,6 +104,9 @@ import com.example.ui.screens.MoneyFlowScreen
 import com.example.ui.screens.SavingsScreen
 import com.example.ui.screens.SettingsScreen
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -225,7 +228,7 @@ fun AppShell(
                                     showAddTransactionSheet = true 
                                 },
                                 containerColor = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.testTag("rail_fab_add")
                             ) {
                                 Icon(imageVector = Icons.Outlined.Add, contentDescription = "Add Flow")
@@ -292,7 +295,10 @@ fun AppShell(
                                 onAddBudget = { c, a -> viewModel.addBudget(c, a) },
                                 onUpdateCurrency = { viewModel.updateCurrency(it) },
                                 onExportData = viewModel::exportUserDataToJson,
-                                onImportData = viewModel::importUserDataFromJson
+                                onImportData = viewModel::importUserDataFromJson,
+                                onRemoveAccount = { viewModel.deleteCurrentUser() },
+                                onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
+                                onClearData = { viewModel.clearCurrentUserData() }
                             )
                         }
                     }
@@ -373,6 +379,9 @@ fun AppShell(
                         onUpdateCurrency = { viewModel.updateCurrency(it) },
                         onExportData = viewModel::exportUserDataToJson,
                         onImportData = viewModel::importUserDataFromJson,
+                        onRemoveAccount = { viewModel.deleteCurrentUser() },
+                        onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
+                        onClearData = { viewModel.clearCurrentUserData() },
                         dockAddRequest = dockAddRequest,
                         onDockAddRequestHandled = { dockAddRequest = null },
                         onWishlistDetailToggle = { isWishlistDetailActive = it }
@@ -474,169 +483,167 @@ fun AppShell(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Card(
-                    onClick = {
-                        navigateToDestination(AppDestination.MONEY_FLOW.route)
-                        showMoreMenuSheet = false
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.CompareArrows,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column {
-                            Text(text = "Money Flow", fontWeight = FontWeight.Bold)
-                            Text(text = "Track debts, IOUs & shared expenses", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-
-                Card(
-                    onClick = {
-                        navigateToDestination(AppDestination.SAVINGS.route)
-                        showMoreMenuSheet = false
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                // Money Flow
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            navigateToDestination(AppDestination.MONEY_FLOW.route)
+                            showMoreMenuSheet = false
+                        }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.CompareArrows,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column {
+                        Text(text = "Money Flow", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = "Track debts, IOUs & shared expenses", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                // Savings
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
                         .testTag("more_hub_savings")
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Savings,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column {
-                            Text(text = "Savings", fontWeight = FontWeight.Bold)
-                            Text(text = "Adult Money & protected Emergency Fund", style = MaterialTheme.typography.bodySmall)
+                        .clickable {
+                            navigateToDestination(AppDestination.SAVINGS.route)
+                            showMoreMenuSheet = false
                         }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Savings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column {
+                        Text(text = "Savings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = "Adult Money & protected Emergency Fund", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                Card(
-                    onClick = {
-                        navigateToDestination(AppDestination.BUDGETS.route)
-                        showMoreMenuSheet = false
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.BarChart,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column {
-                            Text(text = "Category Budgets", fontWeight = FontWeight.Bold)
-                            Text(text = "Manage spending caps & allocations", style = MaterialTheme.typography.bodySmall)
+                // Category Budgets
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            navigateToDestination(AppDestination.BUDGETS.route)
+                            showMoreMenuSheet = false
                         }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.BarChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column {
+                        Text(text = "Category Budgets", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = "Manage spending caps & allocations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                Card(
-                    onClick = {
-                        navigateToDestination(AppDestination.SETTINGS.route)
-                        showMoreMenuSheet = false
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Column {
-                            Text(text = "Settings & Profiles", fontWeight = FontWeight.Bold)
-                            Text(text = "User data isolation, accounts & specs", style = MaterialTheme.typography.bodySmall)
+                // Settings & Profiles
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            navigateToDestination(AppDestination.SETTINGS.route)
+                            showMoreMenuSheet = false
                         }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Column {
+                        Text(text = "Settings & Profiles", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = "User data isolation, accounts & specs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                Card(
-                    onClick = {
-                        showMoreMenuSheet = false
-                        showAuthModal = true
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    modifier = Modifier.fillMaxWidth()
+                // Switch Profile
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            showMoreMenuSheet = false
+                            showAuthModal = true
+                        }
+                        .padding(vertical = 10.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Person,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Column {
-                            Text(text = "Switch Profile (${allUsers.size} accounts)", fontWeight = FontWeight.Bold)
-                            Text(text = "Current: @${currentUser?.username}", style = MaterialTheme.typography.bodySmall)
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(text = "Switch Profile (${allUsers.size} accounts)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(text = "Current: @${currentUser?.username}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
     }
 
-    // Transaction Detail View (Full screen overlay with slide animation)
-    AnimatedContent(
-        targetState = viewingTransaction,
-        transitionSpec = {
-            if (targetState != null) {
-                // Opening details: slide in from right
-                slideInHorizontally { it } togetherWith slideOutHorizontally { -it / 3 }
-            } else {
-                // Closing details: slide out to right
-                slideInHorizontally { -it / 3 } togetherWith slideOutHorizontally { it }
-            }
-        },
-        label = "transaction_detail_transition"
-    ) { tx ->
-        if (tx != null) {
+    // Retain the last viewing transaction item so content remains fully rendered during exit transition
+    var activeDetailTransaction by remember { mutableStateOf<TransactionItem?>(null) }
+    if (viewingTransaction != null) {
+        activeDetailTransaction = viewingTransaction
+    }
+
+    // Transaction Detail View (Full screen overlay with smooth slide + fade animation)
+    AnimatedVisibility(
+        visible = viewingTransaction != null,
+        enter = slideInHorizontally(
+            initialOffsetX = { fullWidth -> fullWidth },
+            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+        ) + fadeIn(
+            animationSpec = tween(durationMillis = 200)
+        ),
+        exit = slideOutHorizontally(
+            targetOffsetX = { fullWidth -> fullWidth },
+            animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+        ) + fadeOut(
+            animationSpec = tween(durationMillis = 200)
+        ),
+        label = "transaction_detail_visibility"
+    ) {
+        activeDetailTransaction?.let { tx ->
             BackHandler { viewingTransaction = null }
             TransactionDetailScreen(
                 item = tx,
@@ -718,6 +725,9 @@ private fun ScreenRouter(
     onUpdateCurrency: (String) -> Unit,
     onExportData: suspend () -> String?,
     onImportData: suspend (String) -> Boolean,
+    onRemoveAccount: () -> Unit,
+    onUpdateProfile: (String, String, String?) -> Unit,
+    onClearData: () -> Unit,
     dockAddRequest: AppDestination? = null,
     onDockAddRequestHandled: () -> Unit = {},
     onWishlistDetailToggle: (Boolean) -> Unit = {}
@@ -790,7 +800,10 @@ private fun ScreenRouter(
                 onUpdateSalaryAndPayday = onUpdateSalaryAndPayday,
                 onUpdateCurrency = onUpdateCurrency,
                 onExportData = onExportData,
-                onImportData = onImportData
+                onImportData = onImportData,
+                onRemoveAccount = onRemoveAccount,
+                onUpdateProfile = onUpdateProfile,
+                onClearData = onClearData
             )
         }
     }

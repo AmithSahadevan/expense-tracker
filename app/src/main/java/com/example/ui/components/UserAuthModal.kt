@@ -204,7 +204,7 @@ fun UserAuthModal(
                                 onDismiss()
                             }
                         },
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isCurrent)
                                 MaterialTheme.colorScheme.surfaceVariant
@@ -301,7 +301,7 @@ fun UserAuthModal(
 
                 Button(
                     onClick = { isRegistering = true },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     ),
@@ -469,7 +469,7 @@ fun UserAuthModal(
                 ) {
                     Button(
                         onClick = { isRegistering = false },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = MaterialTheme.colorScheme.onSurface
@@ -500,7 +500,7 @@ fun UserAuthModal(
                             )
                             onDismiss()
                         },
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary
                         ),

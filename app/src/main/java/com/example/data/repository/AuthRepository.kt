@@ -104,4 +104,18 @@ class AuthRepository(
     fun logout() {
         _currentUser.value = null
     }
+
+    suspend fun updateUser(user: UserEntity) = withContext(Dispatchers.IO) {
+        userDao.updateUser(user)
+        if (_currentUser.value?.id == user.id) {
+            _currentUser.value = user
+        }
+    }
+
+    suspend fun deleteUser(userId: Long) = withContext(Dispatchers.IO) {
+        userDao.deleteUser(userId)
+        if (_currentUser.value?.id == userId) {
+            _currentUser.value = allUsers.firstOrNull()?.firstOrNull { it.id != userId }
+        }
+    }
 }
