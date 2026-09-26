@@ -26,7 +26,7 @@ fun ChoicePill(
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
-        color = if (selected) accent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+        color = if (selected) accent else MaterialTheme.colorScheme.surfaceVariant,
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
@@ -34,7 +34,9 @@ fun ChoicePill(
         Text(
             text = label,
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium),
-            color = if (selected) selectedContentColor else MaterialTheme.colorScheme.onSurface,
+            color = if (selected) {
+                if (accent == Color.White) Color(0xFF0C0F14) else selectedContentColor
+            } else Color(0xFFF4F4F6),
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
         )
     }

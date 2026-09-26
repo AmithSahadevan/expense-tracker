@@ -29,6 +29,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -66,15 +68,15 @@ fun DatePickerField(
             Icon(
                 imageVector = Icons.Default.CalendarMonth,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = Color.White,
                 modifier = Modifier.size(18.dp)
             )
             Column(modifier = Modifier.weight(1f).padding(vertical = 4.dp)) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF94A3B8))
                 Text(
                     text = date?.let { dateFormat.format(Date(it)) } ?: placeholder,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (date != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (date != null) Color(0xFFF4F4F6) else Color(0xFF94A3B8)
                 )
             }
             if (clearable && date != null) {
@@ -82,7 +84,7 @@ fun DatePickerField(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Clear $label",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = Color(0xFF94A3B8),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -99,9 +101,9 @@ fun DatePickerField(
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { onDateChange(keepTimeOfDay(it, reference)) }
                     showPicker = false
-                }) { Text("OK") }
+                }) { Text("OK", color = Color.White, fontWeight = FontWeight.Bold) }
             },
-            dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showPicker = false }) { Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold) } }
         ) {
             DatePicker(state = pickerState)
         }

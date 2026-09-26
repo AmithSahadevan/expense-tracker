@@ -709,10 +709,11 @@ fun AppShell(
     transactionToDelete?.let { tx ->
         AlertDialog(
             onDismissRequest = { transactionToDelete = null },
-            title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold) },
+            title = { Text("Delete Transaction?", fontWeight = FontWeight.Bold, color = Color.White) },
             text = {
                 Text(
-                    text = "Are you sure you want to remove \"${tx.title}\" (${currentUser?.currencySymbol ?: "₹"}${String.format("%.0f", tx.amount)})? This cannot be undone."
+                    text = "Are you sure you want to remove \"${tx.title}\" (${currentUser?.currencySymbol ?: "₹"}${String.format("%.0f", tx.amount)})? This cannot be undone.",
+                    color = Color(0xFFF4F4F6)
                 )
             },
             confirmButton = {
@@ -722,14 +723,17 @@ fun AppShell(
                         transactionToDelete = null
                         viewingTransaction = null // Close detail if deleting from there
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Delete")
+                    Text("Delete", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { transactionToDelete = null }) {
-                    Text("Cancel")
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -923,7 +927,7 @@ private fun AmoebaBottomDock(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.surface,
         tonalElevation = 4.dp
     ) {
         // Full width container that includes system navigation bar area

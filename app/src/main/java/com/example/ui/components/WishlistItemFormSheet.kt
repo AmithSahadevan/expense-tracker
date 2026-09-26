@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -36,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -272,9 +275,9 @@ fun WishlistItemForm(
                         onClick = { step = FormStep.PASTE_LINK },
                         modifier = Modifier.testTag("wishlist_back_to_link")
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Use a product link")
+                        Text("Use a product link", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -304,13 +307,21 @@ fun WishlistItemForm(
                     OutlinedTextField(
                         value = imageUrl,
                         onValueChange = { imageUrl = it },
-                        label = { Text("Image URL") },
-                        placeholder = { Text("https://…/photo.jpg") },
+                        label = { Text("Image URL", color = Color(0xFF94A3B8)) },
+                        placeholder = { Text("https://…/photo.jpg", color = Color(0xFF94A3B8)) },
                         isError = showErrors && errors.imageUrl != null,
-                        supportingText = { Text(if (showErrors && errors.imageUrl != null) errors.imageUrl else "Preview appears on the left") },
+                        supportingText = { Text(if (showErrors && errors.imageUrl != null) errors.imageUrl else "Preview appears on the left", color = Color(0xFF94A3B8)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier
                             .weight(1f)
                             .testTag("wishlist_form_image_url")
@@ -320,13 +331,21 @@ fun WishlistItemForm(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Product name *") },
-                    placeholder = { Text("e.g. Sony WH-1000XM5") },
+                    label = { Text("Product name *", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("e.g. Sony WH-1000XM5", color = Color(0xFF94A3B8)) },
                     isError = showErrors && errors.title != null,
                     supportingText = if (showErrors && errors.title != null) ({ Text(errors.title) }) else null,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("wishlist_form_name")
@@ -338,17 +357,25 @@ fun WishlistItemForm(
                         val cleaned = raw.filter { it.isDigit() }
                         priceText = cleaned
                     },
-                    label = { Text("Price") },
-                    prefix = { Text("$currency ") },
+                    label = { Text("Price", color = Color(0xFF94A3B8)) },
+                    prefix = { Text("$currency ", color = Color.White) },
                     isError = showErrors && errors.price != null,
                     supportingText = when {
                         showErrors && errors.price != null -> ({ Text(errors.price) })
-                        priceText.isBlank() -> ({ Text("Optional. You can add it later.") })
+                        priceText.isBlank() -> ({ Text("Optional. You can add it later.", color = Color(0xFF94A3B8)) })
                         else -> null
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("wishlist_form_price")
@@ -361,11 +388,19 @@ fun WishlistItemForm(
                 OutlinedTextField(
                     value = store,
                     onValueChange = { store = it },
-                    label = { Text("Store / merchant") },
-                    placeholder = { Text("e.g. Amazon, Croma, Nike") },
+                    label = { Text("Store / merchant", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("e.g. Amazon, Croma, Nike", color = Color(0xFF94A3B8)) },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("wishlist_form_store")
@@ -374,12 +409,12 @@ fun WishlistItemForm(
                 OutlinedTextField(
                     value = productUrl,
                     onValueChange = { productUrl = it },
-                    label = { Text("Product URL") },
-                    placeholder = { Text("https://…") },
+                    label = { Text("Product URL", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("https://…", color = Color(0xFF94A3B8)) },
                     isError = showErrors && errors.url != null,
                     supportingText = when {
                         showErrors && errors.url != null -> ({ Text(errors.url) })
-                        productUrl.isNotBlank() -> ({ Text("Tap ↻ to fill in details from this link") })
+                        productUrl.isNotBlank() -> ({ Text("Tap ↻ to fill in details from this link", color = Color(0xFF94A3B8)) })
                         else -> null
                     },
                     trailingIcon = {
@@ -388,12 +423,24 @@ fun WishlistItemForm(
                             enabled = productUrl.isNotBlank() && lookupStatus != LookupStatus.Loading,
                             modifier = Modifier.testTag("wishlist_refetch")
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Fill in details from this link")
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Fill in details from this link",
+                                tint = if (productUrl.isNotBlank() && lookupStatus != LookupStatus.Loading) Color.White else Color(0xFF64748B)
+                            )
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("wishlist_form_url")
@@ -402,7 +449,7 @@ fun WishlistItemForm(
                 Text(
                     text = "PRIORITY",
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -412,7 +459,7 @@ fun WishlistItemForm(
                         ChoicePill(
                             label = WishlistPriority.label(option),
                             selected = priority == option,
-                            accent = MaterialTheme.colorScheme.primary,
+                            accent = Color.White,
                             onClick = { priority = option }
                         )
                     }
@@ -435,11 +482,19 @@ fun WishlistItemForm(
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Notes") },
+                    label = { Text("Notes", color = Color(0xFF94A3B8)) },
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     minLines = 2,
                     maxLines = 4,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -449,6 +504,12 @@ fun WishlistItemForm(
                         if (clean == null) showErrors = true else onSave(clean)
                     },
                     shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14),
+                        disabledContainerColor = Color(0xFF2C2F36),
+                        disabledContentColor = Color(0xFF94A3B8)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -456,7 +517,8 @@ fun WishlistItemForm(
                 ) {
                     Text(
                         text = if (isEdit) "Save Changes" else "Add to Wishlist",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF0C0F14)
                     )
                 }
 
@@ -518,14 +580,21 @@ private fun IncompleteDetailsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        text = { Text(message) },
+        title = { Text(title, fontWeight = FontWeight.Bold, color = Color.White) },
+        text = { Text(message, color = Color(0xFFF4F4F6)) },
         confirmButton = {
-            Button(onClick = onAddAnyway, modifier = Modifier.testTag("wishlist_add_anyway")) { Text("Add Anyway") }
+            Button(
+                onClick = onAddAnyway,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF0C0F14)
+                ),
+                modifier = Modifier.testTag("wishlist_add_anyway")
+            ) { Text("Add Anyway", fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
             TextButton(onClick = onReviewDetails, modifier = Modifier.testTag("wishlist_review_details")) {
-                Text("Review Details")
+                Text("Review Details", color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         modifier = Modifier.testTag("wishlist_incomplete_dialog")
@@ -558,17 +627,17 @@ private fun ColumnScope.PasteLinkStep(
     OutlinedTextField(
         value = linkText,
         onValueChange = onLinkChange,
-        label = { Text("Product link") },
-        placeholder = { Text("https://www.amazon.in/…") },
-        leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) },
+        label = { Text("Product link", color = Color(0xFF94A3B8)) },
+        placeholder = { Text("https://www.amazon.in/…", color = Color(0xFF94A3B8)) },
+        leadingIcon = { Icon(Icons.Default.Link, contentDescription = null, tint = Color.White) },
         trailingIcon = {
             if (linkText.isEmpty()) {
                 IconButton(onClick = onPaste, enabled = !loading, modifier = Modifier.testTag("wishlist_paste_link")) {
-                    Icon(Icons.Default.ContentPaste, contentDescription = "Paste link")
+                    Icon(Icons.Default.ContentPaste, contentDescription = "Paste link", tint = Color.White)
                 }
             } else {
                 IconButton(onClick = { onLinkChange("") }, enabled = !loading) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear link")
+                    Icon(Icons.Default.Close, contentDescription = "Clear link", tint = Color.White)
                 }
             }
         },
@@ -577,6 +646,14 @@ private fun ColumnScope.PasteLinkStep(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
         keyboardActions = KeyboardActions(onGo = { if (linkText.isNotBlank() && !loading) onAdd() }),
         shape = RoundedCornerShape(14.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color.White,
+            unfocusedBorderColor = Color(0xFF4B5563),
+            focusedLabelColor = Color.White,
+            unfocusedLabelColor = Color(0xFF94A3B8),
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color(0xFFF4F4F6)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("wishlist_link_input")
@@ -586,6 +663,12 @@ private fun ColumnScope.PasteLinkStep(
         onClick = onAdd,
         enabled = linkText.isNotBlank() && !loading,
         shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+            contentColor = Color(0xFF0C0F14),
+            disabledContainerColor = Color(0xFF2C2F36),
+            disabledContentColor = Color(0xFF94A3B8)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
@@ -598,15 +681,15 @@ private fun ColumnScope.PasteLinkStep(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
-            Text("Reading product page…", fontWeight = FontWeight.Bold)
+            Text("Reading product page…", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
         } else {
-            Text("Add to Wishlist", fontWeight = FontWeight.Bold)
+            Text("Add to Wishlist", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
         }
     }
 
     if (loading) {
         TextButton(onClick = onCancel, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text("Cancel")
+            Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
         }
     }
 
@@ -629,7 +712,7 @@ private fun ColumnScope.PasteLinkStep(
         Text(
             text = "or",
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = Color(0xFF94A3B8),
             modifier = Modifier.padding(horizontal = 12.dp)
         )
         HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
@@ -639,6 +722,11 @@ private fun ColumnScope.PasteLinkStep(
         onClick = onEnterManually,
         enabled = !loading,
         shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = Color.White,
+            disabledContentColor = Color(0xFF94A3B8)
+        ),
+        border = BorderStroke(1.dp, Color(0xFF4B5563)),
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
@@ -650,7 +738,7 @@ private fun ColumnScope.PasteLinkStep(
     Text(
         text = "The page is read directly from your phone, like opening it in a browser. No account or API key is used.",
         style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = androidx.compose.ui.graphics.Color(0xFF94A3B8),
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
     )
@@ -667,16 +755,16 @@ private fun FormHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp),
-                color = MaterialTheme.colorScheme.onSurface
+                color = androidx.compose.ui.graphics.Color.White
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = androidx.compose.ui.graphics.Color(0xFF94A3B8)
             )
         }
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color(0xFFE2E8F0))
         }
     }
 }

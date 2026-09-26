@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -47,7 +49,6 @@ import com.example.data.model.GoalFunding
 import com.example.data.model.GoalProgress
 import com.example.data.model.SavingsGoalInput
 import com.example.data.model.SavingsGoalValidator
-import com.example.ui.theme.MintGreen
 import com.example.ui.theme.PunchyCoral
 
 private val goalEmojis = listOf("🎯", "📱", "💻", "🎮", "✈️", "🚗", "🏠", "🎧", "📷", "🚲", "⌚", "🎓")
@@ -136,24 +137,24 @@ fun SavingsGoalForm(
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.5).sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color.White
                 )
                 Text(
                     text = "Funded from Adult Money",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = androidx.compose.ui.graphics.Color(0xFF94A3B8)
                 )
             }
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "Close")
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
             }
         }
 
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
-            label = { Text("What are you saving for?") },
-            placeholder = { Text("New phone, GPU, Trip…") },
+            label = { Text("What are you saving for?", color = Color(0xFF94A3B8)) },
+            placeholder = { Text("New phone, GPU, Trip…", color = Color(0xFF94A3B8)) },
             singleLine = true,
             isError = showErrors && errors.title != null,
             supportingText = {
@@ -163,6 +164,14 @@ fun SavingsGoalForm(
             },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("goal_title_field")
@@ -177,7 +186,7 @@ fun SavingsGoalForm(
                 ChoicePill(
                     label = option,
                     selected = emoji == option,
-                    accent = MintGreen,
+                    accent = Color.White,
                     onClick = { emoji = option }
                 )
             }
@@ -186,8 +195,8 @@ fun SavingsGoalForm(
         OutlinedTextField(
             value = targetText,
             onValueChange = { entry -> targetText = entry.filter { it.isDigit() || it == '.' } },
-            label = { Text("Target amount ($currency)") },
-            placeholder = { Text("45000") },
+            label = { Text("Target amount ($currency)", color = Color(0xFF94A3B8)) },
+            placeholder = { Text("45000", color = Color(0xFF94A3B8)) },
             singleLine = true,
             isError = showErrors && errors.targetAmount != null,
             supportingText = {
@@ -197,6 +206,14 @@ fun SavingsGoalForm(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("goal_target_field")
@@ -208,8 +225,8 @@ fun SavingsGoalForm(
             OutlinedTextField(
                 value = startingText,
                 onValueChange = { entry -> startingText = entry.filter { it.isDigit() || it == '.' } },
-                label = { Text("Already saved (optional)") },
-                placeholder = { Text("0") },
+                label = { Text("Already saved (optional)", color = Color(0xFF94A3B8)) },
+                placeholder = { Text("0", color = Color(0xFF94A3B8)) },
                 singleLine = true,
                 isError = startingTooBig,
                 supportingText = {
@@ -219,11 +236,19 @@ fun SavingsGoalForm(
                         } else {
                             "${formatMoney(currency, room)} of Adult Money is free to earmark"
                         },
-                        color = if (startingTooBig) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (startingTooBig) MaterialTheme.colorScheme.error else Color(0xFF94A3B8)
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("goal_starting_field")
@@ -241,11 +266,19 @@ fun SavingsGoalForm(
         OutlinedTextField(
             value = description,
             onValueChange = { description = it },
-            label = { Text("Description (optional)") },
-            placeholder = { Text("Which model, why, anything worth remembering") },
+            label = { Text("Description (optional)", color = Color(0xFF94A3B8)) },
+            placeholder = { Text("Which model, why, anything worth remembering", color = Color(0xFF94A3B8)) },
             minLines = 2,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("goal_description_field")
@@ -260,8 +293,10 @@ fun SavingsGoalForm(
             },
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = Color.White,
+                contentColor = Color(0xFF0C0F14),
+                disabledContainerColor = Color(0xFF2C2F36),
+                disabledContentColor = Color(0xFF94A3B8)
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -270,7 +305,8 @@ fun SavingsGoalForm(
         ) {
             Text(
                 text = if (isEdit) "Save Changes" else "Create Goal",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black)
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                color = Color(0xFF0C0F14)
             )
         }
 
@@ -279,7 +315,7 @@ fun SavingsGoalForm(
                 onClick = onDelete,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    containerColor = Color(0xFF2C2F36),
                     contentColor = PunchyCoral
                 ),
                 modifier = Modifier
@@ -351,19 +387,19 @@ fun GoalContributionSheet(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                     Text(
                         text = "${formatMoney(currency, progress.currentAmount)} of ${formatMoney(currency, progress.target)} · ${formatMoney(currency, progress.remaining)} to go",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
                 }
                 IconButton(onClick = onEdit, modifier = Modifier.testTag("goal_edit_button")) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "Edit goal")
+                    Icon(Icons.Outlined.Edit, contentDescription = "Edit goal", tint = Color.White)
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
                 }
             }
 
@@ -371,7 +407,7 @@ fun GoalContributionSheet(
                 ChoicePill(
                     label = "Set aside",
                     selected = !isWithdrawal,
-                    accent = MintGreen,
+                    accent = Color.White,
                     onClick = {
                         transactionType = SavingsActionType.DEPOSIT
                         rejection = null
@@ -381,7 +417,7 @@ fun GoalContributionSheet(
                 ChoicePill(
                     label = "Take back",
                     selected = isWithdrawal,
-                    accent = PunchyCoral,
+                    accent = Color.White,
                     onClick = {
                         transactionType = SavingsActionType.WITHDRAWAL
                         rejection = null
@@ -396,7 +432,7 @@ fun GoalContributionSheet(
                     amountText = entry.filter { it.isDigit() || it == '.' }
                     rejection = null
                 },
-                label = { Text("Amount ($currency)") },
+                label = { Text("Amount ($currency)", color = Color(0xFF94A3B8)) },
                 singleLine = true,
                 isError = rejection != null,
                 supportingText = {
@@ -406,11 +442,19 @@ fun GoalContributionSheet(
                         } else {
                             "${formatMoney(currency, ceiling)} of Adult Money is unallocated"
                         },
-                        color = if (rejection != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (rejection != null) MaterialTheme.colorScheme.error else Color(0xFF94A3B8)
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("goal_contribute_amount")
@@ -419,10 +463,18 @@ fun GoalContributionSheet(
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Note (optional)") },
+                label = { Text("Note (optional)", color = Color(0xFF94A3B8)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -434,8 +486,10 @@ fun GoalContributionSheet(
                 },
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF0C0F14),
+                    disabledContainerColor = Color(0xFF2C2F36),
+                    disabledContentColor = Color(0xFF94A3B8)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -444,7 +498,8 @@ fun GoalContributionSheet(
             ) {
                 Text(
                     text = if (isWithdrawal) "Take Back" else "Set Aside",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black)
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                    color = Color(0xFF0C0F14)
                 )
             }
 

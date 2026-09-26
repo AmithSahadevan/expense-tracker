@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -45,7 +46,6 @@ import com.example.data.local.entities.BudgetScope
 import com.example.data.model.BudgetInput
 import com.example.data.model.BudgetValidator
 import com.example.ui.theme.PunchyCoral
-import com.example.ui.theme.SkyAzure
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,16 +129,16 @@ fun BudgetForm(
                         fontWeight = FontWeight.Black,
                         letterSpacing = (-0.5).sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color.White
                 )
                 Text(
                     text = "Resets every calendar month",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = androidx.compose.ui.graphics.Color(0xFF94A3B8)
                 )
             }
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "Close")
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
             }
         }
 
@@ -152,20 +152,20 @@ fun BudgetForm(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.2.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ChoicePill(
                         label = "A category",
                         selected = scope == BudgetScope.CATEGORY,
-                        accent = SkyAzure,
+                        accent = Color.White,
                         onClick = { scope = BudgetScope.CATEGORY },
                         modifier = Modifier.testTag("budget_scope_category")
                     )
                     ChoicePill(
                         label = "Everything",
                         selected = scope == BudgetScope.OVERALL,
-                        accent = SkyAzure,
+                        accent = Color.White,
                         onClick = { if (!overallTaken) scope = BudgetScope.OVERALL },
                         modifier = Modifier.testTag("budget_scope_overall")
                     )
@@ -174,7 +174,7 @@ fun BudgetForm(
                     Text(
                         text = "An overall budget already exists. Edit that one to change it.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
                 }
             }
@@ -184,8 +184,8 @@ fun BudgetForm(
             OutlinedTextField(
                 value = category,
                 onValueChange = { category = it },
-                label = { Text("Category") },
-                placeholder = { Text("Food, Fuel, Subscriptions…") },
+                label = { Text("Category", color = Color(0xFF94A3B8)) },
+                placeholder = { Text("Food, Fuel, Subscriptions…", color = Color(0xFF94A3B8)) },
                 singleLine = true,
                 isError = showErrors && errors.category != null,
                 supportingText = {
@@ -195,6 +195,14 @@ fun BudgetForm(
                 },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
                 shape = RoundedCornerShape(12.dp),
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("budget_category_field")
@@ -210,7 +218,7 @@ fun BudgetForm(
                         ChoicePill(
                             label = suggestion,
                             selected = category.equals(suggestion, ignoreCase = true),
-                            accent = SkyAzure,
+                            accent = Color.White,
                             onClick = { category = suggestion }
                         )
                     }
@@ -221,8 +229,8 @@ fun BudgetForm(
         OutlinedTextField(
             value = amountText,
             onValueChange = { entry -> amountText = entry.filter { it.isDigit() || it == '.' } },
-            label = { Text("Monthly cap ($currency)") },
-            placeholder = { Text("6000") },
+            label = { Text("Monthly cap ($currency)", color = Color(0xFF94A3B8)) },
+            placeholder = { Text("6000", color = Color(0xFF94A3B8)) },
             singleLine = true,
             isError = showErrors && errors.amount != null,
             supportingText = {
@@ -232,6 +240,14 @@ fun BudgetForm(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             shape = RoundedCornerShape(12.dp),
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("budget_amount_field")
@@ -253,8 +269,10 @@ fun BudgetForm(
             },
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                containerColor = Color.White,
+                contentColor = Color(0xFF0C0F14),
+                disabledContainerColor = Color(0xFF2C2F36),
+                disabledContentColor = Color(0xFF94A3B8)
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,7 +281,8 @@ fun BudgetForm(
         ) {
             Text(
                 text = if (isEdit) "Save Changes" else "Create Budget",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black)
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black),
+                color = Color(0xFF0C0F14)
             )
         }
 
@@ -272,7 +291,7 @@ fun BudgetForm(
                 onClick = onDelete,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    containerColor = androidx.compose.ui.graphics.Color(0xFF2C2F36),
                     contentColor = PunchyCoral
                 ),
                 modifier = Modifier

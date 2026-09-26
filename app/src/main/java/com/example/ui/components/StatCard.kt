@@ -58,7 +58,7 @@ fun BalanceHeroCard(
             .testTag("hero_balance_card"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(

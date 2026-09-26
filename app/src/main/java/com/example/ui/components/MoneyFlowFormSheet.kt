@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -30,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -116,16 +118,16 @@ fun MoneyFlowForm(
                 Text(
                     text = if (isEdit) "Edit Record" else "Record Money Flow",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp),
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color.White
                 )
                 Text(
                     text = "Kept separate from your income and expenses",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
             }
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
             }
         }
 
@@ -133,14 +135,14 @@ fun MoneyFlowForm(
             ChoicePill(
                 label = "They owe me",
                 selected = isOwedToMe,
-                accent = IncomingAccent,
+                accent = Color.White,
                 onClick = { direction = MoneyFlowDirection.OWED_TO_ME },
                 modifier = Modifier.testTag("money_flow_direction_owed_to_me")
             )
             ChoicePill(
                 label = "I owe them",
                 selected = !isOwedToMe,
-                accent = OutgoingAccent,
+                accent = Color.White,
                 onClick = { direction = MoneyFlowDirection.I_OWE },
                 modifier = Modifier.testTag("money_flow_direction_i_owe")
             )
@@ -149,13 +151,21 @@ fun MoneyFlowForm(
         OutlinedTextField(
             value = personName,
             onValueChange = { personName = it },
-            label = { Text("Person's name *") },
-            placeholder = { Text(if (isOwedToMe) "Who owes you?" else "Who do you owe?") },
+            label = { Text("Person's name *", color = Color(0xFF94A3B8)) },
+            placeholder = { Text(if (isOwedToMe) "Who owes you?" else "Who do you owe?", color = Color(0xFF94A3B8)) },
             isError = showErrors && errors.personName != null,
             supportingText = if (showErrors && errors.personName != null) ({ Text(errors.personName) }) else null,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("money_flow_form_person")
@@ -167,13 +177,21 @@ fun MoneyFlowForm(
                 val cleaned = raw.filter { it.isDigit() }
                 amountText = cleaned
             },
-            label = { Text("Amount *") },
-            prefix = { Text("$currency ") },
+            label = { Text("Amount *", color = Color(0xFF94A3B8)) },
+            prefix = { Text("$currency ", color = Color.White) },
             isError = showErrors && errors.amount != null,
             supportingText = if (showErrors && errors.amount != null) ({ Text(errors.amount) }) else null,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("money_flow_form_amount")
@@ -196,12 +214,20 @@ fun MoneyFlowForm(
         OutlinedTextField(
             value = notes,
             onValueChange = { notes = it },
-            label = { Text("Reason / note") },
-            placeholder = { Text("e.g. concert tickets") },
+            label = { Text("Reason / note", color = Color(0xFF94A3B8)) },
+            placeholder = { Text("e.g. concert tickets", color = Color(0xFF94A3B8)) },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             minLines = 2,
             maxLines = 4,
             shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color(0xFF4B5563),
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color(0xFF94A3B8),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color(0xFFF4F4F6)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("money_flow_form_notes")
@@ -213,6 +239,12 @@ fun MoneyFlowForm(
                 if (clean == null) showErrors = true else onSave(clean)
             },
             shape = RoundedCornerShape(12.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = Color.White,
+                contentColor = Color(0xFF0C0F14),
+                disabledContainerColor = Color(0xFF2C2F36),
+                disabledContentColor = Color(0xFF94A3B8)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
@@ -220,7 +252,8 @@ fun MoneyFlowForm(
         ) {
             Text(
                 text = if (isEdit) "Save Changes" else "Save Record",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF0C0F14)
             )
         }
 

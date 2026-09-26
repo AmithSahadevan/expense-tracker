@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -80,6 +79,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.example.data.model.Currencies
 import com.example.data.model.CurrencyInfo
 import com.example.ui.theme.MintGreen
@@ -515,7 +515,7 @@ fun SettingsScreen(
 
         AlertDialog(
             onDismissRequest = { showEditProfileDialog = false },
-            title = { Text("Edit Profile", fontWeight = FontWeight.Black) },
+            title = { Text("Edit Profile", fontWeight = FontWeight.Black, color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     // PFP Picker
@@ -548,7 +548,7 @@ fun SettingsScreen(
                                     modifier = Modifier
                                         .size(50.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                        .background(if (isSelected) Color.White else Color.Transparent)
                                         .clickable { selectedPfp = path }
                                         .padding(if (isSelected) 2.dp else 0.dp)
                                 ) {
@@ -566,18 +566,34 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = nameInput,
                         onValueChange = { nameInput = it },
-                        label = { Text("Display Name") },
+                        label = { Text("Display Name", color = Color(0xFF94A3B8)) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     OutlinedTextField(
                         value = emailInput,
                         onValueChange = { emailInput = it },
-                        label = { Text("Email Address") },
+                        label = { Text("Email Address", color = Color(0xFF94A3B8)) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -588,13 +604,19 @@ fun SettingsScreen(
                         onUpdateProfile(nameInput, emailInput, selectedPfp)
                         showEditProfileDialog = false
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Save Changes")
+                    Text("Save Changes", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEditProfileDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showEditProfileDialog = false }) {
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         )
     }
@@ -602,9 +624,9 @@ fun SettingsScreen(
     if (showClearDataDialog) {
         AlertDialog(
             onDismissRequest = { showClearDataDialog = false },
-            title = { Text("Clear All Data?", fontWeight = FontWeight.Black) },
+            title = { Text("Clear All Data?", fontWeight = FontWeight.Black, color = Color.White) },
             text = {
-                Text("This will permanently delete ALL transactions, wishlist items, and savings records from this account. Your profile and account settings will remain. This cannot be undone.")
+                Text("This will permanently delete ALL transactions, wishlist items, and savings records from this account. Your profile and account settings will remain. This cannot be undone.", color = Color(0xFFF4F4F6))
             },
             confirmButton = {
                 Button(
@@ -612,13 +634,18 @@ fun SettingsScreen(
                         onClearData()
                         showClearDataDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Clear Everything")
+                    Text("Clear Everything", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showClearDataDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showClearDataDialog = false }) {
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         )
     }
@@ -626,9 +653,9 @@ fun SettingsScreen(
     if (showRemoveAccountDialog) {
         AlertDialog(
             onDismissRequest = { showRemoveAccountDialog = false },
-            title = { Text("Remove Account?", fontWeight = FontWeight.Black) },
+            title = { Text("Remove Account?", fontWeight = FontWeight.Black, color = Color.White) },
             text = {
-                Text("This will permanently delete your account '@${currentUser?.username}' and ALL its transactions, wishlist items, and savings records. This cannot be undone.")
+                Text("This will permanently delete your account '@${currentUser?.username}' and ALL its transactions, wishlist items, and savings records. This cannot be undone.", color = Color(0xFFF4F4F6))
             },
             confirmButton = {
                 Button(
@@ -636,13 +663,18 @@ fun SettingsScreen(
                         onRemoveAccount()
                         showRemoveAccountDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Delete Permanently")
+                    Text("Delete Permanently", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRemoveAccountDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showRemoveAccountDialog = false }) {
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         )
     }
@@ -665,16 +697,24 @@ fun SettingsScreen(
 
         AlertDialog(
             onDismissRequest = { showCurrencyDialog = false },
-            title = { Text("Select Currency", fontWeight = FontWeight.Black) },
+            title = { Text("Select Currency", fontWeight = FontWeight.Black, color = Color.White) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.heightIn(max = 400.dp)) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search country or code...") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        placeholder = { Text("Search country or code...", color = Color(0xFF94A3B8)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -688,7 +728,7 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                    .background(if (isSelected) Color.White else Color.Transparent)
                                     .clickable {
                                         tempSelectedCurrency = item
                                     }
@@ -700,10 +740,22 @@ fun SettingsScreen(
                                 ) {
                                     Text(text = item.flag, fontSize = 20.sp)
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(text = item.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
-                                        Text(text = item.code, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                            color = if (isSelected) Color(0xFF0C0F14) else Color.White
+                                        )
+                                        Text(
+                                            text = item.code,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSelected) Color(0xFF0C0F14).copy(alpha = 0.8f) else Color(0xFF94A3B8)
+                                        )
                                     }
-                                    Text(text = item.symbol, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black))
+                                    Text(
+                                        text = item.symbol,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                        color = if (isSelected) Color(0xFF0C0F14) else Color.White
+                                    )
                                 }
                             }
                         }
@@ -716,13 +768,19 @@ fun SettingsScreen(
                         onUpdateCurrency(tempSelectedCurrency.symbol)
                         showCurrencyDialog = false
                     },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Choose")
+                    Text("Choose", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCurrencyDialog = false }) { Text("Close") }
+                TextButton(onClick = { showCurrencyDialog = false }) {
+                    Text("Close", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         )
     }
@@ -748,7 +806,8 @@ fun SettingsScreen(
             title = {
                 Text(
                     text = "Monthly Salary & Payday",
-                    fontWeight = FontWeight.Black
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
                 )
             },
             text = {
@@ -759,7 +818,7 @@ fun SettingsScreen(
                     Text(
                         text = "Set your expected monthly salary and the day of the month you get paid.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
 
                     OutlinedTextField(
@@ -770,18 +829,27 @@ fun SettingsScreen(
                                 inputError = null
                             }
                         },
-                        label = { Text("Monthly Salary Amount") },
-                        prefix = { Text("$currency ") },
+                        label = { Text("Monthly Salary Amount", color = Color(0xFF94A3B8)) },
+                        prefix = { Text("$currency ", color = Color.White) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     Column {
                         Text(
                             text = "Payday (Day of Month: $paydayInput)",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.White
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(
@@ -792,7 +860,7 @@ fun SettingsScreen(
                                 val isSelected = paydayInput == day
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    color = if (isSelected) Color.White else Color(0xFF2C2F36),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
@@ -805,7 +873,7 @@ fun SettingsScreen(
                                         Text(
                                             text = "$day",
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                            color = if (isSelected) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                                         )
                                     }
                                 }
@@ -826,7 +894,8 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Record salary deposit for this month in ledger now",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFF4F4F6)
                         )
                     }
 
@@ -849,14 +918,19 @@ fun SettingsScreen(
                         }
                         onUpdateSalaryAndPayday(sal, paydayInput, logDepositThisMonth)
                         showSalaryDialog = false
-                    }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
+                    )
                 ) {
-                    Text("Save")
+                    Text("Save", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSalaryDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         )

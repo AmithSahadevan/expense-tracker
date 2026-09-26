@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -126,12 +126,12 @@ fun UserAuthModal(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                     Text(
                         text = if (isRegistering) "Create your private ledger" else "Switch or create account",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
                 }
 
@@ -142,7 +142,7 @@ fun UserAuthModal(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = Color(0xFFE2E8F0)
                     )
                 }
             }
@@ -157,7 +157,7 @@ fun UserAuthModal(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
 
@@ -166,7 +166,7 @@ fun UserAuthModal(
                     val userBg = try {
                         Color(android.graphics.Color.parseColor(user.avatarColorHex))
                     } catch (_: Exception) {
-                        MaterialTheme.colorScheme.primary
+                        Color(0xFF10B981)
                     }
 
                     Row(
@@ -220,12 +220,12 @@ fun UserAuthModal(
                                     Text(
                                         text = user.displayName,
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = Color.White
                                     )
                                     if (isCurrent) {
                                         Surface(
                                             shape = RoundedCornerShape(6.dp),
-                                            color = Color.White.copy(alpha = 0.2f)
+                                            color = Color(0xFF10B981)
                                         ) {
                                             Text(
                                                 text = "ACTIVE",
@@ -242,7 +242,7 @@ fun UserAuthModal(
                                 Text(
                                     text = "@${user.username} • ${user.email}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = Color(0xFF94A3B8)
                                 )
                             }
                         }
@@ -251,7 +251,7 @@ fun UserAuthModal(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Active user",
-                                tint = Color.White
+                                tint = Color(0xFF10B981)
                             )
                         }
                     }
@@ -263,18 +263,20 @@ fun UserAuthModal(
                     onClick = { isRegistering = true },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .testTag("create_new_account_button")
                 ) {
-                    Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null)
+                    Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, tint = Color(0xFF0C0F14))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Create New Account",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color(0xFF0C0F14)
                     )
                 }
             } else {
@@ -285,7 +287,7 @@ fun UserAuthModal(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -321,7 +323,7 @@ fun UserAuthModal(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -336,7 +338,7 @@ fun UserAuthModal(
                                 .clip(RoundedCornerShape(12.dp))
                                 .border(
                                     width = if (isSelected) 3.dp else 0.dp,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    color = Color.White,
                                     shape = RoundedCornerShape(12.dp)
                                 )
                                 .clickable { selectedImagePath = path },
@@ -375,10 +377,18 @@ fun UserAuthModal(
                         newUsername = it.filter { ch -> ch.isLetterOrDigit() || ch == '_' }
                         formError = null
                     },
-                    label = { Text("Username (unique)") },
-                    placeholder = { Text("e.g. jordan") },
+                    label = { Text("Username (unique)", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("e.g. jordan", color = Color(0xFF94A3B8)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("reg_username_input")
@@ -389,10 +399,18 @@ fun UserAuthModal(
                 OutlinedTextField(
                     value = newDisplayName,
                     onValueChange = { newDisplayName = it },
-                    label = { Text("Display Name") },
-                    placeholder = { Text("e.g. Jordan River") },
+                    label = { Text("Display Name", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("e.g. Jordan River", color = Color(0xFF94A3B8)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("reg_display_name_input")
@@ -403,10 +421,18 @@ fun UserAuthModal(
                 OutlinedTextField(
                     value = newEmail,
                     onValueChange = { newEmail = it },
-                    label = { Text("Email") },
-                    placeholder = { Text("e.g. jordan@domain.com") },
+                    label = { Text("Email", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("e.g. jordan@domain.com", color = Color(0xFF94A3B8)) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF4B5563),
+                        focusedLabelColor = Color.White,
+                        unfocusedLabelColor = Color(0xFF94A3B8),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color(0xFFF4F4F6)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("reg_email_input")
@@ -431,12 +457,12 @@ fun UserAuthModal(
                         onClick = { isRegistering = false },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                            containerColor = Color(0xFF2C2F36),
+                            contentColor = Color.White
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel")
+                        Text("Cancel", fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     Button(
@@ -449,7 +475,6 @@ fun UserAuthModal(
                                 formError = "Please enter a valid email"
                                 return@Button
                             }
-                            // We still pass a default emoji to maintain DB compatibility
                             onRegisterUser(
                                 newUsername,
                                 newEmail,
@@ -462,13 +487,16 @@ fun UserAuthModal(
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
+                            containerColor = Color.White,
+                            contentColor = Color(0xFF0C0F14),
+                            disabledContainerColor = Color(0xFF2C2F36),
+                            disabledContentColor = Color(0xFF94A3B8)
                         ),
                         modifier = Modifier
                             .weight(1.5f)
                             .testTag("submit_registration_button")
                     ) {
-                        Text("Register & Switch")
+                        Text("Register & Switch", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
                     }
                 }
             }

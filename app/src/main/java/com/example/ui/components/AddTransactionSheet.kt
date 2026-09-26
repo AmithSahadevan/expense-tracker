@@ -172,12 +172,12 @@ fun AddTransactionSheet(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = Color.White
                     )
                     Text(
                         text = if (isEditMode) "Update ledger entry details" else "Track income or expense in your ledger",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color(0xFF94A3B8)
                     )
                 }
 
@@ -188,7 +188,7 @@ fun AddTransactionSheet(
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "Close",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = Color(0xFFCBD5E1)
                     )
                 }
             }
@@ -200,7 +200,7 @@ fun AddTransactionSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(Color(0xFF2C2F36))
                     .padding(4.dp)
             ) {
                 val isExpense = selectedType == TransactionType.EXPENSE
@@ -223,13 +223,13 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Outlined.AccountBalanceWallet,
                             contentDescription = null,
-                            tint = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (isExpense) Color.White else Color(0xFFCBD5E1),
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "Expense",
                             fontWeight = FontWeight.Bold,
-                            color = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isExpense) Color.White else Color(0xFFCBD5E1)
                         )
                     }
                 }
@@ -254,13 +254,13 @@ fun AddTransactionSheet(
                         Icon(
                             imageVector = Icons.Outlined.Payments,
                             contentDescription = null,
-                            tint = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = if (isIncome) Color.White else Color(0xFFCBD5E1),
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
                             text = "Income",
                             fontWeight = FontWeight.Bold,
-                            color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isIncome) Color.White else Color(0xFFCBD5E1)
                         )
                     }
                 }
@@ -275,7 +275,7 @@ fun AddTransactionSheet(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -287,13 +287,13 @@ fun AddTransactionSheet(
                         errorMessage = null
                     }
                 },
-                placeholder = { Text("0", fontSize = 28.sp, fontWeight = FontWeight.Bold) },
+                placeholder = { Text("0", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8)) },
                 prefix = {
                     Text(
                         text = "$currency ",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary
+                            color = Color.White
                         )
                     )
                 },
@@ -301,12 +301,21 @@ fun AddTransactionSheet(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Black,
-                    fontSize = 28.sp
+                    fontSize = 28.sp,
+                    color = Color.White
                 ),
                 shape = RoundedCornerShape(18.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedPlaceholderColor = Color(0xFF94A3B8),
+                    unfocusedPlaceholderColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6),
+                    focusedPrefixColor = Color.White,
+                    unfocusedPrefixColor = Color.White
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -321,7 +330,7 @@ fun AddTransactionSheet(
                 listOf(10, 25, 50, 100, 500).forEach { bump ->
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = Color(0xFF2C2F36),
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
                             .clickable {
@@ -333,7 +342,7 @@ fun AddTransactionSheet(
                             text = "+$bump",
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = Color(0xFFF4F4F6)
                         )
                     }
                 }
@@ -348,7 +357,7 @@ fun AddTransactionSheet(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
             Spacer(modifier = Modifier.height(6.dp))
             OutlinedTextField(
@@ -362,11 +371,22 @@ fun AddTransactionSheet(
                         if (selectedType == TransactionType.EXPENSE)
                             "e.g. Grocery store, Gas station, Netflix"
                         else
-                            "e.g. Monthly Salary, Freelance project, Bonus"
+                            "e.g. Monthly Salary, Freelance project, Bonus",
+                        color = Color(0xFF94A3B8)
                     )
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedPlaceholderColor = Color(0xFF94A3B8),
+                    unfocusedPlaceholderColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("title_input")
@@ -386,13 +406,13 @@ fun AddTransactionSheet(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF94A3B8)
                 )
                 Text(
                     text = "+ Custom Category",
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color.White
                     ),
                     modifier = Modifier
                         .clickable { showCreateCategoryDialog = true }
@@ -411,12 +431,12 @@ fun AddTransactionSheet(
                     val catColor = try {
                         Color(android.graphics.Color.parseColor(category.colorHex))
                     } catch (_: Exception) {
-                        MaterialTheme.colorScheme.primary
+                        Color.White
                     }
 
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) catColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) catColor.copy(alpha = 0.25f) else Color(0xFF2C2F36),
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
                             .clickable { selectedCategory = category.name }
@@ -429,7 +449,7 @@ fun AddTransactionSheet(
                             Icon(
                                 imageVector = category.icon,
                                 contentDescription = null,
-                                tint = if (isSelected) catColor else MaterialTheme.colorScheme.onSurface,
+                                tint = if (isSelected) catColor else Color(0xFFF4F4F6),
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
@@ -437,7 +457,7 @@ fun AddTransactionSheet(
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                                 ),
-                                color = if (isSelected) catColor else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) catColor else Color(0xFFF4F4F6)
                             )
                         }
                     }
@@ -453,7 +473,7 @@ fun AddTransactionSheet(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -469,7 +489,7 @@ fun AddTransactionSheet(
                 }
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isToday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (isToday) Color.White else Color(0xFF2C2F36),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { selectedDate = System.currentTimeMillis() }
@@ -478,7 +498,7 @@ fun AddTransactionSheet(
                         text = "Today",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        color = if (isToday) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                     )
                 }
 
@@ -490,7 +510,7 @@ fun AddTransactionSheet(
                 }
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (isYesterday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (isYesterday) Color.White else Color(0xFF2C2F36),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable {
@@ -502,14 +522,14 @@ fun AddTransactionSheet(
                         text = "Yesterday",
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        color = if (isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        color = if (isYesterday) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                     )
                 }
 
                 // Date Picker Button
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (!isToday && !isYesterday) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    color = if (!isToday && !isYesterday) Color.White else Color(0xFF2C2F36),
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
                         .clickable { showDatePickerDialog = true }
@@ -523,12 +543,12 @@ fun AddTransactionSheet(
                             imageVector = Icons.Outlined.CalendarToday,
                             contentDescription = "Pick Date",
                             modifier = Modifier.size(16.dp),
-                            tint = if (!isToday && !isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (!isToday && !isYesterday) Color(0xFF0C0F14) else Color.White
                         )
                         Text(
                             text = dateFormatter.format(Date(selectedDate)),
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (!isToday && !isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            color = if (!isToday && !isYesterday) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                         )
                     }
                 }
@@ -549,12 +569,12 @@ fun AddTransactionSheet(
                                 showDatePickerDialog = false
                             }
                         ) {
-                            Text("Select", fontWeight = FontWeight.Bold)
+                            Text("Select", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDatePickerDialog = false }) {
-                            Text("Cancel")
+                            Text("Cancel", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 ) {
@@ -571,7 +591,7 @@ fun AddTransactionSheet(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -587,7 +607,7 @@ fun AddTransactionSheet(
                     val isSelected = paymentMethod == code
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) Color.White else Color(0xFF2C2F36),
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
@@ -601,7 +621,7 @@ fun AddTransactionSheet(
                             Icon(
                                 imageVector = pair.second,
                                 contentDescription = null,
-                                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (isSelected) Color(0xFF0C0F14) else Color.White,
                                 modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -610,7 +630,7 @@ fun AddTransactionSheet(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                                 ),
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                             )
                         }
                     }
@@ -626,7 +646,7 @@ fun AddTransactionSheet(
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 1.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF94A3B8)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -641,7 +661,7 @@ fun AddTransactionSheet(
                     val isSelected = recurrence == code
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) Color.White else Color(0xFF2C2F36),
                         modifier = Modifier
                             .weight(1f)
                             .clip(RoundedCornerShape(12.dp))
@@ -656,7 +676,7 @@ fun AddTransactionSheet(
                                 Icon(
                                     imageVector = Icons.Outlined.Repeat,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
+                                    tint = Color(0xFF0C0F14),
                                     modifier = Modifier.size(12.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -666,7 +686,7 @@ fun AddTransactionSheet(
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium
                                 ),
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) Color(0xFF0C0F14) else Color(0xFFF4F4F6)
                             )
                         }
                     }
@@ -678,9 +698,19 @@ fun AddTransactionSheet(
             OutlinedTextField(
                 value = notesText,
                 onValueChange = { notesText = it },
-                label = { Text("Extra notes (optional)") },
+                label = { Text("Extra notes (optional)", color = Color(0xFF94A3B8)) },
                 shape = RoundedCornerShape(14.dp),
                 maxLines = 2,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF4B5563),
+                    focusedLabelColor = Color.White,
+                    unfocusedLabelColor = Color(0xFF94A3B8),
+                    focusedPlaceholderColor = Color(0xFF94A3B8),
+                    unfocusedPlaceholderColor = Color(0xFF94A3B8),
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color(0xFFF4F4F6)
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -717,10 +747,10 @@ fun AddTransactionSheet(
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selectedType == TransactionType.EXPENSE)
-                        Color(0xFFFF6B6B)
-                    else
-                        Color(0xFF10B981)
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF0C0F14),
+                    disabledContainerColor = Color(0xFF2C2F36),
+                    disabledContentColor = Color(0xFF94A3B8)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -729,7 +759,8 @@ fun AddTransactionSheet(
             ) {
                 Icon(
                     imageVector = if (isEditMode) Icons.Outlined.Check else Icons.Outlined.Add,
-                    contentDescription = null
+                    contentDescription = null,
+                    tint = Color(0xFF0C0F14)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -740,7 +771,8 @@ fun AddTransactionSheet(
                     } else {
                         "Log Income"
                     },
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black)
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                    color = Color(0xFF0C0F14)
                 )
             }
 
@@ -760,7 +792,8 @@ fun AddTransactionSheet(
             title = {
                 Text(
                     text = "New ${if (selectedType == TransactionType.EXPENSE) "Expense" else "Income"} Category",
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             },
             text = {
@@ -768,28 +801,36 @@ fun AddTransactionSheet(
                     OutlinedTextField(
                         value = newCatName,
                         onValueChange = { newCatName = it },
-                        label = { Text("Category Name") },
+                        label = { Text("Category Name", color = Color(0xFF94A3B8)) },
                         singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color.White,
+                            unfocusedBorderColor = Color(0xFF4B5563),
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color(0xFF94A3B8),
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color(0xFFF4F4F6)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text("Selected Icon:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("Selected Icon:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
                     Surface(
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = Color(0xFF2C2F36),
                         modifier = Modifier.size(44.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Outlined.LocalOffer,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
+                                tint = Color.White,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
-                    Text("Pick a Color:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    Text("Pick a Color:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color(0xFF94A3B8))
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -804,7 +845,7 @@ fun AddTransactionSheet(
                                     .clickable { newCatColor = colHex }
                                     .then(
                                         if (newCatColor == colHex)
-                                            Modifier.background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f), CircleShape)
+                                            Modifier.background(Color.White.copy(alpha = 0.2f), CircleShape)
                                         else
                                             Modifier
                                     )
@@ -817,8 +858,6 @@ fun AddTransactionSheet(
                 Button(
                     onClick = {
                         if (newCatName.isNotBlank()) {
-                            // We still pass an emoji to the repo to maintain DB compatibility, 
-                            // but UI will show the icon via IconMapper.
                             onCreateCustomCategory?.invoke(
                                 newCatName.trim(),
                                 "🏷️", 
@@ -829,14 +868,20 @@ fun AddTransactionSheet(
                             showCreateCategoryDialog = false
                         }
                     },
-                    enabled = newCatName.isNotBlank()
+                    enabled = newCatName.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0C0F14),
+                        disabledContainerColor = Color(0xFF2C2F36),
+                        disabledContentColor = Color(0xFF94A3B8)
+                    )
                 ) {
-                    Text("Create")
+                    Text("Create", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCreateCategoryDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         )
