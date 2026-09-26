@@ -35,8 +35,6 @@ import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,7 +46,6 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -555,31 +552,13 @@ fun AddTransactionSheet(
             }
 
             if (showDatePickerDialog) {
-                val datePickerState = rememberDatePickerState(
-                    initialSelectedDateMillis = selectedDate
-                )
-                DatePickerDialog(
-                    onDismissRequest = { showDatePickerDialog = false },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                datePickerState.selectedDateMillis?.let { millis ->
-                                    selectedDate = millis
-                                }
-                                showDatePickerDialog = false
-                            }
-                        ) {
-                            Text("Select", fontWeight = FontWeight.Bold, color = Color.White)
-                        }
+                AppDatePickerDialog(
+                    initialDateMillis = selectedDate,
+                    onDateSelected = { millis ->
+                        selectedDate = millis
                     },
-                    dismissButton = {
-                        TextButton(onClick = { showDatePickerDialog = false }) {
-                            Text("Cancel", fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                ) {
-                    DatePicker(state = datePickerState)
-                }
+                    onDismissRequest = { showDatePickerDialog = false }
+                )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
