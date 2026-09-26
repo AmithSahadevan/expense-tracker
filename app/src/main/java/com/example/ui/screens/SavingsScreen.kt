@@ -56,7 +56,10 @@ import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -92,6 +95,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.atan2
 
 private enum class HistoryFilter(val label: String, val savingsType: String?) {
     ALL("All", null),
@@ -468,69 +472,221 @@ private fun adultSeriesColor(): Color = MintGreen
 
 @Composable
 private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency: String) {
-    val total = adultMoney + emergencyFund
+    val adultAmount = adultMoney.coerceAtLeast(0.0)
+    val emergencyAmount = emergencyFund.coerceAtLeast(0.0)
+    val total = adultAmount + emergencyAmount
     val adultColor = adultSeriesColor()
-    Box(
+    var activeSector by remember { mutableStateOf("TOTAL") }
+
+    val adultPercent = if (total > 0) (adultAmount / total * 100) else 0.0
+    val emergencyPercent = if (total > 0) (emergencyAmount / total * 100) else 0.0
+
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .testTag("total_savings_card")
     ) {
-        Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = "TOTAL SAVINGS",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = formatMoney(currency, total),
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Black, fontSize = 34.sp),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag("total_savings_amount")
-            )
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "TOTAL SAVINGS",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
-            // Split bar: share of each pot, with a 2dp surface gap between segments.
-            if (total > 0) {
-                val adultShare = (adultMoney.coerceAtLeast(0.0) / total).toFloat().coerceIn(0f, 1f)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    if (adultShare > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .weight(adultShare)
-                                .height(10.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(adultColor)
-                        )
-                    }
-                    if (adultShare < 1f) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f - adultShare)
-                                .height(10.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(EmergencyChartAmber)
+                if (activeSector != "TOTAL") {
+                    TextButton(onClick = { activeSector = "TOTAL" }) {
+                        Text(
+                            text = "Reset View",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                LegendAmount(
-                    color = adultColor,
+            // Interactive Donut Active Chart
+            Box(
+                modifier = Modifier
+                    .size(220.dp)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(total, adultAmount, emergencyAmount) {
+                            detectTapGestures { offset ->
+                                if (total <= 0) return@detectTapGestures
+                                val center = Offset(size.width / 2f, size.height / 2f)
+                                val dx = offset.x - center.x
+                                val dy = offset.y - center.y
+                                var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+                                if (angle < 0) angle += 360f
+                                val adjustedAngle = (angle + 90f) % 360f
+                                val adultSweep = (adultAmount / total * 360.0).toFloat()
+
+                                activeSector = if (adjustedAngle <= adultSweep) {
+                                    if (activeSector == "ADULT") "TOTAL" else "ADULT"
+                                } else {
+                                    if (activeSector == "EMERGENCY") "TOTAL" else "EMERGENCY"
+                                }
+                            }
+                        }
+                ) {
+                    val sizePx = size.minDimension
+                    val centerPx = Offset(size.width / 2f, size.height / 2f)
+
+                    if (total <= 0) {
+                        drawCircle(
+                            color = Color.Gray.copy(alpha = 0.2f),
+                            radius = (sizePx / 2f) - 16.dp.toPx(),
+                            center = centerPx,
+                            style = Stroke(width = 20.dp.toPx())
+                        )
+                    } else {
+                        val baseRadius = (sizePx / 2f) - 22.dp.toPx()
+                        val adultSweep = (adultAmount / total * 360.0).toFloat()
+                        val emergencySweep = 360f - adultSweep
+
+                        val gapDeg = if (adultAmount > 0 && emergencyAmount > 0) 4f else 0f
+                        val startAngle = -90f
+
+                        // Adult Money Arc
+                        if (adultAmount > 0) {
+                            val isActive = activeSector == "ADULT"
+                            val strokeW = if (isActive) 28.dp.toPx() else 20.dp.toPx()
+                            val radius = if (isActive) baseRadius + 4.dp.toPx() else baseRadius
+                            val arcSize = Size(radius * 2, radius * 2)
+                            val topLeft = Offset(centerPx.x - radius, centerPx.y - radius)
+
+                            drawArc(
+                                color = adultColor,
+                                startAngle = startAngle + gapDeg / 2f,
+                                sweepAngle = (adultSweep - gapDeg).coerceAtLeast(1f),
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                            )
+                        }
+
+                        // Emergency Fund Arc
+                        if (emergencyAmount > 0) {
+                            val isActive = activeSector == "EMERGENCY"
+                            val strokeW = if (isActive) 28.dp.toPx() else 20.dp.toPx()
+                            val radius = if (isActive) baseRadius + 4.dp.toPx() else baseRadius
+                            val arcSize = Size(radius * 2, radius * 2)
+                            val topLeft = Offset(centerPx.x - radius, centerPx.y - radius)
+
+                            drawArc(
+                                color = EmergencyChartAmber,
+                                startAngle = startAngle + adultSweep + gapDeg / 2f,
+                                sweepAngle = (emergencySweep - gapDeg).coerceAtLeast(1f),
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                            )
+                        }
+                    }
+                }
+
+                // Center Hole Display
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    val labelText = when (activeSector) {
+                        "ADULT" -> "Adult Money"
+                        "EMERGENCY" -> "Emergency Fund"
+                        else -> "Total Savings"
+                    }
+                    val amountValue = when (activeSector) {
+                        "ADULT" -> adultAmount
+                        "EMERGENCY" -> emergencyAmount
+                        else -> total
+                    }
+                    val subText = when (activeSector) {
+                        "ADULT" -> "${String.format(Locale.getDefault(), "%.1f", adultPercent)}% of total"
+                        "EMERGENCY" -> "${String.format(Locale.getDefault(), "%.1f", emergencyPercent)}% of total"
+                        else -> "Tap chart to inspect"
+                    }
+
+                    Text(
+                        text = labelText.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp
+                        ),
+                        color = when (activeSector) {
+                            "ADULT" -> adultColor
+                            "EMERGENCY" -> EmergencyChartAmber
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = formatMoney(currency, amountValue),
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Black,
+                            fontSize = 24.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.testTag("total_savings_amount")
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+
+            // Interactive Legend Chips
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                DonutLegendChip(
                     label = "Adult Money",
-                    sublabel = "Spendable on wishlist",
-                    amount = formatMoney(currency, adultMoney),
+                    amount = formatMoney(currency, adultAmount),
+                    percent = "${String.format(Locale.getDefault(), "%.0f", adultPercent)}%",
+                    color = adultColor,
+                    isActive = activeSector == "ADULT",
+                    onClick = {
+                        activeSector = if (activeSector == "ADULT") "TOTAL" else "ADULT"
+                    },
                     modifier = Modifier.weight(1f)
                 )
-                LegendAmount(
-                    color = EmergencyChartAmber,
+
+                DonutLegendChip(
                     label = "Emergency Fund",
-                    sublabel = "Protected · not spendable",
-                    amount = formatMoney(currency, emergencyFund),
+                    amount = formatMoney(currency, emergencyAmount),
+                    percent = "${String.format(Locale.getDefault(), "%.0f", emergencyPercent)}%",
+                    color = EmergencyChartAmber,
+                    isActive = activeSector == "EMERGENCY",
+                    onClick = {
+                        activeSector = if (activeSector == "EMERGENCY") "TOTAL" else "EMERGENCY"
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -539,19 +695,57 @@ private fun TotalSavingsCard(adultMoney: Double, emergencyFund: Double, currency
 }
 
 @Composable
-private fun LegendAmount(color: Color, label: String, sublabel: String, amount: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(
-            modifier = Modifier
-                .padding(top = 4.dp)
-                .size(10.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(color)
-        )
-        Column {
-            Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-            Text(amount, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Black), color = MaterialTheme.colorScheme.onSurface)
-            Text(sublabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun DonutLegendChip(
+    label: String,
+    amount: String,
+    percent: String,
+    color: Color,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = if (isActive) color.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        border = if (isActive) BorderStroke(1.5.dp, color) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        modifier = modifier.clickable { onClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Text(
+                    text = amount,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Black),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = color.copy(alpha = 0.15f)
+            ) {
+                Text(
+                    text = percent,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = color,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }

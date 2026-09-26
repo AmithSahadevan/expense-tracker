@@ -113,7 +113,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.activity.compose.BackHandler
 import com.example.ui.screens.TransactionDetailScreen
@@ -324,8 +326,21 @@ fun AppShell(
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 bottomBar = {
-                    val showDock = if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
-                    if (showDock) {
+                    val showDock = currentDestination != AppDestination.SETTINGS &&
+                            if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
+
+                    AnimatedVisibility(
+                        visible = showDock,
+                        enter = slideInVertically(
+                            initialOffsetY = { fullHeight -> fullHeight },
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                        ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                        exit = slideOutVertically(
+                            targetOffsetY = { fullHeight -> fullHeight },
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(durationMillis = 200)),
+                        label = "bottom_dock_visibility"
+                    ) {
                         AmoebaBottomDock(
                             currentDestination = currentDestination,
                             pageOrder = pagerDestinations,
@@ -643,43 +658,50 @@ fun AppShell(
         }
     }
 
+    BackHandler(enabled = viewingTransaction != null) {
+        viewingTransaction = null
+    }
+
+    BackHandler(enabled = currentDestination == AppDestination.SETTINGS && viewingTransaction == null) {
+        navigateToDestination(AppDestination.HOME.route)
+    }
+
     // Retain the last viewing transaction item so content remains fully rendered during exit transition
     var activeDetailTransaction by remember { mutableStateOf<TransactionItem?>(null) }
     if (viewingTransaction != null) {
         activeDetailTransaction = viewingTransaction
     }
 
-    // Transaction Detail View (Full screen overlay with smooth slide + fade animation)
-    AnimatedVisibility(
-        visible = viewingTransaction != null,
-        enter = slideInHorizontally(
-            initialOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-        ) + fadeIn(
-            animationSpec = tween(durationMillis = 200)
-        ),
-        exit = slideOutHorizontally(
-            targetOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-        ) + fadeOut(
-            animationSpec = tween(durationMillis = 200)
-        ),
-        label = "transaction_detail_visibility"
-    ) {
+    val detailSlideProgress by animateFloatAsState(
+        targetValue = if (viewingTransaction != null) 1f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "transaction_detail_slide"
+    )
+
+    // Transaction Detail View (GPU accelerated slide animation matching page swipe physics)
+    if (detailSlideProgress > 0f || viewingTransaction != null) {
         activeDetailTransaction?.let { tx ->
-            BackHandler { viewingTransaction = null }
-            TransactionDetailScreen(
-                item = tx,
-                currency = currentUser?.currencySymbol ?: "₹",
-                onBack = { viewingTransaction = null },
-                onEdit = {
-                    editingTransaction = tx
-                    showAddTransactionSheet = true
-                },
-                onDelete = {
-                    transactionToDelete = tx
-                }
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = (1f - detailSlideProgress) * size.width
+                        alpha = detailSlideProgress.coerceIn(0f, 1f)
+                    }
+            ) {
+                TransactionDetailScreen(
+                    item = tx,
+                    currency = currentUser?.currencySymbol ?: "₹",
+                    onBack = { viewingTransaction = null },
+                    onEdit = {
+                        editingTransaction = tx
+                        showAddTransactionSheet = true
+                    },
+                    onDelete = {
+                        transactionToDelete = tx
+                    }
+                )
+            }
         }
     }
 
@@ -845,7 +867,8 @@ private fun ScreenRouter(
                 onImportData = onImportData,
                 onRemoveAccount = onRemoveAccount,
                 onUpdateProfile = onUpdateProfile,
-                onClearData = onClearData
+                onClearData = onClearData,
+                onBackToHome = { onNavigateTo(AppDestination.HOME.route) }
             )
         }
     }
@@ -860,12 +883,18 @@ private fun AmoebaBottomDock(
     onOpenMoreMenu: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val selectedDockerIndex = when (currentDestination) {
-        AppDestination.HOME -> 0
-        AppDestination.TRANSACTIONS -> 1
-        AppDestination.WISHLIST -> 3
-        AppDestination.MONEY_FLOW, AppDestination.SAVINGS, AppDestination.BUDGETS, AppDestination.SETTINGS -> 4
+    var activeDockerIndex by remember { mutableIntStateOf(0) }
+    LaunchedEffect(currentDestination) {
+        when (currentDestination) {
+            AppDestination.HOME -> activeDockerIndex = 0
+            AppDestination.TRANSACTIONS -> activeDockerIndex = 1
+            AppDestination.WISHLIST -> activeDockerIndex = 3
+            AppDestination.MONEY_FLOW, AppDestination.SAVINGS, AppDestination.BUDGETS -> activeDockerIndex = 4
+            AppDestination.SETTINGS -> Unit
+        }
     }
+
+    val selectedDockerIndex = activeDockerIndex
 
     var previousIndex by remember { mutableIntStateOf(selectedDockerIndex) }
     val isMovingRight = selectedDockerIndex >= previousIndex

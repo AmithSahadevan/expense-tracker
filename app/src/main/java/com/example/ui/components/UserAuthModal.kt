@@ -121,7 +121,7 @@ fun UserAuthModal(
             ) {
                 Column {
                     Text(
-                        text = if (isRegistering) "New Account" else "Profiles & Isolation",
+                        text = if (isRegistering) "New Account" else "Profiles",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Black,
                             letterSpacing = (-0.5).sp
@@ -129,7 +129,7 @@ fun UserAuthModal(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (isRegistering) "Create your private ledger" else "Multi-user data partition",
+                        text = if (isRegistering) "Create your private ledger" else "Switch or create account",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -148,34 +148,6 @@ fun UserAuthModal(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Data Isolation Security Notice
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Text(
-                        text = "User Data Isolation active: Every transaction, budget, and wishlist item is scoped strictly to its authenticated user ID.",
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             if (!isRegistering) {
                 // List of profiles
@@ -197,102 +169,90 @@ fun UserAuthModal(
                         MaterialTheme.colorScheme.primary
                     }
 
-                    Card(
-                        onClick = {
-                            if (!isCurrent) {
-                                onSwitchUser(user)
-                                onDismiss()
-                            }
-                        },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isCurrent)
-                                MaterialTheme.colorScheme.surfaceVariant
-                            else
-                                MaterialTheme.colorScheme.surface
-                        ),
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                            .testTag("user_profile_item_${user.username}")
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                if (!isCurrent) {
+                                    onSwitchUser(user)
+                                    onDismiss()
+                                }
+                            }
+                            .padding(vertical = 10.dp, horizontal = 4.dp)
+                            .testTag("user_profile_item_${user.username}"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .background(userBg),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(CircleShape)
-                                        .background(userBg),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (user.avatarImagePath != null) {
-                                        AsyncImage(
-                                            model = "file:///android_asset/${user.avatarImagePath}",
-                                            contentDescription = null,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Person,
-                                            contentDescription = null,
-                                            tint = Color.White,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
-
-                                Column {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = user.displayName,
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        if (isCurrent) {
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = "ACTIVE",
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontWeight = FontWeight.ExtraBold,
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        fontSize = 9.sp
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Text(
-                                        text = "@${user.username} • ${user.email}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                if (user.avatarImagePath != null) {
+                                    AsyncImage(
+                                        model = "file:///android_asset/${user.avatarImagePath}",
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Person,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
 
-                            if (isCurrent) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Active user",
-                                    tint = MaterialTheme.colorScheme.primary
+                            Column {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = user.displayName,
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (isCurrent) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color.White.copy(alpha = 0.2f)
+                                        ) {
+                                            Text(
+                                                text = "ACTIVE",
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = Color.White,
+                                                    fontSize = 9.sp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = "@${user.username} • ${user.email}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                        }
+
+                        if (isCurrent) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Active user",
+                                tint = Color.White
+                            )
                         }
                     }
                 }

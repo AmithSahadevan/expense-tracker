@@ -94,11 +94,6 @@ fun BudgetsScreen(
                     ),
                     color = MaterialTheme.colorScheme.onBackground
                 )
-                Text(
-                    text = "${summary.monthLabel} · ${formatMoney(currency, summary.monthSpent)} spent so far",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -178,23 +173,6 @@ fun BudgetsScreen(
                             currency = currency,
                             onClick = { formRequest = BudgetFormRequest(existing = progress.budget) }
                         )
-                    }
-
-                    item(key = "add_budget") {
-                        Button(
-                            onClick = { formRequest = BudgetFormRequest(existing = null) },
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
-                                .testTag("budget_add_button")
-                        ) {
-                            Text("+ Add Budget", fontWeight = FontWeight.Bold)
-                        }
                     }
 
                     item(key = "bottom_spacer") {

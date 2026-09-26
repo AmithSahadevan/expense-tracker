@@ -103,71 +103,68 @@ fun OverallBudgetCard(
     onClick: (() -> Unit)? = null
 ) {
     val accent = budgetStatusColor(progress.status)
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .padding(vertical = 12.dp)
             .testTag("overall_budget_card")
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "OVERALL BUDGET",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = 1.2.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = formatMoney(currency, progress.spent),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-1).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.testTag("overall_budget_spent")
-                    )
-                    Text(
-                        text = "of ${formatMoney(currency, progress.allocated)} this month",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                StatusPill(status = progress.status, text = "${progress.percentLabel}%")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            BudgetBar(percentUsed = progress.percentUsed, status = progress.status, height = 12.dp)
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            Column {
                 Text(
-                    text = budgetStatusMessage(progress, currency),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = accent,
-                    modifier = Modifier.testTag("overall_budget_remaining")
+                    text = "OVERALL BUDGET",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.2.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = formatMoney(currency, progress.spent),
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-1).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.testTag("overall_budget_spent")
                 )
                 Text(
-                    text = "$monthLabel · $daysLeft ${if (daysLeft == 1) "day" else "days"} left",
+                    text = "of ${formatMoney(currency, progress.allocated)} this month",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            StatusPill(status = progress.status, text = "${progress.percentLabel}%")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        BudgetBar(percentUsed = progress.percentUsed, status = progress.status, height = 12.dp)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = budgetStatusMessage(progress, currency),
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = accent,
+                modifier = Modifier.testTag("overall_budget_remaining")
+            )
+            Text(
+                text = "$monthLabel · $daysLeft ${if (daysLeft == 1) "day" else "days"} left",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -181,47 +178,44 @@ fun CategoryBudgetCard(
     onClick: (() -> Unit)? = null
 ) {
     val accent = budgetStatusColor(progress.status)
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .padding(vertical = 10.dp)
             .testTag("budget_card_${progress.id}")
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = progress.label,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${formatMoney(currency, progress.spent)} of ${formatMoney(currency, progress.allocated)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                StatusPill(status = progress.status, text = "${progress.percentLabel}%")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = progress.label,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "${formatMoney(currency, progress.spent)} of ${formatMoney(currency, progress.allocated)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            BudgetBar(percentUsed = progress.percentUsed, status = progress.status)
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = budgetStatusMessage(progress, currency),
-                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                color = accent
-            )
+            StatusPill(status = progress.status, text = "${progress.percentLabel}%")
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        BudgetBar(percentUsed = progress.percentUsed, status = progress.status)
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Text(
+            text = budgetStatusMessage(progress, currency),
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+            color = accent
+        )
     }
 }
 
@@ -286,36 +280,31 @@ fun BudgetAlertBanner(
         flagged.joinToString(" · ") { "${it.label} ${budgetStatusMessage(it, currency).lowercase()}" }
     }
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .testTag("budget_alert_banner")
+            .padding(vertical = 8.dp)
+            .testTag("budget_alert_banner"),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = budgetStatusIcon(status),
-                contentDescription = null,
-                tint = accent,
-                modifier = Modifier.size(22.dp)
+        Icon(
+            imageVector = budgetStatusIcon(status),
+            contentDescription = null,
+            tint = accent,
+            modifier = Modifier.size(22.dp)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = headline,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = headline,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
