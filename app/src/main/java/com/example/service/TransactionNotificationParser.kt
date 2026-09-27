@@ -40,12 +40,12 @@ object TransactionNotificationParser {
     )
 
     private val DEBIT_KEYWORDS = Pattern.compile(
-        "\\b(debited|spent|paid|payment to|sent to|transfer to|withdrawn|charged|purchase at|paid at)\\b",
+        "\\b(debited|debit of|spent|paid|payment of|payment to|sent to|money sent|transferred to|transfer to|withdrawn|withdrawal|charged|deducted|purchase at|purchase of|paid at|paid to)\\b",
         Pattern.CASE_INSENSITIVE
     )
 
     private val CREDIT_KEYWORDS = Pattern.compile(
-        "\\b(credited|received|added to|deposited|refunded|received from|salary credited)\\b",
+        "\\b(credited|credit of|received|money received|added to|deposited|refunded|refund of|received from|salary credited)\\b",
         Pattern.CASE_INSENSITIVE
     )
 
@@ -57,6 +57,13 @@ object TransactionNotificationParser {
 
     private val AMOUNT_PATTERN_2 = Pattern.compile(
         "([\\d,]+(?:\\.\\d{1,2})?)\\s*(?:Rs\\.?|INR|₹)",
+        Pattern.CASE_INSENSITIVE
+    )
+
+    // Some apps write the amount with no currency marker at all ("You paid 250 to Cafe"),
+    // so fall back to a number sitting directly beside a transaction keyword.
+    private val AMOUNT_PATTERN_3 = Pattern.compile(
+        "\\b(?:debited|credited|spent|paid|sent|received|withdrawn|deducted|refunded|amount(?:\\s*of)?)\\b[^\\d]{0,15}([\\d,]+(?:\\.\\d{1,2})?)\\b",
         Pattern.CASE_INSENSITIVE
     )
 
@@ -155,6 +162,12 @@ object TransactionNotificationParser {
         val matcher2 = AMOUNT_PATTERN_2.matcher(text)
         if (matcher2.find()) {
             val raw = matcher2.group(1)?.replace(",", "") ?: ""
+            return raw.toDoubleOrNull()
+        }
+
+        val matcher3 = AMOUNT_PATTERN_3.matcher(text)
+        if (matcher3.find()) {
+            val raw = matcher3.group(1)?.replace(",", "") ?: ""
             return raw.toDoubleOrNull()
         }
 

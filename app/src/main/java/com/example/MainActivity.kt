@@ -14,6 +14,8 @@ import com.example.data.local.AppDatabase
 import com.example.data.remote.ProductLookupService
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.ExpenseTrackerRepository
+import com.example.data.local.preferences.TransactionDetectionPreferences
+import com.example.service.ExpenseNotificationListenerService
 import com.example.ui.AppShell
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.ExpenseTrackerViewModel
@@ -59,6 +61,13 @@ class MainActivity : ComponentActivity() {
 
         // 2. Start VSYNC Keep-Alive Loop on resume
         startKeepAliveFrameCallback()
+
+        // 3. Android silently unbinds notification listeners after a process death or an app
+        //    update, which stops automatic transaction detection without any visible sign.
+        //    Opening the app is a good moment to bring the listener back.
+        if (TransactionDetectionPreferences.isAutoDetectionEnabled(this)) {
+            ExpenseNotificationListenerService.ensureListenerConnected(this)
+        }
     }
 
     override fun onPause() {

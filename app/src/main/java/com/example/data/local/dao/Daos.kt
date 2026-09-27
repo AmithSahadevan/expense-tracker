@@ -101,6 +101,14 @@ interface TransactionDao {
     @Query("DELETE FROM income WHERE id = :id AND userId = :userId")
     suspend fun deleteIncome(id: Long, userId: Long): Int
 
+    // Used by automatic transaction detection: only the entries near the notification matter,
+    // so the whole ledger does not have to be loaded for every notification.
+    @Query("SELECT * FROM expenses WHERE userId = :userId AND date >= :minDate AND date <= :maxDate ORDER BY date DESC")
+    suspend fun getExpensesInRange(userId: Long, minDate: Long, maxDate: Long): List<ExpenseEntity>
+
+    @Query("SELECT * FROM income WHERE userId = :userId AND date >= :minDate AND date <= :maxDate ORDER BY date DESC")
+    suspend fun getIncomeInRange(userId: Long, minDate: Long, maxDate: Long): List<IncomeEntity>
+
     @Query("DELETE FROM expenses WHERE userId = :userId")
     suspend fun deleteAllExpensesForUser(userId: Long)
 
@@ -306,6 +314,17 @@ interface ProcessedNotificationDao {
         minTimestamp: Long,
         maxTimestamp: Long
     ): ProcessedNotificationEntity?
+
+    // All candidates, because deciding whether two notifications describe the same payment needs
+    // to compare reference IDs across every match in the window, not just the first row.
+    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND direction = :direction AND ABS(amount - :amount) < 0.01 AND timestamp >= :minTimestamp AND timestamp <= :maxTimestamp ORDER BY timestamp DESC")
+    suspend fun findMatchingNotifications(
+        userId: Long,
+        direction: String,
+        amount: Double,
+        minTimestamp: Long,
+        maxTimestamp: Long
+    ): List<ProcessedNotificationEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: ProcessedNotificationEntity): Long

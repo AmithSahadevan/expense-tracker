@@ -81,7 +81,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.core.app.NotificationManagerCompat
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.service.ExpenseNotificationListenerService
 import android.provider.Settings
 import com.example.data.local.preferences.TransactionDetectionPreferences
 import androidx.compose.foundation.lazy.LazyRow
@@ -132,6 +136,29 @@ fun SettingsScreen(
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var isAutoDetectionEnabled by remember {
         mutableStateOf(TransactionDetectionPreferences.isAutoDetectionEnabled(context))
+    }
+    var hasNotificationAccess by remember {
+        mutableStateOf(ExpenseNotificationListenerService.isNotificationAccessGranted(context))
+    }
+
+    // Granting notification access happens in Android's own settings screen, so the result is only
+    // visible once we come back. Re-checking on resume also gives us a reliable moment to revive a
+    // listener that Android unbound while the app was in the background.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasNotificationAccess =
+                    ExpenseNotificationListenerService.isNotificationAccessGranted(context)
+                if (hasNotificationAccess &&
+                    TransactionDetectionPreferences.isAutoDetectionEnabled(context)
+                ) {
+                    ExpenseNotificationListenerService.ensureListenerConnected(context)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val currency = currentUser?.currencySymbol ?: "₹"
 
@@ -376,8 +403,11 @@ fun SettingsScreen(
                             isAutoDetectionEnabled = enabled
                             TransactionDetectionPreferences.setAutoDetectionEnabled(context, enabled)
                             if (enabled) {
-                                val hasPermission = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
-                                if (!hasPermission) {
+                                hasNotificationAccess =
+                                    ExpenseNotificationListenerService.isNotificationAccessGranted(context)
+                                if (hasNotificationAccess) {
+                                    ExpenseNotificationListenerService.ensureListenerConnected(context)
+                                } else {
                                     try {
                                         val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                                         context.startActivity(intent)
@@ -397,8 +427,7 @@ fun SettingsScreen(
                 }
 
                 if (isAutoDetectionEnabled) {
-                    val hasPermission = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
-                    if (!hasPermission) {
+                    if (!hasNotificationAccess) {
                         Card(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
