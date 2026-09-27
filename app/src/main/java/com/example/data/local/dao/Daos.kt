@@ -11,6 +11,7 @@ import com.example.data.local.entities.ExpenseEntity
 import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.IncomeEntity
 import com.example.data.local.entities.MoneyFlowEntity
+import com.example.data.local.entities.ProcessedNotificationEntity
 import com.example.data.local.entities.SavingsEntity
 import com.example.data.local.entities.SavingsGoalEntity
 import com.example.data.local.entities.SavingsTransactionEntity
@@ -288,3 +289,28 @@ interface CategoryDao {
     @Query("DELETE FROM custom_categories WHERE userId = :userId")
     suspend fun deleteAllCategoriesForUser(userId: Long)
 }
+
+@Dao
+interface ProcessedNotificationDao {
+    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND fingerprint = :fingerprint LIMIT 1")
+    suspend fun findByFingerprint(userId: Long, fingerprint: String): ProcessedNotificationEntity?
+
+    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND referenceId = :refId LIMIT 1")
+    suspend fun findByReferenceId(userId: Long, refId: String): ProcessedNotificationEntity?
+
+    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND direction = :direction AND ABS(amount - :amount) < 0.01 AND timestamp >= :minTimestamp AND timestamp <= :maxTimestamp LIMIT 1")
+    suspend fun findMatchingNotification(
+        userId: Long,
+        direction: String,
+        amount: Double,
+        minTimestamp: Long,
+        maxTimestamp: Long
+    ): ProcessedNotificationEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(entity: ProcessedNotificationEntity): Long
+
+    @Query("DELETE FROM processed_notifications WHERE createdAt < :cutoffTimestamp")
+    suspend fun deleteOlderThan(cutoffTimestamp: Long): Int
+}
+

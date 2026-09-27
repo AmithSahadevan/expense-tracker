@@ -9,6 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.local.dao.BudgetDao
 import com.example.data.local.dao.CategoryDao
 import com.example.data.local.dao.MoneyFlowDao
+import com.example.data.local.dao.ProcessedNotificationDao
 import com.example.data.local.dao.SavingsDao
 import com.example.data.local.dao.TransactionDao
 import com.example.data.local.dao.UserDao
@@ -19,6 +20,7 @@ import com.example.data.local.entities.ExpenseEntity
 import com.example.data.local.entities.GoalContributionEntity
 import com.example.data.local.entities.IncomeEntity
 import com.example.data.local.entities.MoneyFlowEntity
+import com.example.data.local.entities.ProcessedNotificationEntity
 import com.example.data.local.entities.SavingsEntity
 import com.example.data.local.entities.SavingsGoalEntity
 import com.example.data.local.entities.SavingsTransactionEntity
@@ -37,9 +39,10 @@ import com.example.data.local.entities.WishlistItemEntity
         BudgetEntity::class,
         SavingsGoalEntity::class,
         CategoryEntity::class,
-        GoalContributionEntity::class
+        GoalContributionEntity::class,
+        ProcessedNotificationEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun wishlistDao(): WishlistDao
     abstract fun budgetDao(): BudgetDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun processedNotificationDao(): ProcessedNotificationDao
 
     companion object {
         @Volatile
@@ -122,6 +126,31 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Automatic transaction detection processed notifications log.
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `processed_notifications` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `userId` INTEGER NOT NULL,
+                        `fingerprint` TEXT NOT NULL,
+                        `referenceId` TEXT,
+                        `amount` REAL NOT NULL,
+                        `direction` TEXT NOT NULL,
+                        `merchant` TEXT NOT NULL,
+                        `packageSource` TEXT NOT NULL DEFAULT '',
+                        `timestamp` INTEGER NOT NULL DEFAULT 0,
+                        `createdAt` INTEGER NOT NULL DEFAULT 0
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_processed_notifications_userId` ON `processed_notifications` (`userId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_processed_notifications_fingerprint` ON `processed_notifications` (`fingerprint`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_processed_notifications_referenceId` ON `processed_notifications` (`referenceId`)")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -135,7 +164,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .fallbackToDestructiveMigration()
                     .fallbackToDestructiveMigrationOnDowngrade()
@@ -146,3 +176,4 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+

@@ -222,3 +222,25 @@ data class CategoryEntity(
     val colorHex: String = "#6366F1",
     val createdAt: Long = System.currentTimeMillis()
 )
+
+@Entity(
+    tableName = "processed_notifications",
+    indices = [
+        Index(value = ["userId"]),
+        Index(value = ["fingerprint"]),
+        Index(value = ["referenceId"])
+    ]
+)
+data class ProcessedNotificationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val userId: Long,
+    val fingerprint: String,
+    val referenceId: String? = null,
+    val amount: Double,
+    val direction: String, // "DEBIT" or "CREDIT"
+    val merchant: String,
+    val packageSource: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    val createdAt: Long = System.currentTimeMillis()
+)
+

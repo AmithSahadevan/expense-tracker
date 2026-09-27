@@ -1,7 +1,9 @@
 package com.example.data.repository
 
+import android.content.Context
 import com.example.data.local.dao.UserDao
 import com.example.data.local.entities.UserEntity
+import com.example.data.local.preferences.TransactionDetectionPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +16,8 @@ import kotlinx.coroutines.withContext
 
 class AuthRepository(
     private val userDao: UserDao,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val context: Context? = null
 ) {
     private val _currentUser = MutableStateFlow<UserEntity?>(null)
     val currentUser: StateFlow<UserEntity?> = _currentUser.asStateFlow()
@@ -24,6 +27,13 @@ class AuthRepository(
     init {
         scope.launch {
             initializeDefaultUserIfNeeded()
+        }
+    }
+
+    private fun updateActiveUser(user: UserEntity?) {
+        _currentUser.value = user
+        if (context != null && user != null) {
+            TransactionDetectionPreferences.setActiveUserId(context, user.id)
         }
     }
 
@@ -42,7 +52,7 @@ class AuthRepository(
                 )
                 val id = userDao.insertUser(defaultUser)
                 val created = userDao.findUserById(id)
-                _currentUser.value = created
+                updateActiveUser(created)
             } else {
                 val alex = userDao.getUserByUsername("alex")
                 if (alex != null && (alex.avatarImagePath == null || alex.avatarImagePath == "pfp/download.jpg")) {
@@ -51,7 +61,7 @@ class AuthRepository(
                 
                 val users = userDao.getAllUsers().firstOrNull()
                 if (_currentUser.value == null && !users.isNullOrEmpty()) {
-                    _currentUser.value = users.first()
+                    updateActiveUser(users.first())
                 }
             }
         } catch (e: Exception) {
@@ -93,29 +103,30 @@ class AuthRepository(
 
         val id = userDao.insertUser(newUser)
         val created = userDao.findUserById(id) ?: newUser.copy(id = id)
-        _currentUser.value = created
+        updateActiveUser(created)
         Result.success(created)
     }
 
     fun switchUser(user: UserEntity) {
-        _currentUser.value = user
+        updateActiveUser(user)
     }
 
     fun logout() {
-        _currentUser.value = null
+        updateActiveUser(null)
     }
 
     suspend fun updateUser(user: UserEntity) = withContext(Dispatchers.IO) {
         userDao.updateUser(user)
         if (_currentUser.value?.id == user.id) {
-            _currentUser.value = user
+            updateActiveUser(user)
         }
     }
 
     suspend fun deleteUser(userId: Long) = withContext(Dispatchers.IO) {
         userDao.deleteUser(userId)
         if (_currentUser.value?.id == userId) {
-            _currentUser.value = allUsers.firstOrNull()?.firstOrNull { it.id != userId }
+            updateActiveUser(allUsers.firstOrNull()?.firstOrNull { it.id != userId })
         }
     }
 }
+

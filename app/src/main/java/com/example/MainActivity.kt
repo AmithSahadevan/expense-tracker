@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: ExpenseTrackerViewModel by viewModels {
         val database = AppDatabase.getInstance(applicationContext)
-        val authRepo = AuthRepository(database.userDao())
+        val authRepo = AuthRepository(database.userDao(), context = applicationContext)
         val expenseRepo = ExpenseTrackerRepository(database)
         ExpenseTrackerViewModelFactory(authRepo, expenseRepo, ProductLookupService())
     }

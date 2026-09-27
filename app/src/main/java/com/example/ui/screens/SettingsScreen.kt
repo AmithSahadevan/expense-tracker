@@ -78,6 +78,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.core.app.NotificationManagerCompat
+import android.provider.Settings
+import com.example.data.local.preferences.TransactionDetectionPreferences
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.example.data.model.Currencies
@@ -124,6 +130,9 @@ fun SettingsScreen(
     var showRemoveAccountDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
+    var isAutoDetectionEnabled by remember {
+        mutableStateOf(TransactionDetectionPreferences.isAutoDetectionEnabled(context))
+    }
     val currency = currentUser?.currencySymbol ?: "₹"
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -321,6 +330,144 @@ fun SettingsScreen(
                         )
                     ) {
                         Text(text = "Change", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    }
+                }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        // Automatic Transaction Detection
+        Text(
+            text = "AUTOMATIC TRANSACTION DETECTION",
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = "Automatic Transaction Detection",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "Parse bank & payment app notifications locally to record expenses and incomes automatically.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Switch(
+                        checked = isAutoDetectionEnabled,
+                        onCheckedChange = { enabled ->
+                            isAutoDetectionEnabled = enabled
+                            TransactionDetectionPreferences.setAutoDetectionEnabled(context, enabled)
+                            if (enabled) {
+                                val hasPermission = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+                                if (!hasPermission) {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Please open Settings and grant Notification Access to Expense Tracker", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = Color.Gray,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+                }
+
+                if (isAutoDetectionEnabled) {
+                    val hasPermission = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+                    if (!hasPermission) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = "Notification Access Required",
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                                Text(
+                                    text = "Android requires notification access permission to read bank SMS and payment app alerts. Tap below to enable access in Settings.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Button(
+                                    onClick = {
+                                        try {
+                                            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Please grant Notification Access in Android Settings", Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Text("Grant Notification Access", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MintGreen)
+                            )
+                            Text(
+                                text = "Active • Listening for financial transaction notifications",
+                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                color = MintGreen
+                            )
+                        }
                     }
                 }
             }
