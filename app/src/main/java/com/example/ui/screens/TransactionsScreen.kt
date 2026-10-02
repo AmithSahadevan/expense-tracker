@@ -37,6 +37,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -113,28 +115,83 @@ fun TransactionsScreen(
 
     val headerDateFormat = remember { SimpleDateFormat("d MMM EEEE", Locale.getDefault()) }
 
+    var headerHeight by remember { mutableStateOf(0.dp) }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = modifier.testTag("transactions_screen")
-    ) { innerPadding ->
+    ) { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp)
         ) {
-            // Header
-            Text(
-                text = "Transactions",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            // Transaction List
+            if (filteredList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            top = AppChrome.contentTopPadding(headerHeight) + 12.dp,
+                            bottom = 140.dp
+                        ),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    FunkyEmptyState(
+                        icon = PhosphorIcons.Bold.Coins,
+                        headline = "No transactions found",
+                        subtext = if (transactions.isEmpty())
+                            "Your money ledger is empty. Tap '+ Add Transaction' to start recording your income and expenses!"
+                        else
+                            "No transactions match the selected search or filters.",
+                        actionButtonText = "+ Add Transaction",
+                        onActionClick = onOpenAddTransaction,
+                        badgeText = "Ledger",
+                        accentColor = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        top = AppChrome.contentTopPadding(headerHeight),
+                        bottom = AppChrome.BottomContentPadding
+                    ),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    groupedTransactions.forEach { (dayStart, items) ->
+                        // Date Header with Summary
+                        stickyHeader {
+                            DateHeader(
+                                date = Date(dayStart),
+                                dateFormat = headerDateFormat,
+                                dailyIncome = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount },
+                                dailyExpense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+                            )
+                        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                        items(items, key = { "${it.type.name}_${it.id}" }) { item ->
+                            TransactionRowItem(
+                                item = item,
+                                onEdit = { onEditTransaction(item) }
+                            )
+                        }
+                        
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+        }
 
+        GradientTopBar(
+            title = "Transactions",
+            onSolidHeightChanged = { headerHeight = it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
             // Thin Search Bar with Filter
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -284,59 +341,8 @@ fun TransactionsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Transaction List
-            if (filteredList.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 20.dp, bottom = 140.dp),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    FunkyEmptyState(
-                        icon = PhosphorIcons.Bold.Coins,
-                        headline = "No transactions found",
-                        subtext = if (transactions.isEmpty())
-                            "Your money ledger is empty. Tap '+ Add Transaction' to start recording your income and expenses!"
-                        else
-                            "No transactions match the selected search or filters.",
-                        actionButtonText = "+ Add Transaction",
-                        onActionClick = onOpenAddTransaction,
-                        badgeText = "Ledger",
-                        accentColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 120.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    groupedTransactions.forEach { (dayStart, items) ->
-                        // Date Header with Summary
-                        stickyHeader {
-                            DateHeader(
-                                date = Date(dayStart),
-                                dateFormat = headerDateFormat,
-                                dailyIncome = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amount },
-                                dailyExpense = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
-                            )
-                        }
-
-                        items(items, key = { "${it.type.name}_${it.id}" }) { item ->
-                            TransactionRowItem(
-                                item = item,
-                                onEdit = { onEditTransaction(item) }
-                            )
-                        }
-                        
-                        item {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                }
             }
+        }
         }
     }
 }

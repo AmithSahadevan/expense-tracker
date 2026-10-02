@@ -22,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -78,24 +80,9 @@ fun BudgetsScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = modifier.testTag("budgets_screen")
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding())
-        ) {
-            Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp)) {
-                Text(
-                    text = "Budgets",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
+    ) { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             if (budgets.isEmpty()) {
                 Box(
@@ -103,7 +90,7 @@ fun BudgetsScreen(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 20.dp)
-                        .padding(top = 20.dp, bottom = 140.dp),
+                        .padding(top = AppChrome.topContentPadding + 12.dp, bottom = 140.dp),
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
@@ -119,7 +106,12 @@ fun BudgetsScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
+                    contentPadding = PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = AppChrome.topContentPadding,
+                        bottom = 40.dp
+                    ),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (summary.alertCount > 0) {
@@ -175,10 +167,16 @@ fun BudgetsScreen(
                     }
 
                     item(key = "bottom_spacer") {
-                        Spacer(modifier = Modifier.navigationBarsPadding().height(96.dp))
+                        Spacer(modifier = Modifier.navigationBarsPadding().height(AppChrome.BottomContentPadding))
                     }
                 }
             }
+        }
+
+        GradientTopBar(
+            title = "Budgets",
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
         }
     }
 

@@ -34,6 +34,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -143,26 +145,19 @@ fun SavingsScreen(
         dialogRequest = DialogRequest(existing = null, savingsType = type, transactionType = action)
     }
 
+    Box(modifier = modifier.fillMaxSize()) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 120.dp),
-        modifier = modifier
+        contentPadding = PaddingValues(
+            start = 20.dp,
+            end = 20.dp,
+            top = AppChrome.topContentPadding,
+            bottom = AppChrome.BottomContentPadding
+        ),
+        modifier = Modifier
             .fillMaxSize()
             .testTag("savings_screen")
     ) {
-        item {
-            Column {
-                Text(
-                    text = "Savings",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
-
         item {
             TotalSavingsCard(
                 adultMoney = adultMoneyBalance,
@@ -277,6 +272,12 @@ fun SavingsScreen(
             Spacer(modifier = Modifier.navigationBarsPadding().height(48.dp))
         }
     }
+    GradientTopBar(
+        title = "Savings",
+        modifier = Modifier.align(Alignment.TopCenter)
+    )
+    }
+
 
     dialogRequest?.let { request ->
         SavingsTransactionDialog(

@@ -43,12 +43,20 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.ui.unit.Dp
+import com.example.ui.components.AppHubDrawerContent
+import com.example.ui.components.BottomFadeScrim
+import com.example.ui.components.ProfileAvatar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -121,6 +129,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.example.data.local.entities.BudgetEntity
 import com.example.data.local.entities.MoneyFlowEntity
 import com.example.data.local.entities.SavingsTransactionEntity
@@ -128,6 +139,7 @@ import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
 import com.example.ui.viewmodel.DashboardSummaryUiState
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,17 +163,17 @@ fun AppShell(
 
     val pagerDestinations = remember {
         listOf(
-            AppDestination.SETTINGS,
             AppDestination.HOME,
             AppDestination.TRANSACTIONS,
             AppDestination.WISHLIST,
             AppDestination.SAVINGS,
             AppDestination.MONEY_FLOW,
-            AppDestination.BUDGETS
+            AppDestination.BUDGETS,
+            AppDestination.SETTINGS
         )
     }
 
-    val pagerState = rememberPagerState(initialPage = 1) { pagerDestinations.size }
+    val pagerState = rememberPagerState(initialPage = 0) { pagerDestinations.size }
     var currentDestination by remember { mutableStateOf(AppDestination.HOME) }
 
     // Sync Pager -> currentDestination
@@ -185,14 +197,32 @@ fun AppShell(
     var viewingTransaction by remember { mutableStateOf<TransactionItem?>(null) }
     var transactionToDelete by remember { mutableStateOf<TransactionItem?>(null) }
     var showAuthModal by remember { mutableStateOf(false) }
-    var showMoreMenuSheet by remember { mutableStateOf(false) }
     var isWishlistDetailActive by remember { mutableStateOf(false) }
     // Page whose own add form the dock's add button asked to open; cleared once that page opens it.
     var dockAddRequest by remember { mutableStateOf<AppDestination?>(null) }
 
-    val addSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val addSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { it != SheetValue.Hidden }
+    )
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val moreHubSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+    val openDrawerOnSwipeRight = remember(pagerState, drawerState, scope) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val horizontal = abs(available.x) > abs(available.y)
+                val atFirstPage = pagerState.currentPage == 0 &&
+                        pagerState.currentPageOffsetFraction == 0f
+                return if (available.x > 0f && horizontal && atFirstPage && drawerState.isClosed) {
+                    scope.launch { drawerState.open() }
+                    available
+                } else {
+                    Offset.Zero
+                }
+            }
+        }
+    }
 
     // Retain the last viewing transaction item so content remains fully rendered during exit transition
     var activeDetailTransaction by remember { mutableStateOf<TransactionItem?>(null) }
@@ -335,53 +365,47 @@ fun AppShell(
                     }
                 }
             } else {
-                // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        val showDock = currentDestination != AppDestination.SETTINGS &&
-                                if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
+                // Mobile canonical layout: pages draw full-bleed, with the gradient top bar
+                // and the floating dock overlaid on top of them.
+                val showDock = currentDestination != AppDestination.SETTINGS &&
+                        if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
 
-                        AnimatedVisibility(
-                            visible = showDock,
-                            enter = slideInVertically(
-                                initialOffsetY = { fullHeight -> fullHeight },
-                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                            ) + fadeIn(animationSpec = tween(durationMillis = 200)),
-                            exit = slideOutVertically(
-                                targetOffsetY = { fullHeight -> fullHeight },
-                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                            ) + fadeOut(animationSpec = tween(durationMillis = 200)),
-                            label = "bottom_dock_visibility"
+                ModalNavigationDrawer(
+                    drawerState = drawerState,
+                    gesturesEnabled = drawerState.isOpen || viewingTransaction == null,
+                    scrimColor = Color.Black.copy(alpha = 0.55f),
+                    drawerContent = {
+                        ModalDrawerSheet(
+                            drawerContainerColor = MaterialTheme.colorScheme.background,
+                            drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp),
+                            windowInsets = WindowInsets(0, 0, 0, 0),
+                            modifier = Modifier.width(312.dp)
                         ) {
-                            AmoebaBottomDock(
+                            AppHubDrawerContent(
+                                currentUser = currentUser,
                                 currentDestination = currentDestination,
-                                pageOrder = pagerDestinations,
-                                onNavigate = { dest -> navigateToDestination(dest.route) },
-                                onDockAdd = {
-                                    when (currentDestination) {
-                                        AppDestination.TRANSACTIONS -> {
-                                            editingTransaction = null
-                                            showAddTransactionSheet = true
-                                        }
-                                        AppDestination.WISHLIST,
-                                        AppDestination.MONEY_FLOW,
-                                        AppDestination.BUDGETS -> dockAddRequest = currentDestination
-                                        AppDestination.HOME,
-                                        AppDestination.SAVINGS,
-                                        AppDestination.SETTINGS -> Unit
-                                    }
+                                accountCount = allUsers.size,
+                                onNavigate = { dest ->
+                                    scope.launch { drawerState.close() }
+                                    navigateToDestination(dest.route)
                                 },
-                                onOpenMoreMenu = { showMoreMenuSheet = true }
+                                onSwitchProfile = {
+                                    scope.launch { drawerState.close() }
+                                    showAuthModal = true
+                                }
                             )
                         }
                     }
-                ) { innerPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = innerPadding.calculateTopPadding()) // Only respect top padding
-                    ) {
+                ) {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+                    ) { _ ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .nestedScroll(openDrawerOnSwipeRight)
+                        ) {
                         ScreenRouter(
                             pagerState = pagerState,
                             pagerDestinations = pagerDestinations,
@@ -437,6 +461,57 @@ fun AppShell(
                             onDockAddRequestHandled = { dockAddRequest = null },
                             onWishlistDetailToggle = { isWishlistDetailActive = it }
                         )
+
+                        // Bottom chrome: a fade that darkens page content as it scrolls
+                        // beneath, with the dock floating on top so it stays legible.
+                        AnimatedVisibility(
+                            visible = showDock,
+                            enter = slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight },
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                            ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                            exit = slideOutVertically(
+                                targetOffsetY = { fullHeight -> fullHeight },
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                            ) + fadeOut(animationSpec = tween(durationMillis = 200)),
+                            label = "bottom_dock_visibility",
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                BottomFadeScrim()
+                                Column {
+                                    FloatingDock(
+                                        currentDestination = currentDestination,
+                                        currentUser = currentUser,
+                                        pageOrder = pagerDestinations,
+                                        onNavigate = { dest -> navigateToDestination(dest.route) },
+                                        onDockAdd = {
+                                            when (currentDestination) {
+                                                AppDestination.TRANSACTIONS -> {
+                                                    editingTransaction = null
+                                                    showAddTransactionSheet = true
+                                                }
+                                                AppDestination.WISHLIST,
+                                                AppDestination.MONEY_FLOW,
+                                                AppDestination.BUDGETS -> dockAddRequest = currentDestination
+                                                AppDestination.HOME,
+                                                AppDestination.SAVINGS,
+                                                AppDestination.SETTINGS -> Unit
+                                            }
+                                        },
+                                        onOpenProfile = {
+                                            navigateToDestination(AppDestination.SETTINGS.route)
+                                        }
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Spacer(modifier = Modifier.navigationBarsPadding())
+                                }
+                            }
+                        }
+                        }
                     }
                 }
             }
@@ -523,169 +598,22 @@ fun AppShell(
         )
     }
 
-    // More Hub Quick Modal Sheet (for quick access to Budgets & Settings on mobile)
-    if (showMoreMenuSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showMoreMenuSheet = false },
-            sheetState = moreHubSheetState,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = "App Hub & Controls",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+    // The former "App Hub & Controls" bottom sheet now lives in the navigation drawer
+    // (AppHubDrawerContent), opened from the dock's profile avatar or an edge swipe.
 
-                // Money Flow
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            navigateToDestination(AppDestination.MONEY_FLOW.route)
-                            showMoreMenuSheet = false
-                        }
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Bold.ArrowsLeftRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(text = "Money Flow", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(text = "Track debts, IOUs & shared expenses", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Savings
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .testTag("more_hub_savings")
-                        .clickable {
-                            navigateToDestination(AppDestination.SAVINGS.route)
-                            showMoreMenuSheet = false
-                        }
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Bold.Target,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(text = "Savings", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(text = "Adult Money & protected Emergency Fund", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Category Budgets
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            navigateToDestination(AppDestination.BUDGETS.route)
-                            showMoreMenuSheet = false
-                        }
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Bold.ChartBar,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(text = "Category Budgets", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(text = "Manage spending caps & allocations", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Settings & Profiles
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            navigateToDestination(AppDestination.SETTINGS.route)
-                            showMoreMenuSheet = false
-                        }
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Bold.Gear,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(text = "Settings & Profiles", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(text = "User data isolation, accounts & specs", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                // Switch Profile
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            showMoreMenuSheet = false
-                            showAuthModal = true
-                        }
-                        .padding(vertical = 10.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Bold.User,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(text = "Switch Profile (${allUsers.size} accounts)", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(text = "Current: @${currentUser?.username}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-        }
+    BackHandler(enabled = drawerState.isOpen) {
+        scope.launch { drawerState.close() }
     }
 
-    BackHandler(enabled = viewingTransaction != null) {
+    BackHandler(enabled = viewingTransaction != null && !drawerState.isOpen) {
         viewingTransaction = null
     }
 
-    BackHandler(enabled = currentDestination == AppDestination.SETTINGS && viewingTransaction == null) {
+    BackHandler(
+        enabled = currentDestination == AppDestination.SETTINGS &&
+                viewingTransaction == null &&
+                !drawerState.isOpen
+    ) {
         navigateToDestination(AppDestination.HOME.route)
     }
 
@@ -889,146 +817,70 @@ private fun ScreenRouter(
     }
 }
 
+/**
+ * The floating dock: Home, Transactions, Wishlist, the page-aware add button, and the
+ * profile avatar pushed to the right. It draws no bar of its own - the [BottomFadeScrim]
+ * behind it supplies the darkening, so page content dissolves underneath rather than
+ * being cut off by a solid edge.
+ */
 @Composable
-private fun AmoebaBottomDock(
+private fun FloatingDock(
     currentDestination: AppDestination,
+    currentUser: UserEntity?,
     pageOrder: List<AppDestination>,
     onNavigate: (AppDestination) -> Unit,
     onDockAdd: () -> Unit,
-    onOpenMoreMenu: () -> Unit,
+    onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var activeDockerIndex by remember { mutableIntStateOf(0) }
-    LaunchedEffect(currentDestination) {
-        when (currentDestination) {
-            AppDestination.HOME -> activeDockerIndex = 0
-            AppDestination.TRANSACTIONS -> activeDockerIndex = 1
-            AppDestination.WISHLIST -> activeDockerIndex = 3
-            AppDestination.MONEY_FLOW, AppDestination.SAVINGS, AppDestination.BUDGETS -> activeDockerIndex = 4
-            AppDestination.SETTINGS -> Unit
-        }
-    }
-
-    val selectedDockerIndex = activeDockerIndex
-
-    var previousIndex by remember { mutableIntStateOf(selectedDockerIndex) }
-    val isMovingRight = selectedDockerIndex >= previousIndex
-
-    LaunchedEffect(selectedDockerIndex) {
-        previousIndex = selectedDockerIndex
-    }
-
-    val animLeft by animateFloatAsState(
-        targetValue = selectedDockerIndex.toFloat(),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = if (isMovingRight) 180f else 480f
-        ),
-        label = "amoeba_left"
-    )
-
-    val animRight by animateFloatAsState(
-        targetValue = selectedDockerIndex.toFloat(),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = if (isMovingRight) 480f else 180f
-        ),
-        label = "amoeba_right"
-    )
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 4.dp
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Full width container that includes system navigation bar area
-        Column(modifier = Modifier.fillMaxWidth()) {
-            BoxWithConstraints(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp), // Standard WhatsApp-like bottom bar height
-                contentAlignment = Alignment.CenterStart
-            ) {
-                val density = LocalDensity.current
-                val slotWidthPx = with(density) { (maxWidth / 5).toPx() }
-                val bubbleBaseDiameterPx = with(density) { 42.dp.toPx() } // Smaller bubble
-                val bubbleRadiusPx = bubbleBaseDiameterPx / 2f
+        DockCircleItem(
+            icon = AppDestination.HOME.icon,
+            contentDescription = AppDestination.HOME.title,
+            isSelected = currentDestination == AppDestination.HOME,
+            onClick = { onNavigate(AppDestination.HOME) },
+            modifier = Modifier.testTag("nav_item_home")
+        )
+        DockCircleItem(
+            icon = AppDestination.TRANSACTIONS.icon,
+            contentDescription = AppDestination.TRANSACTIONS.title,
+            isSelected = currentDestination == AppDestination.TRANSACTIONS,
+            onClick = { onNavigate(AppDestination.TRANSACTIONS) },
+            modifier = Modifier.testTag("nav_item_transactions")
+        )
+        DockCircleItem(
+            icon = AppDestination.WISHLIST.icon,
+            contentDescription = AppDestination.WISHLIST.title,
+            isSelected = currentDestination == AppDestination.WISHLIST,
+            onClick = { onNavigate(AppDestination.WISHLIST) },
+            modifier = Modifier.testTag("nav_item_wishlist")
+        )
+        DockAddMorphButton(
+            currentDestination = currentDestination,
+            pageOrder = pageOrder,
+            onClick = onDockAdd,
+            size = DockItemSize,
+            modifier = Modifier.testTag("dock_add_flow_button")
+        )
 
-                val minSlot = minOf(animLeft, animRight)
-                val maxSlot = maxOf(animLeft, animRight)
-                val stretch = maxSlot - minSlot
+        Spacer(modifier = Modifier.weight(1f))
 
-                val leftPx = (minSlot + 0.5f) * slotWidthPx - bubbleRadiusPx
-                val rightPx = (maxSlot + 0.5f) * slotWidthPx + bubbleRadiusPx
-                val bubbleWidthPx = (rightPx - leftPx).coerceAtLeast(bubbleBaseDiameterPx)
-                val squashFactor = (1f - (stretch * 0.12f)).coerceIn(0.78f, 1.0f)
-                val bubbleHeightPx = bubbleBaseDiameterPx * squashFactor
-
-                val bubbleLeftDp = with(density) { leftPx.toDp() }
-                val bubbleWidthDp = with(density) { bubbleWidthPx.toDp() }
-                val bubbleHeightDp = with(density) { bubbleHeightPx.toDp() }
-
-                Box(
-                    modifier = Modifier
-                        .offset(x = bubbleLeftDp)
-                        .size(width = bubbleWidthDp, height = bubbleHeightDp)
-                        .align(Alignment.CenterStart)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = CircleShape
-                        )
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    DockerSlotItem(
-                        icon = AppDestination.HOME.icon,
-                        contentDescription = AppDestination.HOME.title,
-                        isSelected = selectedDockerIndex == 0,
-                        onClick = { onNavigate(AppDestination.HOME) },
-                        modifier = Modifier.weight(1f).testTag("nav_item_home")
-                    )
-                    DockerSlotItem(
-                        icon = AppDestination.TRANSACTIONS.icon,
-                        contentDescription = AppDestination.TRANSACTIONS.title,
-                        isSelected = selectedDockerIndex == 1,
-                        onClick = { onNavigate(AppDestination.TRANSACTIONS) },
-                        modifier = Modifier.weight(1f).testTag("nav_item_transactions")
-                    )
-                    Box(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        DockAddMorphButton(
-                            currentDestination = currentDestination,
-                            pageOrder = pageOrder,
-                            onClick = onDockAdd,
-                            modifier = Modifier.testTag("dock_add_flow_button")
-                        )
-                    }
-                    DockerSlotItem(
-                        icon = AppDestination.WISHLIST.icon,
-                        contentDescription = AppDestination.WISHLIST.title,
-                        isSelected = selectedDockerIndex == 3,
-                        onClick = { onNavigate(AppDestination.WISHLIST) },
-                        modifier = Modifier.weight(1f).testTag("nav_item_wishlist")
-                    )
-                    DockerSlotItem(
-                        icon = PhosphorIcons.Bold.Sidebar,
-                        contentDescription = "More",
-                        isSelected = selectedDockerIndex == 4,
-                        onClick = { onOpenMoreMenu() },
-                        modifier = Modifier.weight(1f).testTag("nav_item_more")
-                    )
-                }
-            }
-            // Push content up to respect system bars but keep Surface background below
-            Spacer(modifier = Modifier.navigationBarsPadding())
-        }
+        ProfileAvatar(
+            currentUser = currentUser,
+            size = DockItemSize,
+            onClick = onOpenProfile,
+            modifier = Modifier.testTag("dock_profile_button")
+        )
     }
 }
+
+private val DockItemSize = 52.dp
 
 // Accent of the page's own add FAB; null for pages without one (dock button shows the "O").
 private fun AppDestination.dockAddAccent(): Color? = when (this) {
@@ -1044,7 +896,8 @@ private fun DockAddMorphButton(
     currentDestination: AppDestination,
     pageOrder: List<AppDestination>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    size: Dp = 42.dp
 ) {
     val accent = currentDestination.dockAddAccent()
 
@@ -1082,7 +935,7 @@ private fun DockAddMorphButton(
 
     Canvas(
         modifier = modifier
-            .size(42.dp)
+            .size(size)
             .clip(CircleShape)
             .clickable(enabled = accent != null, onClick = onClick)
             .semantics { contentDescription = "Add Flow" }
@@ -1093,10 +946,12 @@ private fun DockAddMorphButton(
         // The hole is two rounded bars. As full circles of holeDiameter they form the "O";
         // shrinking to long thin bars they become the "+". Thickness eases out faster than
         // length so the circle pinches into arms rather than just scaling down.
-        val holeDiameter = 32.dp.toPx()
-        val plusLength = 16.dp.toPx()
-        val plusThickness = 3.dp.toPx()
-        val maxHole = size.minDimension - 2.dp.toPx()
+        // Proportions are fractions of the button so the shape survives any size.
+        val canvasSize = this.size.minDimension
+        val holeDiameter = canvasSize * (32f / 42f)
+        val plusLength = canvasSize * (16f / 42f)
+        val plusThickness = canvasSize * (3f / 42f)
+        val maxHole = canvasSize - 2.dp.toPx()
 
         val thicknessProgress = if (morph in 0f..1f) 1f - (1f - morph) * (1f - morph) else morph
         val thickness = (holeDiameter + (plusThickness - holeDiameter) * thicknessProgress)
@@ -1124,36 +979,65 @@ private fun DockAddMorphButton(
     }
 }
 
+/**
+ * One dock circle. Selected reads as a solid light disc with a dark glyph; unselected is a
+ * hairline ring over the darkened background.
+ */
 @Composable
-private fun DockerSlotItem(
+private fun DockCircleItem(
     icon: ImageVector,
     contentDescription: String,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val containerColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            Color.White.copy(alpha = 0.06f)
+        },
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "dock_item_container"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            Color.White.copy(alpha = 0.78f)
+        },
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "dock_item_tint"
+    )
+    val borderAlpha by animateFloatAsState(
+        targetValue = if (isSelected) 0f else 0.16f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "dock_item_border"
+    )
     val iconScale by animateFloatAsState(
-        targetValue = if (isSelected) 1.18f else 1.0f,
+        targetValue = if (isSelected) 1.08f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = 400f
         ),
-        label = "docker_icon_scale"
+        label = "dock_item_scale"
     )
 
     Box(
         modifier = modifier
-            .fillMaxHeight()
+            .size(DockItemSize)
             .clip(CircleShape)
+            .background(containerColor)
+            .border(width = 1.5.dp, color = Color.White.copy(alpha = borderAlpha), shape = CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+            tint = iconTint,
             modifier = Modifier
-                .size(24.dp)
+                .size(22.dp)
                 .graphicsLayer {
                     scaleX = iconScale
                     scaleY = iconScale

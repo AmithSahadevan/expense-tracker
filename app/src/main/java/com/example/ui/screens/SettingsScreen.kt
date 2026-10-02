@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,8 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -213,40 +216,15 @@ fun SettingsScreen(
         }
     }
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp)
             .testTag("settings_screen")
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (onBackToHome != null) {
-                IconButton(
-                    onClick = onBackToHome,
-                    modifier = Modifier.padding(end = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = PhosphorIcons.Bold.ArrowLeft,
-                        contentDescription = "Back to Home",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-            Text(
-                text = "Settings & Profiles",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = (-0.5).sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(AppChrome.topContentPadding))
 
         // Active Account Profile Card (Flattened)
         Box(
@@ -756,8 +734,30 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.navigationBarsPadding().height(30.dp))
     }
+    GradientTopBar(
+        title = "Settings & Profiles",
+        navigationIcon = if (onBackToHome != null) {
+            {
+                IconButton(
+                    onClick = onBackToHome,
+                    modifier = Modifier.padding(end = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.ArrowLeft,
+                        contentDescription = "Back to Home",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+        } else {
+            null
+        },
+        modifier = Modifier.align(Alignment.TopCenter)
+    )
+    }
+
 
     if (showEditProfileDialog && currentUser != null) {
         var nameInput by remember { mutableStateOf(currentUser.displayName) }

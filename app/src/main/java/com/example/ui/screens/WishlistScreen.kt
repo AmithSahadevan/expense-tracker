@@ -54,6 +54,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -84,6 +86,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
@@ -282,6 +285,7 @@ private fun WishlistBrowse(
     onAddClick: () -> Unit
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var headerHeight by remember { mutableStateOf(0.dp) }
     
     val filteredItems = remember(items, filter, adultMoneyBalance, searchQuery) {
         val baseFiltered = WishlistBrowser.apply(items, filter, adultMoneyBalance)
@@ -302,57 +306,9 @@ private fun WishlistBrowse(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = Modifier.testTag("wishlist_screen")
-    ) { innerPadding ->
+    ) { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Header Section
-            if (viewMode == WishlistViewMode.GRID) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = innerPadding.calculateTopPadding() + 12.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (affordableItems.size >= 2) {
-                        IconButton(
-                            onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Bold.ArrowLeft,
-                                contentDescription = "Back to Carousel",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                    Text(
-                        text = "Wishlist",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .padding(top = innerPadding.calculateTopPadding() + 12.dp, bottom = 8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Wishlist",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-
             if (items.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     FunkyEmptyState(
@@ -382,18 +338,14 @@ private fun WishlistBrowse(
                     if (mode == WishlistViewMode.GRID) {
                         WishlistGridView(
                             visibleItems = filteredItems,
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = { searchQuery = it },
-                            filter = filter,
-                            onFilterChange = onFilterChange,
                             gridState = gridState,
                             onOpenItem = onOpenItem,
-                            totalCount = items.size,
-                            canAffordCount = canAffordCount,
-                            needMoreCount = needMoreCount
+                            topContentPadding = AppChrome.contentTopPadding(headerHeight),
+                            filter = filter
                         )
                     } else {
                         WishlistCarouselView(
+                            topContentPadding = AppChrome.topContentPadding,
                             items = affordableItems,
                             allItems = items,
                             adultMoneyBalance = adultMoneyBalance,
@@ -405,46 +357,69 @@ private fun WishlistBrowse(
                 }
             }
         }
+        GradientTopBar(
+            title = "Wishlist",
+            onSolidHeightChanged = { headerHeight = it },
+            content = if (viewMode == WishlistViewMode.GRID) {
+                {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp)
+                    ) {
+                        WishlistFilterRow(
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = { searchQuery = it },
+                            filter = filter,
+                            onFilterChange = onFilterChange,
+                            totalCount = items.size,
+                            canAffordCount = canAffordCount,
+                            needMoreCount = needMoreCount
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+            navigationIcon = if (viewMode == WishlistViewMode.GRID && affordableItems.size >= 2) {
+                {
+                    IconButton(
+                        onClick = { onViewModeChange(WishlistViewMode.CAROUSEL) },
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = PhosphorIcons.Bold.ArrowLeft,
+                            contentDescription = "Back to Carousel",
+                            tint = Color.White
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+        }
+
     }
 }
 
 @Composable
 private fun WishlistGridView(
     visibleItems: List<WishlistItemEntity>,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    filter: WishlistFilter,
-    onFilterChange: (WishlistFilter) -> Unit,
     gridState: LazyStaggeredGridState,
     onOpenItem: (WishlistItemEntity) -> Unit,
-    totalCount: Int,
-    canAffordCount: Int,
-    needMoreCount: Int
+    topContentPadding: Dp,
+    filter: WishlistFilter
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 12.dp)
-        ) {
-            WishlistFilterRow(
-                searchQuery = searchQuery,
-                onSearchQueryChange = onSearchQueryChange,
-                filter = filter,
-                onFilterChange = onFilterChange,
-                totalCount = totalCount,
-                canAffordCount = canAffordCount,
-                needMoreCount = needMoreCount
-            )
-        }
-
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
             state = gridState,
             contentPadding = PaddingValues(
                 start = 12.dp,
                 end = 12.dp,
-                top = 8.dp,
+                top = topContentPadding + 8.dp,
                 bottom = 160.dp
             ),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -621,6 +596,7 @@ private const val CarouselSideScale = 0.68f
 
 @Composable
 private fun WishlistCarouselView(
+    topContentPadding: Dp,
     items: List<WishlistItemEntity>,
     allItems: List<WishlistItemEntity> = items,
     adultMoneyBalance: Double,
@@ -630,7 +606,9 @@ private fun WishlistCarouselView(
 ) {
     if (items.isEmpty()) {
         Box(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = topContentPadding),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -701,8 +679,8 @@ private fun WishlistCarouselView(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Clears the screen title so the carousel starts below it.
-        Spacer(modifier = Modifier.height(20.dp))
+        // Clears the gradient title bar so the carousel starts below it.
+        Spacer(modifier = Modifier.height(topContentPadding + 20.dp))
 
         Text(
             text = "${items.size} ITEMS READY",

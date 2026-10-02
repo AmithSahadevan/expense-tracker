@@ -30,7 +30,9 @@ import com.example.data.model.GoalsSummary
 import com.example.data.model.TransactionItem
 import com.example.ui.components.BalanceHeroCard
 import com.example.ui.components.FunkyEmptyState
-import com.example.ui.components.PlayfulTopBar
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
+import androidx.compose.foundation.layout.Box
 import com.example.ui.components.TransactionRowItem
 import com.example.ui.theme.MintGreen
 import com.example.ui.viewmodel.DashboardSummaryUiState
@@ -50,20 +52,18 @@ fun HomeScreen(
     val currency = currentUser?.currencySymbol ?: "₹"
     val hasTransactions = summary.recentTransactions.isNotEmpty() || summary.totalIncome > 0 || summary.totalExpense > 0
 
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .testTag("home_screen_content")
     ) {
-        PlayfulTopBar(
-            currentUser = currentUser,
-            onUserClick = onOpenAuthModal
-        )
+        Spacer(modifier = Modifier.height(AppChrome.topContentPadding))
 
         Column(
             modifier = Modifier
-                .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 12.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp)
         ) {
             // Balance Hero Card (Available Money, Income, Expense, Current Month's Spending)
             BalanceHeroCard(
@@ -131,7 +131,15 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(96.dp))
+            Spacer(modifier = Modifier.height(AppChrome.BottomContentPadding))
         }
+    }
+
+    GradientTopBar(
+        title = "Kyash",
+        centerTitle = true,
+        showFade = false,
+        modifier = Modifier.align(Alignment.TopCenter)
+    )
     }
 }

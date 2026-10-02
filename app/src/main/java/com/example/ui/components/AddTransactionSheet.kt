@@ -138,7 +138,11 @@ fun AddTransactionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
+        // Matches every other page's background instead of the lighter surface tone.
+        containerColor = MaterialTheme.colorScheme.background,
+        // No drag handle: this sheet is closed with the X button or a back press only,
+        // so it must not advertise a swipe-down gesture it refuses to honour.
+        dragHandle = null,
         modifier = Modifier.testTag("add_transaction_bottom_sheet")
     ) {
         Column(

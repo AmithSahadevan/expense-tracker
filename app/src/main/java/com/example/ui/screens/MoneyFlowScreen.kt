@@ -31,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import com.example.ui.components.AppChrome
+import com.example.ui.components.GradientTopBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -108,30 +110,18 @@ fun MoneyFlowScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = modifier.testTag("money_flow_screen")
-    ) { innerPadding ->
+    ) { _ ->
+        Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             contentPadding = PaddingValues(
                 start = 20.dp,
                 end = 20.dp,
-                top = innerPadding.calculateTopPadding() + 12.dp,
-                bottom = 140.dp
+                top = AppChrome.topContentPadding,
+                bottom = AppChrome.BottomContentPadding
             ),
             modifier = Modifier.fillMaxSize()
         ) {
-            item(key = "header") {
-                Column {
-                    Text(
-                        text = "Money Flow",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-
             item(key = "totals") {
                 MoneyFlowTotals(summary = summary, currency = currency)
             }
@@ -207,6 +197,12 @@ fun MoneyFlowScreen(
                 Spacer(modifier = Modifier.navigationBarsPadding().height(24.dp))
             }
         }
+        GradientTopBar(
+            title = "Money Flow",
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+        }
+
     }
 
     if (showForm) {
