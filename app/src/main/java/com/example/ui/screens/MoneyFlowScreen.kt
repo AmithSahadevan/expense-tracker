@@ -21,14 +21,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Handshake
-import androidx.compose.material.icons.automirrored.outlined.Undo
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -147,7 +140,7 @@ fun MoneyFlowScreen(
                 item(key = "empty") {
                     Box(modifier = Modifier.padding(top = 12.dp), contentAlignment = Alignment.TopCenter) {
                         FunkyEmptyState(
-                            icon = Icons.Outlined.Handshake,
+                            icon = PhosphorIcons.Bold.Handshake,
                             headline = "No money owed either way",
                             subtext = "Track what you lent and what you borrowed, so nobody has to remember it awkwardly.",
                             actionButtonText = "+ Record money flow",
@@ -371,7 +364,7 @@ private fun MoneyFlowCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (isOwedToMe) Icons.Outlined.ArrowDownward else Icons.Outlined.ArrowUpward,
+                            imageVector = if (isOwedToMe) PhosphorIcons.Bold.ArrowDown else PhosphorIcons.Bold.ArrowUp,
                             contentDescription = null,
                             tint = amountColor,
                             modifier = Modifier.size(18.dp)
@@ -442,7 +435,7 @@ private fun MoneyFlowCard(
                     modifier = Modifier.testTag("money_flow_settle_${item.id}")
                 ) {
                     Icon(
-                        imageVector = if (item.isSettled) Icons.AutoMirrored.Outlined.Undo else Icons.Outlined.CheckCircle,
+                        imageVector = if (item.isSettled) PhosphorIcons.Bold.ArrowUDownLeft else PhosphorIcons.Bold.CheckCircle,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
@@ -456,7 +449,7 @@ private fun MoneyFlowCard(
                 Row {
                     IconButton(onClick = onEdit, modifier = Modifier.testTag("money_flow_edit_${item.id}")) {
                         Icon(
-                            imageVector = Icons.Outlined.Edit,
+                            imageVector = PhosphorIcons.Bold.PencilSimple,
                             contentDescription = "Edit record",
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                             modifier = Modifier.size(18.dp)
@@ -464,7 +457,7 @@ private fun MoneyFlowCard(
                     }
                     IconButton(onClick = onDelete, modifier = Modifier.testTag("money_flow_delete_${item.id}")) {
                         Icon(
-                            imageVector = Icons.Outlined.DeleteOutline,
+                            imageVector = PhosphorIcons.Bold.Trash,
                             contentDescription = "Delete record",
                             tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                             modifier = Modifier.size(18.dp)

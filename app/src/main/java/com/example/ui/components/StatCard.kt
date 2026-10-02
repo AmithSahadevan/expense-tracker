@@ -14,12 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.WarningAmber
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -123,7 +118,7 @@ fun BalanceHeroCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowDownward,
+                            imageVector = PhosphorIcons.Bold.ArrowDown,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(16.dp)
@@ -167,7 +162,7 @@ fun BalanceHeroCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.ArrowUpward,
+                            imageVector = PhosphorIcons.Bold.ArrowUp,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(16.dp)

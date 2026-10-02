@@ -14,10 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Edit
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -146,7 +143,7 @@ fun SavingsGoalForm(
                 )
             }
             IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                Icon(PhosphorIcons.Bold.X, contentDescription = "Close", tint = Color.White)
             }
         }
 
@@ -324,7 +321,7 @@ fun SavingsGoalForm(
                     .testTag("goal_delete_button")
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
+                    imageVector = PhosphorIcons.Bold.Trash,
                     contentDescription = null,
                     modifier = Modifier.padding(end = 6.dp)
                 )
@@ -396,10 +393,10 @@ fun GoalContributionSheet(
                     )
                 }
                 IconButton(onClick = onEdit, modifier = Modifier.testTag("goal_edit_button")) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "Edit goal", tint = Color.White)
+                    Icon(PhosphorIcons.Bold.PencilSimple, contentDescription = "Edit goal", tint = Color.White)
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                    Icon(PhosphorIcons.Bold.X, contentDescription = "Close", tint = Color.White)
                 }
             }
 

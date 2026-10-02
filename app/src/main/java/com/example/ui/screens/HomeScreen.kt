@@ -12,8 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Park
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -113,7 +112,7 @@ fun HomeScreen(
 
             if (!hasTransactions) {
                 FunkyEmptyState(
-                    icon = Icons.Outlined.Park,
+                    icon = PhosphorIcons.Bold.Tree,
                     headline = "Nothing recorded yet",
                     subtext = "Enjoy the clean slate. Track income, expenses, and build your savings cushion.",
                     actionButtonText = "View All Transactions",

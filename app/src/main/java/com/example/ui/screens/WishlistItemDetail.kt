@@ -20,14 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Savings
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -113,7 +106,7 @@ fun WishlistItemDetail(
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack, modifier = Modifier.testTag("wishlist_detail_back")) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to wishlist")
+                    Icon(PhosphorIcons.Bold.ArrowLeft, contentDescription = "Back to wishlist")
                 }
                 Text(
                     text = "Wishlist",
@@ -122,10 +115,10 @@ fun WishlistItemDetail(
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = onEdit, modifier = Modifier.testTag("wishlist_detail_edit")) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit product", tint = Color.White)
+                    Icon(PhosphorIcons.Bold.PencilSimple, contentDescription = "Edit product", tint = Color.White)
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.testTag("wishlist_detail_delete")) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "Delete product", tint = MaterialTheme.colorScheme.error)
+                    Icon(PhosphorIcons.Bold.Trash, contentDescription = "Delete product", tint = MaterialTheme.colorScheme.error)
                 }
             }
 
@@ -220,7 +213,7 @@ fun WishlistItemDetail(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Check,
+                            imageVector = PhosphorIcons.Bold.Check,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
@@ -272,7 +265,7 @@ fun WishlistItemDetail(
                             .height(52.dp)
                             .testTag("wishlist_detail_open_link")
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(PhosphorIcons.Bold.ArrowSquareOut, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "View",
@@ -314,7 +307,7 @@ fun WishlistItemDetail(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(imageVector = PhosphorIcons.Bold.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                             Text(
                                 text = "Purchased",
                                 fontWeight = FontWeight.Bold,
@@ -329,7 +322,7 @@ fun WishlistItemDetail(
             item.targetPurchaseDate?.let { target ->
                 DetailSection(
                     label = "TARGET PURCHASE DATE",
-                    icon = Icons.Outlined.Savings,
+                    icon = PhosphorIcons.Bold.Target,
                     body = "${dateFormat.format(Date(target))} · ${RelativeDates.describe(target)}"
                 )
             }

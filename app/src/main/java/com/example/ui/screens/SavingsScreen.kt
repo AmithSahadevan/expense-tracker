@@ -25,9 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Edit
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -972,7 +970,7 @@ private fun SavingsHistoryRow(
             )
             IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
                 Icon(
-                    imageVector = Icons.Default.Edit,
+                    imageVector = PhosphorIcons.Bold.PencilSimple,
                     contentDescription = "Edit savings record",
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                     modifier = Modifier.size(16.dp)
@@ -980,7 +978,7 @@ private fun SavingsHistoryRow(
             }
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(
-                    imageVector = Icons.Default.DeleteOutline,
+                    imageVector = PhosphorIcons.Bold.Trash,
                     contentDescription = "Delete savings record",
                     tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                     modifier = Modifier.size(18.dp)

@@ -36,14 +36,7 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.CompareArrows
-import androidx.compose.material.icons.automirrored.outlined.MenuOpen
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Savings
-import androidx.compose.material.icons.outlined.Settings
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -201,230 +194,260 @@ fun AppShell(
     val authSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val moreHubSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // Retain the last viewing transaction item so content remains fully rendered during exit transition
+    var activeDetailTransaction by remember { mutableStateOf<TransactionItem?>(null) }
+    if (viewingTransaction != null) {
+        activeDetailTransaction = viewingTransaction
+    }
+
+    val detailSlideProgress by animateFloatAsState(
+        targetValue = if (viewingTransaction != null) 1f else 0f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "transaction_detail_slide"
+    )
+
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val isWideScreen = maxWidth >= 720.dp
 
-        if (isWideScreen) {
-            // Tablet & Desktop Canonical Layout with NavigationRail
-            Row(modifier = Modifier.fillMaxSize()) {
-                NavigationRail(
-                    modifier = Modifier.fillMaxHeight(),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    header = {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(vertical = 16.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer)
-                                    .clickable { showAuthModal = true },
-                                contentAlignment = Alignment.Center
+        // Background Screen Container (Shifts to the left with dimming, creating depth/parallax movement like Instagram/iOS push)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = -(size.width * 0.25f * detailSlideProgress)
+                }
+        ) {
+            if (isWideScreen) {
+                // Tablet & Desktop Canonical Layout with NavigationRail
+                Row(modifier = Modifier.fillMaxSize()) {
+                    NavigationRail(
+                        modifier = Modifier.fillMaxHeight(),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        header = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(vertical = 16.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            FloatingActionButton(
-                                onClick = { 
-                                    editingTransaction = null
-                                    showAddTransactionSheet = true 
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.testTag("rail_fab_add")
-                            ) {
-                                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Add Flow")
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .clickable { showAuthModal = true },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = PhosphorIcons.Bold.User,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                                FloatingActionButton(
+                                    onClick = { 
+                                        editingTransaction = null
+                                        showAddTransactionSheet = true 
+                                    },
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.testTag("rail_fab_add")
+                                ) {
+                                    Icon(imageVector = PhosphorIcons.Bold.Plus, contentDescription = "Add Flow")
+                                }
                             }
                         }
-                    }
-                ) {
-                    AppDestination.entries.forEach { dest ->
-                        NavigationRailItem(
-                            selected = currentDestination == dest,
-                            onClick = { navigateToDestination(dest.route) },
-                            icon = { Icon(imageVector = dest.icon, contentDescription = dest.title) },
-                            label = { Text(dest.title, style = MaterialTheme.typography.labelSmall) },
-                            modifier = Modifier.testTag("rail_item_${dest.route}")
-                        )
-                    }
-                }
-
-                // Main Content for Wide Screens
-                Scaffold { innerPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentAlignment = Alignment.TopCenter
                     ) {
-                        Box(modifier = Modifier.widthIn(max = 1100.dp)) {
-                            ScreenRouter(
-                                pagerState = pagerState,
-                                pagerDestinations = pagerDestinations,
-                                currentUser = currentUser,
-                                summary = summary,
-                                transactions = transactions,
-                                moneyFlows = moneyFlows,
-                                wishlist = wishlist,
-                                savingsTransactions = savingsTransactions,
-                                budgets = budgets,
-                                budgetsSummary = budgetsSummary,
-                                goalsSummary = goalsSummary,
-                                allUsersCount = allUsers.size,
-                                onNavigateTo = navigateToDestination,
-                                onOpenAddTransaction = {
-                                    editingTransaction = null
-                                    showAddTransactionSheet = true
-                                },
-                                onOpenAuthModal = { showAuthModal = true },
-                                onDeleteTransaction = { transactionToDelete = it },
-                                onEditTransaction = { item ->
-                                    viewingTransaction = item
-                                },
-                                onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
-                                    viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
-                                },
-                                onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
-                                onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
-                                onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
-                                onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
-                                onAddWishlistItem = { viewModel.addWishlistItem(it) },
-                                onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
-                                onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
-                                onLookupProduct = viewModel::lookupProduct,
-                                onToggleWishlist = { viewModel.toggleWishlistItem(it) },
-                                onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
-                                onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
-                                onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                                onAddBudget = { viewModel.addBudget(it) },
-                                onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
-                                onDeleteBudget = { viewModel.deleteBudget(it) },
-                                onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
-                                onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
-                                onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
-                                onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
-                                onUpdateCurrency = { viewModel.updateCurrency(it) },
-                                onExportData = viewModel::exportUserDataToJson,
-                                onImportData = viewModel::importUserDataFromJson,
-                                onRemoveAccount = { viewModel.deleteCurrentUser() },
-                                onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
-                                onClearData = { viewModel.clearCurrentUserData() }
+                        AppDestination.entries.forEach { dest ->
+                            NavigationRailItem(
+                                selected = currentDestination == dest,
+                                onClick = { navigateToDestination(dest.route) },
+                                icon = { Icon(imageVector = dest.icon, contentDescription = dest.title) },
+                                label = { Text(dest.title, style = MaterialTheme.typography.labelSmall) },
+                                modifier = Modifier.testTag("rail_item_${dest.route}")
                             )
                         }
                     }
-                }
-            }
-        } else {
-            // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                bottomBar = {
-                    val showDock = currentDestination != AppDestination.SETTINGS &&
-                            if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
 
-                    AnimatedVisibility(
-                        visible = showDock,
-                        enter = slideInVertically(
-                            initialOffsetY = { fullHeight -> fullHeight },
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                        ) + fadeIn(animationSpec = tween(durationMillis = 200)),
-                        exit = slideOutVertically(
-                            targetOffsetY = { fullHeight -> fullHeight },
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                        ) + fadeOut(animationSpec = tween(durationMillis = 200)),
-                        label = "bottom_dock_visibility"
-                    ) {
-                        AmoebaBottomDock(
-                            currentDestination = currentDestination,
-                            pageOrder = pagerDestinations,
-                            onNavigate = { dest -> navigateToDestination(dest.route) },
-                            onDockAdd = {
-                                when (currentDestination) {
-                                    AppDestination.TRANSACTIONS -> {
+                    // Main Content for Wide Screens
+                    Scaffold { innerPadding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
+                            Box(modifier = Modifier.widthIn(max = 1100.dp)) {
+                                ScreenRouter(
+                                    pagerState = pagerState,
+                                    pagerDestinations = pagerDestinations,
+                                    currentUser = currentUser,
+                                    summary = summary,
+                                    transactions = transactions,
+                                    moneyFlows = moneyFlows,
+                                    wishlist = wishlist,
+                                    savingsTransactions = savingsTransactions,
+                                    budgets = budgets,
+                                    budgetsSummary = budgetsSummary,
+                                    goalsSummary = goalsSummary,
+                                    allUsersCount = allUsers.size,
+                                    onNavigateTo = navigateToDestination,
+                                    onOpenAddTransaction = {
                                         editingTransaction = null
                                         showAddTransactionSheet = true
+                                    },
+                                    onOpenAuthModal = { showAuthModal = true },
+                                    onDeleteTransaction = { transactionToDelete = it },
+                                    onEditTransaction = { item ->
+                                        viewingTransaction = item
+                                    },
+                                    onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
+                                        viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
+                                    },
+                                    onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
+                                    onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
+                                    onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
+                                    onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
+                                    onAddWishlistItem = { viewModel.addWishlistItem(it) },
+                                    onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
+                                    onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
+                                    onLookupProduct = viewModel::lookupProduct,
+                                    onToggleWishlist = { viewModel.toggleWishlistItem(it) },
+                                    onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
+                                    onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
+                                    onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
+                                    onAddBudget = { viewModel.addBudget(it) },
+                                    onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
+                                    onDeleteBudget = { viewModel.deleteBudget(it) },
+                                    onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
+                                    onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
+                                    onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
+                                    onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
+                                    onUpdateCurrency = { viewModel.updateCurrency(it) },
+                                    onExportData = viewModel::exportUserDataToJson,
+                                    onImportData = viewModel::importUserDataFromJson,
+                                    onRemoveAccount = { viewModel.deleteCurrentUser() },
+                                    onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
+                                    onClearData = { viewModel.clearCurrentUserData() }
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Mobile Canonical Layout with Playful TopBar & BottomBar + Navigation Hub
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        val showDock = currentDestination != AppDestination.SETTINGS &&
+                                if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
+
+                        AnimatedVisibility(
+                            visible = showDock,
+                            enter = slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight },
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                            ) + fadeIn(animationSpec = tween(durationMillis = 200)),
+                            exit = slideOutVertically(
+                                targetOffsetY = { fullHeight -> fullHeight },
+                                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                            ) + fadeOut(animationSpec = tween(durationMillis = 200)),
+                            label = "bottom_dock_visibility"
+                        ) {
+                            AmoebaBottomDock(
+                                currentDestination = currentDestination,
+                                pageOrder = pagerDestinations,
+                                onNavigate = { dest -> navigateToDestination(dest.route) },
+                                onDockAdd = {
+                                    when (currentDestination) {
+                                        AppDestination.TRANSACTIONS -> {
+                                            editingTransaction = null
+                                            showAddTransactionSheet = true
+                                        }
+                                        AppDestination.WISHLIST,
+                                        AppDestination.MONEY_FLOW,
+                                        AppDestination.BUDGETS -> dockAddRequest = currentDestination
+                                        AppDestination.HOME,
+                                        AppDestination.SAVINGS,
+                                        AppDestination.SETTINGS -> Unit
                                     }
-                                    AppDestination.WISHLIST,
-                                    AppDestination.MONEY_FLOW,
-                                    AppDestination.BUDGETS -> dockAddRequest = currentDestination
-                                    AppDestination.HOME,
-                                    AppDestination.SAVINGS,
-                                    AppDestination.SETTINGS -> Unit
-                                }
+                                },
+                                onOpenMoreMenu = { showMoreMenuSheet = true }
+                            )
+                        }
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerPadding.calculateTopPadding()) // Only respect top padding
+                    ) {
+                        ScreenRouter(
+                            pagerState = pagerState,
+                            pagerDestinations = pagerDestinations,
+                            currentUser = currentUser,
+                            summary = summary,
+                            transactions = transactions,
+                            moneyFlows = moneyFlows,
+                            wishlist = wishlist,
+                            savingsTransactions = savingsTransactions,
+                            budgets = budgets,
+                            budgetsSummary = budgetsSummary,
+                            goalsSummary = goalsSummary,
+                            allUsersCount = allUsers.size,
+                            onNavigateTo = navigateToDestination,
+                            onOpenAddTransaction = {
+                                editingTransaction = null
+                                showAddTransactionSheet = true
                             },
-                            onOpenMoreMenu = { showMoreMenuSheet = true }
+                            onOpenAuthModal = { showAuthModal = true },
+                            onDeleteTransaction = { transactionToDelete = it },
+                            onEditTransaction = { item ->
+                                viewingTransaction = item
+                            },
+                            onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
+                                viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
+                            },
+                            onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
+                            onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
+                            onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
+                            onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
+                            onAddWishlistItem = { viewModel.addWishlistItem(it) },
+                            onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
+                            onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
+                            onLookupProduct = viewModel::lookupProduct,
+                            onToggleWishlist = { viewModel.toggleWishlistItem(it) },
+                            onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
+                            onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
+                            onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
+                            onAddBudget = { viewModel.addBudget(it) },
+                            onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
+                            onDeleteBudget = { viewModel.deleteBudget(it) },
+                            onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
+                            onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
+                            onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
+                            onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
+                            onUpdateCurrency = { viewModel.updateCurrency(it) },
+                            onExportData = viewModel::exportUserDataToJson,
+                            onImportData = viewModel::importUserDataFromJson,
+                            onRemoveAccount = { viewModel.deleteCurrentUser() },
+                            onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
+                            onClearData = { viewModel.clearCurrentUserData() },
+                            dockAddRequest = dockAddRequest,
+                            onDockAddRequestHandled = { dockAddRequest = null },
+                            onWishlistDetailToggle = { isWishlistDetailActive = it }
                         )
                     }
                 }
-            ) { innerPadding ->
+            }
+
+            // Dark Scrim overlay over background during Transaction Detail slide
+            if (detailSlideProgress > 0f) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(top = innerPadding.calculateTopPadding()) // Only respect top padding
-                ) {
-                    ScreenRouter(
-                        pagerState = pagerState,
-                        pagerDestinations = pagerDestinations,
-                        currentUser = currentUser,
-                        summary = summary,
-                        transactions = transactions,
-                        moneyFlows = moneyFlows,
-                        wishlist = wishlist,
-                        savingsTransactions = savingsTransactions,
-                        budgets = budgets,
-                        budgetsSummary = budgetsSummary,
-                        goalsSummary = goalsSummary,
-                        allUsersCount = allUsers.size,
-                        onNavigateTo = navigateToDestination,
-                        onOpenAddTransaction = {
-                            editingTransaction = null
-                            showAddTransactionSheet = true
-                        },
-                        onOpenAuthModal = { showAuthModal = true },
-                        onDeleteTransaction = { transactionToDelete = it },
-                        onEditTransaction = { item ->
-                            viewingTransaction = item
-                        },
-                        onUpdateSalaryAndPayday = { salary, payday, logThisMonth ->
-                            viewModel.updateSalaryAndPayday(salary, payday, logThisMonth)
-                        },
-                        onAddMoneyFlow = { viewModel.addMoneyFlow(it) },
-                        onUpdateMoneyFlow = { id, input -> viewModel.updateMoneyFlow(id, input) },
-                        onDeleteMoneyFlow = { viewModel.deleteMoneyFlow(it) },
-                        onToggleMoneyFlow = { viewModel.toggleMoneyFlowSettled(it) },
-                        onAddWishlistItem = { viewModel.addWishlistItem(it) },
-                        onUpdateWishlistItem = { id, input -> viewModel.updateWishlistItem(id, input) },
-                        onDeleteWishlistItem = { viewModel.deleteWishlistItem(it) },
-                        onLookupProduct = viewModel::lookupProduct,
-                        onToggleWishlist = { viewModel.toggleWishlistItem(it) },
-                        onAddSavingsTransaction = { viewModel.addSavingsTransaction(it) },
-                        onUpdateSavingsTransaction = { id, input -> viewModel.updateSavingsTransaction(id, input) },
-                        onDeleteSavingsTransaction = { viewModel.deleteSavingsTransaction(it) },
-                        onAddBudget = { viewModel.addBudget(it) },
-                        onUpdateBudget = { id, input -> viewModel.updateBudget(id, input) },
-                        onDeleteBudget = { viewModel.deleteBudget(it) },
-                        onAddGoal = { input, starting -> viewModel.addSavingsGoal(input, starting) },
-                        onUpdateGoal = { id, input -> viewModel.updateSavingsGoal(id, input) },
-                        onDeleteGoal = { viewModel.deleteSavingsGoal(it) },
-                        onContributeToGoal = { goalId, type, amount, note -> viewModel.contributeToGoal(goalId, type, amount, note) },
-                        onUpdateCurrency = { viewModel.updateCurrency(it) },
-                        onExportData = viewModel::exportUserDataToJson,
-                        onImportData = viewModel::importUserDataFromJson,
-                        onRemoveAccount = { viewModel.deleteCurrentUser() },
-                        onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
-                        onClearData = { viewModel.clearCurrentUserData() },
-                        dockAddRequest = dockAddRequest,
-                        onDockAddRequestHandled = { dockAddRequest = null },
-                        onWishlistDetailToggle = { isWishlistDetailActive = it }
-                    )
-                }
+                        .background(Color.Black.copy(alpha = 0.25f * detailSlideProgress))
+                )
             }
         }
     }
@@ -535,7 +558,7 @@ fun AppShell(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.CompareArrows,
+                        imageVector = PhosphorIcons.Bold.ArrowsLeftRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(24.dp)
@@ -561,7 +584,7 @@ fun AppShell(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Savings,
+                        imageVector = PhosphorIcons.Bold.Target,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(24.dp)
@@ -586,7 +609,7 @@ fun AppShell(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.BarChart,
+                        imageVector = PhosphorIcons.Bold.ChartBar,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(24.dp)
@@ -611,7 +634,7 @@ fun AppShell(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Settings,
+                        imageVector = PhosphorIcons.Bold.Gear,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(24.dp)
@@ -643,7 +666,7 @@ fun AppShell(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Person,
+                            imageVector = PhosphorIcons.Bold.User,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(20.dp)
@@ -666,19 +689,7 @@ fun AppShell(
         navigateToDestination(AppDestination.HOME.route)
     }
 
-    // Retain the last viewing transaction item so content remains fully rendered during exit transition
-    var activeDetailTransaction by remember { mutableStateOf<TransactionItem?>(null) }
-    if (viewingTransaction != null) {
-        activeDetailTransaction = viewingTransaction
-    }
-
-    val detailSlideProgress by animateFloatAsState(
-        targetValue = if (viewingTransaction != null) 1f else 0f,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-        label = "transaction_detail_slide"
-    )
-
-    // Transaction Detail View (GPU accelerated slide animation matching page swipe physics)
+    // Transaction Detail View (GPU accelerated parallax slide animation matching Instagram/iOS push physics)
     if (detailSlideProgress > 0f || viewingTransaction != null) {
         activeDetailTransaction?.let { tx ->
             Box(
@@ -686,7 +697,7 @@ fun AppShell(
                     .fillMaxSize()
                     .graphicsLayer {
                         translationX = (1f - detailSlideProgress) * size.width
-                        alpha = detailSlideProgress.coerceIn(0f, 1f)
+                        shadowElevation = 16.dp.toPx()
                     }
             ) {
                 TransactionDetailScreen(
@@ -1005,7 +1016,7 @@ private fun AmoebaBottomDock(
                         modifier = Modifier.weight(1f).testTag("nav_item_wishlist")
                     )
                     DockerSlotItem(
-                        icon = Icons.AutoMirrored.Outlined.MenuOpen,
+                        icon = PhosphorIcons.Bold.Sidebar,
                         contentDescription = "More",
                         isSelected = selectedDockerIndex == 4,
                         onClick = { onOpenMoreMenu() },

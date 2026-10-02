@@ -20,12 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.outlined.Person
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -140,7 +135,7 @@ fun UserAuthModal(
                     modifier = Modifier.testTag("close_auth_modal")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = PhosphorIcons.Bold.X,
                         contentDescription = "Close",
                         tint = Color(0xFFE2E8F0)
                     )
@@ -204,7 +199,7 @@ fun UserAuthModal(
                                     )
                                 } else {
                                     Icon(
-                                        imageVector = Icons.Outlined.Person,
+                                        imageVector = PhosphorIcons.Bold.User,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)
@@ -249,7 +244,7 @@ fun UserAuthModal(
 
                         if (isCurrent) {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = PhosphorIcons.Bold.Check,
                                 contentDescription = "Active user",
                                 tint = Color(0xFF10B981)
                             )
@@ -271,7 +266,7 @@ fun UserAuthModal(
                         .height(52.dp)
                         .testTag("create_new_account_button")
                 ) {
-                    Icon(imageVector = Icons.Default.PersonAdd, contentDescription = null, tint = Color(0xFF0C0F14))
+                    Icon(imageVector = PhosphorIcons.Bold.UserPlus, contentDescription = null, tint = Color(0xFF0C0F14))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Create New Account",
@@ -307,7 +302,7 @@ fun UserAuthModal(
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Outlined.Person,
+                            imageVector = PhosphorIcons.Bold.User,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(36.dp)
@@ -358,7 +353,7 @@ fun UserAuthModal(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Check,
+                                        imageVector = PhosphorIcons.Bold.Check,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)

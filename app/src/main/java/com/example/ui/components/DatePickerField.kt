@@ -15,13 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -80,7 +74,7 @@ fun DatePickerField(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.CalendarMonth,
+                imageVector = PhosphorIcons.Bold.Calendar,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(18.dp)
@@ -96,7 +90,7 @@ fun DatePickerField(
             if (clearable && date != null) {
                 IconButton(onClick = { onDateChange(null) }, modifier = Modifier.size(36.dp)) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = PhosphorIcons.Bold.X,
                         contentDescription = "Clear $label",
                         tint = Color(0xFF94A3B8),
                         modifier = Modifier.size(18.dp)
@@ -215,7 +209,7 @@ fun AppDatePickerDialog(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
-                            imageVector = if (isYearView) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                            imageVector = if (isYearView) PhosphorIcons.Bold.CaretUp else PhosphorIcons.Bold.CaretDown,
                             contentDescription = "Toggle Year View",
                             tint = Color.White,
                             modifier = Modifier.size(20.dp)
@@ -225,7 +219,7 @@ fun AppDatePickerDialog(
                     if (!isYearView) {
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                imageVector = PhosphorIcons.Bold.CaretLeft,
                                 contentDescription = "Previous Month",
                                 tint = Color.White,
                                 modifier = Modifier
@@ -241,7 +235,7 @@ fun AppDatePickerDialog(
                                     }
                             )
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                imageVector = PhosphorIcons.Bold.CaretRight,
                                 contentDescription = "Next Month",
                                 tint = Color.White,
                                 modifier = Modifier

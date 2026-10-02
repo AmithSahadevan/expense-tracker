@@ -20,18 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalance
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.LocalOffer
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material.icons.outlined.Smartphone
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -186,7 +175,7 @@ fun AddTransactionSheet(
                     modifier = Modifier.testTag("close_sheet_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Close,
+                        imageVector = PhosphorIcons.Bold.X,
                         contentDescription = "Close",
                         tint = Color(0xFFCBD5E1)
                     )
@@ -221,7 +210,7 @@ fun AddTransactionSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.AccountBalanceWallet,
+                            imageVector = PhosphorIcons.Bold.Wallet,
                             contentDescription = null,
                             tint = if (isExpense) Color.White else Color(0xFFCBD5E1),
                             modifier = Modifier.size(16.dp)
@@ -252,7 +241,7 @@ fun AddTransactionSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Payments,
+                            imageVector = PhosphorIcons.Bold.Money,
                             contentDescription = null,
                             tint = if (isIncome) Color.White else Color(0xFFCBD5E1),
                             modifier = Modifier.size(16.dp)
@@ -540,7 +529,7 @@ fun AddTransactionSheet(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.CalendarToday,
+                            imageVector = PhosphorIcons.Bold.Calendar,
                             contentDescription = "Pick Date",
                             modifier = Modifier.size(16.dp),
                             tint = if (!isToday && !isYesterday) Color(0xFF0C0F14) else Color.White
@@ -581,10 +570,10 @@ fun AddTransactionSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 listOf(
-                    "CARD" to ("Card" to Icons.Outlined.CreditCard),
-                    "CASH" to ("Cash" to Icons.Outlined.Payments),
-                    "BANK" to ("Bank" to Icons.Outlined.AccountBalance),
-                    "UPI" to ("UPI" to Icons.Outlined.Smartphone)
+                    "CARD" to ("Card" to PhosphorIcons.Bold.CreditCard),
+                    "CASH" to ("Cash" to PhosphorIcons.Bold.Money),
+                    "BANK" to ("Bank" to PhosphorIcons.Bold.Bank),
+                    "UPI" to ("UPI" to PhosphorIcons.Bold.DeviceMobile)
                 ).forEach { (code, pair) ->
                     val isSelected = paymentMethod == code
                     Surface(
@@ -656,7 +645,7 @@ fun AddTransactionSheet(
                         ) {
                             if (isSelected && code != "NONE") {
                                 Icon(
-                                    imageVector = Icons.Outlined.Repeat,
+                                    imageVector = PhosphorIcons.Bold.ArrowsClockwise,
                                     contentDescription = null,
                                     tint = Color(0xFF0C0F14),
                                     modifier = Modifier.size(12.dp)
@@ -740,7 +729,7 @@ fun AddTransactionSheet(
                     .testTag("submit_transaction_button")
             ) {
                 Icon(
-                    imageVector = if (isEditMode) Icons.Outlined.Check else Icons.Outlined.Add,
+                    imageVector = if (isEditMode) PhosphorIcons.Bold.Check else PhosphorIcons.Bold.Plus,
                     contentDescription = null,
                     tint = Color(0xFF0C0F14)
                 )
@@ -804,7 +793,7 @@ fun AddTransactionSheet(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Outlined.LocalOffer,
+                                imageVector = PhosphorIcons.Bold.Tag,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(24.dp)

@@ -8,8 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -79,7 +78,7 @@ fun PlayfulTopBar(
                     )
                 } else {
                     Icon(
-                        imageVector = Icons.Outlined.Person,
+                        imageVector = PhosphorIcons.Bold.User,
                         contentDescription = "Profile",
                         tint = displayColor,
                         modifier = Modifier.size(22.dp)

@@ -11,11 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDownward
-import androidx.compose.material.icons.outlined.ArrowUpward
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.WarningAmber
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -60,7 +56,7 @@ fun MoneyFlowTotals(summary: MoneyFlowSummary, currency: String, modifier: Modif
             amount = summary.expectedIncoming,
             currency = currency,
             accent = IncomingAccent,
-            icon = Icons.Outlined.ArrowDownward,
+            icon = PhosphorIcons.Bold.ArrowDown,
             overdueCount = summary.overdueExpectedCount,
             modifier = Modifier
                 .weight(1f)
@@ -76,7 +72,7 @@ fun MoneyFlowTotals(summary: MoneyFlowSummary, currency: String, modifier: Modif
             amount = summary.pendingObligations,
             currency = currency,
             accent = OutgoingAccent,
-            icon = Icons.Outlined.ArrowUpward,
+            icon = PhosphorIcons.Bold.ArrowUp,
             overdueCount = summary.overdueObligationCount,
             modifier = Modifier
                 .weight(1f)
@@ -132,7 +128,7 @@ private fun MoneyFlowTotalTile(
             if (overdueCount > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(
-                        imageVector = Icons.Outlined.WarningAmber,
+                        imageVector = PhosphorIcons.Bold.Warning,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(13.dp)
@@ -157,7 +153,7 @@ fun MoneyFlowExclusionNote(text: String, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.Top
     ) {
         Icon(
-            imageVector = Icons.Outlined.Info,
+            imageVector = PhosphorIcons.Bold.Info,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(14.dp)

@@ -40,16 +40,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ViewCarousel
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.StarOutline
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -115,7 +106,6 @@ import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import kotlinx.coroutines.delay
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.util.lerp
@@ -329,7 +319,7 @@ private fun WishlistBrowse(
                             modifier = Modifier.padding(end = 4.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                imageVector = PhosphorIcons.Bold.ArrowLeft,
                                 contentDescription = "Back to Carousel",
                                 tint = Color.White
                             )
@@ -366,7 +356,7 @@ private fun WishlistBrowse(
             if (items.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     FunkyEmptyState(
-                        icon = Icons.Outlined.StarOutline,
+                        icon = PhosphorIcons.Bold.Star,
                         headline = "Your wishlist is looking lonely",
                         subtext = "That special thing you've been eyeing? Add its name, price and photo link, and we'll track when your Adult Money can cover it.",
                         actionButtonText = "+ Add Wishlist Item",
@@ -396,8 +386,6 @@ private fun WishlistBrowse(
                             onSearchQueryChange = { searchQuery = it },
                             filter = filter,
                             onFilterChange = onFilterChange,
-                            adultMoneyBalance = adultMoneyBalance,
-                            currency = currency,
                             gridState = gridState,
                             onOpenItem = onOpenItem,
                             totalCount = items.size,
@@ -427,35 +415,18 @@ private fun WishlistGridView(
     onSearchQueryChange: (String) -> Unit,
     filter: WishlistFilter,
     onFilterChange: (WishlistFilter) -> Unit,
-    adultMoneyBalance: Double,
-    currency: String,
     gridState: LazyStaggeredGridState,
     onOpenItem: (WishlistItemEntity) -> Unit,
     totalCount: Int,
     canAffordCount: Int,
     needMoreCount: Int
 ) {
-    LazyVerticalStaggeredGrid(
-        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-        state = gridState,
-        contentPadding = PaddingValues(
-            start = 12.dp,
-            end = 12.dp,
-            top = 8.dp,
-            bottom = 160.dp
-        ),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalItemSpacing = 16.dp,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        fullWidthItem("spending_power") {
-            WishlistSpendingPowerCard(
-                adultMoneyBalance = adultMoneyBalance,
-                currency = currency
-            )
-        }
-
-        fullWidthItem("filters") {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp, end = 4.dp, top = 4.dp, bottom = 12.dp)
+        ) {
             WishlistFilterRow(
                 searchQuery = searchQuery,
                 onSearchQueryChange = onSearchQueryChange,
@@ -467,27 +438,41 @@ private fun WishlistGridView(
             )
         }
 
-        if (visibleItems.isEmpty()) {
-            fullWidthItem("filter_empty") {
-                Text(
-                    text = when (filter) {
-                        WishlistFilter.CAN_AFFORD ->
-                            "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
-                        WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money"
-                        else -> "No items to show."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(24.dp)
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+            state = gridState,
+            contentPadding = PaddingValues(
+                start = 12.dp,
+                end = 12.dp,
+                top = 8.dp,
+                bottom = 160.dp
+            ),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalItemSpacing = 16.dp,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            if (visibleItems.isEmpty()) {
+                fullWidthItem("filter_empty") {
+                    Text(
+                        text = when (filter) {
+                            WishlistFilter.CAN_AFFORD ->
+                                "Nothing fits your Adult Money yet. Add to Adult Money from the Savings screen to unlock items."
+                            WishlistFilter.NEED_MORE -> "Everything you want is within reach of your Adult Money"
+                            else -> "No items to show."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(24.dp)
+                    )
+                }
+            }
+
+            items(visibleItems, key = { it.id }) { item ->
+                WishlistProductCard(
+                    item = item,
+                    onClick = { onOpenItem(item) }
                 )
             }
-        }
-
-        items(visibleItems, key = { it.id }) { item ->
-            WishlistProductCard(
-                item = item,
-                onClick = { onOpenItem(item) }
-            )
         }
     }
 }
@@ -549,7 +534,7 @@ private fun WishlistFilterRow(
                         },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Search,
+                                imageVector = PhosphorIcons.Bold.MagnifyingGlass,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -562,7 +547,7 @@ private fun WishlistFilterRow(
                                     modifier = Modifier.size(24.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Clear,
+                                        imageVector = PhosphorIcons.Bold.X,
                                         contentDescription = "Clear search",
                                         modifier = Modifier.size(16.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -595,7 +580,7 @@ private fun WishlistFilterRow(
                     )
             ) {
                 Icon(
-                    imageVector = Icons.Default.FilterList,
+                    imageVector = PhosphorIcons.Bold.Funnel,
                     contentDescription = "Filter Wishlist",
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
@@ -939,89 +924,6 @@ private fun WishlistGridPreview(
 }
 
 @Composable
-private fun WishlistSpendingPowerCard(
-    adultMoneyBalance: Double,
-    currency: String,
-    modifier: Modifier = Modifier,
-    isHero: Boolean = false
-) {
-    if (isHero) {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .testTag("wishlist_spending_power_hero"),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primary
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(22.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "CURRENT ADULT MONEY",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            letterSpacing = 1.5.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.CreditCard,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = 34.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-
-                Text(
-                    text = "Spendable Adult Money · Ready for items",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                )
-            }
-        }
-    } else {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 6.dp)
-                .testTag("wishlist_spending_power"),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Current Adult Money",
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
-            )
-            Text(
-                text = formatMoney(currency, adultMoneyBalance.coerceAtLeast(0.0)),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
-                color = Color.White
-            )
-        }
-    }
-}
-
-@Composable
 private fun WishlistProductCard(
     item: WishlistItemEntity,
     onClick: () -> Unit
@@ -1095,7 +997,7 @@ private fun WishlistProductCard(
                     }
             )
             Icon(
-                imageVector = Icons.Default.MoreHoriz,
+                imageVector = PhosphorIcons.Bold.DotsThree,
                 contentDescription = "Options",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)

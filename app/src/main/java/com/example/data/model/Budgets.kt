@@ -211,7 +211,7 @@ object BudgetCalculator {
         budgets: List<BudgetEntity>,
         transactions: List<TransactionItem>,
         customCategories: List<String> = emptyList(),
-        now: Long = System.currentTimeMillis()
+        now: Long = transactions.maxOfOrNull { it.date } ?: System.currentTimeMillis()
     ): List<String> {
         val taken = budgets.filter { it.scope == BudgetScope.CATEGORY }.map { it.category.lowercase() }.toSet()
         val range = monthRange(now)

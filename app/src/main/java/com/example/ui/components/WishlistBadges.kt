@@ -5,8 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Check
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -53,7 +52,7 @@ fun PurchasedBadge(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(
-                imageVector = Icons.Outlined.Check,
+                imageVector = PhosphorIcons.Bold.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(12.dp)
@@ -83,7 +82,7 @@ fun AffordabilityChip(result: WishlistAffordability, currency: String, modifier:
         ) {
             if (showCheck) {
                 Icon(
-                    imageVector = Icons.Outlined.Check,
+                    imageVector = PhosphorIcons.Bold.Check,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(12.dp)

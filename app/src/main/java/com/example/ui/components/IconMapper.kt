@@ -1,54 +1,51 @@
 package com.example.ui.components
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object IconMapper {
     fun mapEmojiToIcon(emoji: String): ImageVector {
         return when (emoji) {
-            "🍔" -> Icons.Outlined.Restaurant
-            "⛽" -> Icons.Outlined.LocalGasStation
-            "🚌" -> Icons.Outlined.DirectionsBus
-            "👕" -> Icons.Outlined.Checkroom
-            "⚡" -> Icons.Outlined.Bolt
-            "📱" -> Icons.Outlined.Smartphone
-            "🌐" -> Icons.Outlined.Language
-            "📺" -> Icons.Outlined.Subscriptions
-            "🛍️" -> Icons.Outlined.ShoppingBag
-            "🍿" -> Icons.Outlined.Movie
-            "💊" -> Icons.Outlined.MedicalServices
-            "✈️" -> Icons.Outlined.Flight
-            "📚" -> Icons.Outlined.School
-            "📦" -> Icons.Outlined.Category
-            "💼" -> Icons.Outlined.Work
-            "💻" -> Icons.Outlined.Computer
-            "📈" -> Icons.AutoMirrored.Outlined.TrendingUp
-            "🚀" -> Icons.Outlined.RocketLaunch
-            "🎁" -> Icons.Outlined.Redeem
-            "🏠" -> Icons.Outlined.HomeWork
-            "💵" -> Icons.Outlined.Payments
-            "💸" -> Icons.Outlined.AccountBalanceWallet
-            "💳" -> Icons.Outlined.CreditCard
-            "🏦" -> Icons.Outlined.AccountBalance
-            "🤝" -> Icons.Outlined.SwapHoriz
-            "🎯" -> Icons.Outlined.Savings
-            "📊" -> Icons.Outlined.BarChart
-            "⚙️" -> Icons.Outlined.Settings
-            "✨" -> Icons.Outlined.StarOutline
-            "🛡️" -> Icons.Outlined.Shield
-            "🦊" -> Icons.Outlined.Person
-            "🐱" -> Icons.Outlined.Person
-            "🌈" -> Icons.Outlined.Person
-            "👾" -> Icons.Outlined.Person
-            "🛹" -> Icons.Outlined.Person
-            "🍕" -> Icons.Outlined.Person
-            "🥑" -> Icons.Outlined.Person
-            "🎧" -> Icons.Outlined.Person
-            "💎" -> Icons.Outlined.Person
-            "🏷️" -> Icons.Outlined.LocalOffer
-            else -> Icons.Outlined.Category
+            "🍔" -> PhosphorIcons.Bold.ForkKnife
+            "⛽" -> PhosphorIcons.Bold.GasPump
+            "🚌" -> PhosphorIcons.Bold.Bus
+            "👕" -> PhosphorIcons.Bold.TShirt
+            "⚡" -> PhosphorIcons.Bold.Lightning
+            "📱" -> PhosphorIcons.Bold.DeviceMobile
+            "🌐" -> PhosphorIcons.Bold.Globe
+            "📺" -> PhosphorIcons.Bold.Television
+            "🛍️" -> PhosphorIcons.Bold.ShoppingBag
+            "🍿" -> PhosphorIcons.Bold.FilmStrip
+            "💊" -> PhosphorIcons.Bold.FirstAid
+            "✈️" -> PhosphorIcons.Bold.Airplane
+            "📚" -> PhosphorIcons.Bold.GraduationCap
+            "📦" -> PhosphorIcons.Bold.Package
+            "💼" -> PhosphorIcons.Bold.Briefcase
+            "💻" -> PhosphorIcons.Bold.Desktop
+            "📈" -> PhosphorIcons.Bold.TrendUp
+            "🚀" -> PhosphorIcons.Bold.Rocket
+            "🎁" -> PhosphorIcons.Bold.Gift
+            "🏠" -> PhosphorIcons.Bold.House
+            "💵" -> PhosphorIcons.Bold.Money
+            "💸" -> PhosphorIcons.Bold.Wallet
+            "💳" -> PhosphorIcons.Bold.CreditCard
+            "🏦" -> PhosphorIcons.Bold.Bank
+            "🤝" -> PhosphorIcons.Bold.ArrowsLeftRight
+            "🎯" -> PhosphorIcons.Bold.Target
+            "📊" -> PhosphorIcons.Bold.ChartBar
+            "⚙️" -> PhosphorIcons.Bold.Gear
+            "✨" -> PhosphorIcons.Bold.Sparkle
+            "🛡️" -> PhosphorIcons.Bold.Shield
+            "🦊" -> PhosphorIcons.Bold.User
+            "🐱" -> PhosphorIcons.Bold.User
+            "🌈" -> PhosphorIcons.Bold.User
+            "👾" -> PhosphorIcons.Bold.User
+            "🛹" -> PhosphorIcons.Bold.User
+            "🍕" -> PhosphorIcons.Bold.User
+            "🥑" -> PhosphorIcons.Bold.User
+            "🎧" -> PhosphorIcons.Bold.User
+            "💎" -> PhosphorIcons.Bold.User
+            "🏷️" -> PhosphorIcons.Bold.Tag
+            else -> PhosphorIcons.Bold.Package
         }
     }
 }

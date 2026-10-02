@@ -83,8 +83,10 @@ dependencies {
   // implementation(libs.androidx.camera.core)
   // implementation(libs.androidx.camera.lifecycle)
   // implementation(libs.androidx.camera.view)
-  implementation(libs.androidx.compose.material.icons.core)
-  implementation(libs.androidx.compose.material.icons.extended)
+  // Icons come from the official Phosphor set in ui/components/PhosphorIcons.kt, so the
+  // Material icon artifacts are unused. Uncomment if a Material icon is ever needed:
+  // implementation(libs.androidx.compose.material.icons.core)
+  // implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)

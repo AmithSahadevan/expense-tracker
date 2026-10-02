@@ -25,16 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.MonetizationOn
-import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.AlertDialog
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -188,7 +180,7 @@ fun TransactionsScreen(
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Default.Search,
+                                        imageVector = PhosphorIcons.Bold.MagnifyingGlass,
                                         contentDescription = null,
                                         modifier = Modifier.size(20.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -201,7 +193,7 @@ fun TransactionsScreen(
                                             modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Clear,
+                                                imageVector = PhosphorIcons.Bold.X,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(16.dp),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -234,7 +226,7 @@ fun TransactionsScreen(
                             )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.FilterList,
+                            imageVector = PhosphorIcons.Bold.Funnel,
                             contentDescription = "Filter",
                             modifier = Modifier.size(20.dp),
                             tint = if (filterType != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -254,7 +246,7 @@ fun TransactionsScreen(
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.FilterList,
+                                    imageVector = PhosphorIcons.Bold.Funnel,
                                     contentDescription = null,
                                     tint = if (filterType == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -268,7 +260,7 @@ fun TransactionsScreen(
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Outlined.AccountBalanceWallet,
+                                    imageVector = PhosphorIcons.Bold.Wallet,
                                     contentDescription = null,
                                     tint = if (filterType == TransactionType.EXPENSE) Color(0xFFFF6B6B) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -282,7 +274,7 @@ fun TransactionsScreen(
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Outlined.Payments,
+                                    imageVector = PhosphorIcons.Bold.Money,
                                     contentDescription = null,
                                     tint = if (filterType == TransactionType.INCOME) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -304,7 +296,7 @@ fun TransactionsScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
-                        icon = Icons.Outlined.MonetizationOn,
+                        icon = PhosphorIcons.Bold.Coins,
                         headline = "No transactions found",
                         subtext = if (transactions.isEmpty())
                             "Your money ledger is empty. Tap '+ Add Transaction' to start recording your income and expenses!"

@@ -13,12 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.LockOpen
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.WarningAmber
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -189,7 +184,7 @@ fun EmergencyFundCard(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.LockOpen,
+                                    imageVector = PhosphorIcons.Bold.LockOpen,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
                                 )

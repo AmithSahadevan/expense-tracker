@@ -18,18 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.CurrencyExchange
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.FileDownload
+import com.example.ui.components.PhosphorIcons
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +29,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -75,10 +63,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.runtime.DisposableEffect
@@ -245,7 +230,7 @@ fun SettingsScreen(
                     modifier = Modifier.padding(end = 4.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = PhosphorIcons.Bold.ArrowLeft,
                         contentDescription = "Back to Home",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -316,7 +301,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
+                                imageVector = PhosphorIcons.Bold.PencilSimple,
                                 contentDescription = "Edit Profile",
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
@@ -328,7 +313,7 @@ fun SettingsScreen(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.SwapHoriz,
+                                imageVector = PhosphorIcons.Bold.ArrowsLeftRight,
                                 contentDescription = "Switch Profile",
                                 tint = Color.White
                             )
@@ -466,7 +451,7 @@ fun SettingsScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Notifications,
+                                        imageVector = PhosphorIcons.Bold.Bell,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.size(20.dp)
@@ -552,7 +537,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
+                            imageVector = PhosphorIcons.Bold.Bell,
                             contentDescription = null,
                             tint = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
@@ -639,7 +624,7 @@ fun SettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.CalendarMonth,
+                                imageVector = PhosphorIcons.Bold.Calendar,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(14.dp)
@@ -698,7 +683,7 @@ fun SettingsScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(imageVector = PhosphorIcons.Bold.DownloadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Backup", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
@@ -709,7 +694,7 @@ fun SettingsScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(imageVector = PhosphorIcons.Bold.UploadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Import", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
@@ -724,7 +709,7 @@ fun SettingsScreen(
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Clear All Data", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                 }
@@ -750,7 +735,7 @@ fun SettingsScreen(
                     .weight(1f)
                     .testTag("create_account_button")
             ) {
-                Icon(imageVector = Icons.Default.People, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(imageVector = PhosphorIcons.Bold.Users, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("New Account", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
             }
@@ -765,7 +750,7 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Remove Profile", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
             }
@@ -972,7 +957,7 @@ fun SettingsScreen(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         placeholder = { Text("Search country or code...", color = Color(0xFF94A3B8)) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White) },
+                        leadingIcon = { Icon(PhosphorIcons.Bold.MagnifyingGlass, contentDescription = null, tint = Color.White) },
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(

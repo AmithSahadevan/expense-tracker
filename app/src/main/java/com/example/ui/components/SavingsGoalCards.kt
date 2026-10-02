@@ -14,11 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.WarningAmber
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -157,7 +153,7 @@ fun GoalFundingCard(
                     .padding(10.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.Lock,
+                    imageVector = PhosphorIcons.Bold.Lock,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp)
@@ -177,7 +173,7 @@ fun GoalFundingCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.WarningAmber,
+                        imageVector = PhosphorIcons.Bold.Warning,
                         contentDescription = null,
                         tint = PunchyCoral,
                         modifier = Modifier.size(16.dp)
@@ -281,7 +277,7 @@ fun SavingsGoalCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.CheckCircle,
+                            imageVector = PhosphorIcons.Bold.CheckCircle,
                             contentDescription = null,
                             tint = MintGreen,
                             modifier = Modifier.size(14.dp)
@@ -336,7 +332,7 @@ fun SavingsGoalCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.Schedule,
+                        imageVector = PhosphorIcons.Bold.Calendar,
                         contentDescription = null,
                         tint = accent,
                         modifier = Modifier.size(14.dp)

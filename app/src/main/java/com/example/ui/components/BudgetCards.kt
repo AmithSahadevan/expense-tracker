@@ -14,10 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.WarningAmber
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -50,9 +47,9 @@ fun budgetStatusColor(status: BudgetStatus): Color = when (status) {
 }
 
 private fun budgetStatusIcon(status: BudgetStatus): ImageVector = when (status) {
-    BudgetStatus.ON_TRACK -> Icons.Outlined.CheckCircle
-    BudgetStatus.APPROACHING -> Icons.Outlined.WarningAmber
-    BudgetStatus.OVER -> Icons.Outlined.ErrorOutline
+    BudgetStatus.ON_TRACK -> PhosphorIcons.Bold.CheckCircle
+    BudgetStatus.APPROACHING -> PhosphorIcons.Bold.Warning
+    BudgetStatus.OVER -> PhosphorIcons.Bold.WarningCircle
 }
 
 /** Short warning text. Colour alone never carries the message. */

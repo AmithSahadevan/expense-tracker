@@ -18,12 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Refresh
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -275,7 +270,7 @@ fun WishlistItemForm(
                         onClick = { step = FormStep.PASTE_LINK },
                         modifier = Modifier.testTag("wishlist_back_to_link")
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Icon(PhosphorIcons.Bold.ArrowLeft, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Use a product link", color = Color.White, fontWeight = FontWeight.Bold)
                     }
@@ -424,7 +419,7 @@ fun WishlistItemForm(
                             modifier = Modifier.testTag("wishlist_refetch")
                         ) {
                             Icon(
-                                Icons.Default.Refresh,
+                                PhosphorIcons.Bold.ArrowCounterClockwise,
                                 contentDescription = "Fill in details from this link",
                                 tint = if (productUrl.isNotBlank() && lookupStatus != LookupStatus.Loading) Color.White else Color(0xFF64748B)
                             )
@@ -629,15 +624,15 @@ private fun ColumnScope.PasteLinkStep(
         onValueChange = onLinkChange,
         label = { Text("Product link", color = Color(0xFF94A3B8)) },
         placeholder = { Text("https://www.amazon.in/…", color = Color(0xFF94A3B8)) },
-        leadingIcon = { Icon(Icons.Default.Link, contentDescription = null, tint = Color.White) },
+        leadingIcon = { Icon(PhosphorIcons.Bold.Link, contentDescription = null, tint = Color.White) },
         trailingIcon = {
             if (linkText.isEmpty()) {
                 IconButton(onClick = onPaste, enabled = !loading, modifier = Modifier.testTag("wishlist_paste_link")) {
-                    Icon(Icons.Default.ContentPaste, contentDescription = "Paste link", tint = Color.White)
+                    Icon(PhosphorIcons.Bold.ClipboardText, contentDescription = "Paste link", tint = Color.White)
                 }
             } else {
                 IconButton(onClick = { onLinkChange("") }, enabled = !loading) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear link", tint = Color.White)
+                    Icon(PhosphorIcons.Bold.X, contentDescription = "Clear link", tint = Color.White)
                 }
             }
         },
@@ -764,7 +759,7 @@ private fun FormHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
             )
         }
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color(0xFFE2E8F0))
+            Icon(PhosphorIcons.Bold.X, contentDescription = "Close", tint = Color(0xFFE2E8F0))
         }
     }
 }

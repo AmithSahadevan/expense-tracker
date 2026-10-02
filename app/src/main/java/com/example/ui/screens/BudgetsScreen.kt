@@ -16,8 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BarChart
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -108,7 +107,7 @@ fun BudgetsScreen(
                     contentAlignment = Alignment.TopCenter
                 ) {
                     FunkyEmptyState(
-                        icon = Icons.Outlined.BarChart,
+                        icon = PhosphorIcons.Bold.ChartBar,
                         headline = "Budgets are untouched",
                         subtext = "Cap a category — Food, Fuel, Subscriptions — or the whole month, and every expense you record counts against it automatically.",
                         actionButtonText = "+ Set a Budget",

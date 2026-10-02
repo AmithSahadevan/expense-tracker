@@ -35,18 +35,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.NavigateBefore
-import androidx.compose.material.icons.automirrored.filled.NavigateNext
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.OpenInFull
-import androidx.compose.material.icons.filled.PictureAsPdf
+import com.example.ui.components.PhosphorIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -249,7 +238,7 @@ fun TransactionDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(imageVector = PhosphorIcons.Bold.ArrowLeft, contentDescription = "Back")
                 }
                 Text(
                     text = "Transaction Details",
@@ -346,7 +335,7 @@ fun TransactionDetailScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AttachFile,
+                            imageVector = PhosphorIcons.Bold.Paperclip,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
@@ -453,7 +442,7 @@ fun TransactionDetailScreen(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+                    Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null)
                     Spacer(modifier = Modifier.size(8.dp))
                     Text("Delete", fontWeight = FontWeight.Bold)
                 }
@@ -463,7 +452,7 @@ fun TransactionDetailScreen(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = null)
+                    Icon(imageVector = PhosphorIcons.Bold.PencilSimple, contentDescription = null)
                     Spacer(modifier = Modifier.size(8.dp))
                     Text("Edit", fontWeight = FontWeight.Bold)
                 }
@@ -518,7 +507,7 @@ private fun AddMoreCard(
             modifier = Modifier.padding(8.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Add,
+                imageVector = PhosphorIcons.Bold.Plus,
                 contentDescription = "Add More",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(28.dp)
@@ -617,7 +606,7 @@ private fun AttachmentDeckCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.PictureAsPdf,
+                            imageVector = PhosphorIcons.Bold.FilePdf,
                             contentDescription = "PDF",
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(36.dp)
@@ -642,7 +631,7 @@ private fun AttachmentDeckCard(
                     .padding(6.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.OpenInFull,
+                    imageVector = PhosphorIcons.Bold.CornersOut,
                     contentDescription = "Expand",
                     tint = Color.White,
                     modifier = Modifier
@@ -713,13 +702,13 @@ private fun AttachmentViewerDialog(
                     Row {
                         IconButton(onClick = { showDeleteConfirmation = true }) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
+                                imageVector = PhosphorIcons.Bold.Trash,
                                 contentDescription = "Delete Attachment",
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
                         IconButton(onClick = onDismiss) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
+                            Icon(imageVector = PhosphorIcons.Bold.X, contentDescription = "Close")
                         }
                     }
                 }
@@ -743,7 +732,7 @@ private fun AttachmentViewerDialog(
                         modifier = Modifier.size(38.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateBefore,
+                            imageVector = PhosphorIcons.Bold.CaretLeft,
                             contentDescription = "Previous File"
                         )
                     }
@@ -789,7 +778,7 @@ private fun AttachmentViewerDialog(
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Icon(
-                                            imageVector = Icons.Default.PictureAsPdf,
+                                            imageVector = PhosphorIcons.Bold.FilePdf,
                                             contentDescription = null,
                                             tint = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(56.dp)
@@ -822,7 +811,7 @@ private fun AttachmentViewerDialog(
                         modifier = Modifier.size(38.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                            imageVector = PhosphorIcons.Bold.CaretRight,
                             contentDescription = "Next File"
                         )
                     }
@@ -839,7 +828,7 @@ private fun AttachmentViewerDialog(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
+                        Icon(imageVector = PhosphorIcons.Bold.ArrowSquareOut, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Open with PDF Viewer", fontWeight = FontWeight.Bold)
                     }
