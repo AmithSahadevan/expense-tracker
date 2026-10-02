@@ -67,9 +67,10 @@ object TransactionNotificationParser {
         Pattern.CASE_INSENSITIVE
     )
 
-    // Regex for reference ID / UTR
+    // Reference ID / UTR. The label may be spelled out and padded with filler words, as in
+    // "Reference Number is 66366448XXXX", so those words are consumed rather than captured.
     private val REF_ID_PATTERN = Pattern.compile(
-        "\\b(?:Ref(?:erence)?(?:\\s*No|\\s*ID)?|Txn(?:\\s*ID|\\s*No)?|UTR|UPI\\s*Ref|RRN)[^\\w]*([A-Za-z0-9]{6,22})\\b",
+        "\\b(?:Ref(?:erence)?|Txn|Transaction|UTR|RRN)(?:\\s*(?:Number|No\\.?|ID|#))?(?:\\s*(?:is|:|-|=))?[^\\w]*([A-Za-z0-9]{6,22})\\b",
         Pattern.CASE_INSENSITIVE
     )
 
@@ -176,9 +177,12 @@ object TransactionNotificationParser {
 
     private fun extractReferenceId(text: String): String? {
         val matcher = REF_ID_PATTERN.matcher(text)
-        if (matcher.find()) {
-            val ref = matcher.group(1)?.trim()
-            if (!ref.isNullOrEmpty() && ref.length >= 6) {
+        while (matcher.find()) {
+            val ref = matcher.group(1)?.trim() ?: continue
+            // A real reference always contains at least one digit; a label word like "Number"
+            // never does. Without this check "Reference Number is 66366448XXXX" yields the word
+            // "Number" as the reference, which is then identical for every such notification.
+            if (ref.length >= 6 && ref.any { it.isDigit() }) {
                 return ref
             }
         }

@@ -204,7 +204,10 @@ class ExpenseTrackerRepository(
 
     // --- Custom Categories ---
     fun getCustomCategoriesForUser(userId: Long): Flow<List<CategoryEntity>> =
-        categoryDao.getCustomCategoriesForUser(userId)
+        categoryDao.getCustomCategoriesForUser(userId).map { list ->
+            list.filter { !it.name.equals("Auto", ignoreCase = true) }
+                .distinctBy { it.name.lowercase() }
+        }
 
     suspend fun addCustomCategory(
         userId: Long,
@@ -213,6 +216,9 @@ class ExpenseTrackerRepository(
         type: String = "EXPENSE",
         colorHex: String = "#6366F1"
     ): Long = withContext(Dispatchers.IO) {
+        if (name.trim().equals("Auto", ignoreCase = true)) {
+            return@withContext -1L
+        }
         categoryDao.insertCategory(
             CategoryEntity(
                 userId = userId,

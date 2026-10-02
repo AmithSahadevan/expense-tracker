@@ -87,6 +87,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.service.ExpenseNotificationListenerService
 import android.provider.Settings
+import android.Manifest
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import com.example.data.local.preferences.TransactionDetectionPreferences
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -140,6 +144,23 @@ fun SettingsScreen(
     var hasNotificationAccess by remember {
         mutableStateOf(ExpenseNotificationListenerService.isNotificationAccessGranted(context))
     }
+    var canPostNotifications by remember { mutableStateOf(areAppNotificationsAllowed(context)) }
+    // Android only shows the permission dialog once; after that the request returns denied with no
+    // dialog, so a second tap has to take the user to Settings instead.
+    var postNotificationsRequested by remember { mutableStateOf(false) }
+
+    val postNotificationsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        canPostNotifications = areAppNotificationsAllowed(context)
+        if (!granted) {
+            Toast.makeText(
+                context,
+                "Notifications are off. Tap again to open Settings.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     // Granting notification access happens in Android's own settings screen, so the result is only
     // visible once we come back. Re-checking on resume also gives us a reliable moment to revive a
@@ -150,6 +171,7 @@ fun SettingsScreen(
             if (event == Lifecycle.Event.ON_RESUME) {
                 hasNotificationAccess =
                     ExpenseNotificationListenerService.isNotificationAccessGranted(context)
+                canPostNotifications = areAppNotificationsAllowed(context)
                 if (hasNotificationAccess &&
                     TransactionDetectionPreferences.isAutoDetectionEnabled(context)
                 ) {
@@ -497,6 +519,76 @@ fun SettingsScreen(
                                 color = MintGreen
                             )
                         }
+                    }
+                }
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                )
+
+                // Permission for the confirmation shown after a transaction is recorded.
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            when {
+                                canPostNotifications -> openAppNotificationSettings(context)
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                    !postNotificationsRequested -> {
+                                    postNotificationsRequested = true
+                                    postNotificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                                else -> openAppNotificationSettings(context)
+                            }
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f).padding(end = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column {
+                            Text(
+                                text = "Transaction Tracked Alerts",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = if (canPostNotifications) {
+                                    "You'll get a notification each time a transaction is recorded."
+                                } else {
+                                    "Tap to allow notifications so the app can confirm each recorded transaction."
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error)
+                        )
+                        Text(
+                            text = if (canPostNotifications) "Allowed" else "Not allowed",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -1110,5 +1202,42 @@ fun SettingsScreen(
                 }
             }
         )
+    }
+}
+
+/** True when the app may post notifications: the runtime permission on Android 13+, and the
+ *  app-level notification switch on every version. */
+private fun areAppNotificationsAllowed(context: Context): Boolean {
+    return try {
+        NotificationManagerCompat.from(context).areNotificationsEnabled()
+    } catch (e: Exception) {
+        false
+    }
+}
+
+/** Opens this app's notification settings, falling back to its app info page. */
+private fun openAppNotificationSettings(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        try {
+            context.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            )
+            return
+        } catch (e: Exception) {
+            // Fall through to the app info page below.
+        }
+    }
+    try {
+        context.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.fromParts("package", context.packageName, null))
+        )
+    } catch (e: Exception) {
+        Toast.makeText(
+            context,
+            "Open Settings > Apps > Expense Tracker > Notifications to allow notifications",
+            Toast.LENGTH_LONG
+        ).show()
     }
 }

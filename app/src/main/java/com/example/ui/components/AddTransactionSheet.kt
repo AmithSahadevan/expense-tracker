@@ -136,10 +136,13 @@ fun AddTransactionSheet(
     }
 
     val typeString = if (selectedType == TransactionType.EXPENSE) "EXPENSE" else "INCOME"
-    val userCustomForType = customCategories.filter { it.type.equals(typeString, ignoreCase = true) }
+    val userCustomForType = customCategories
+        .filter { it.type.equals(typeString, ignoreCase = true) }
+        .filter { !it.name.equals("Auto", ignoreCase = true) }
         .map { CategoryInfo(it.name, IconMapper.mapEmojiToIcon(it.emoji), selectedType, it.colorHex) }
 
-    val allCategories = defaultCategories + userCustomForType
+    val allCategories = (defaultCategories + userCustomForType)
+        .filter { !it.name.equals("Auto", ignoreCase = true) }
 
     val dateFormatter = remember { SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault()) }
 

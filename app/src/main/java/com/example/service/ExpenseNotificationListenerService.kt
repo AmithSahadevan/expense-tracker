@@ -150,6 +150,7 @@ class ExpenseNotificationListenerService : NotificationListenerService() {
         // notification for this payment must not be treated as a brand new transaction.
         db.processedNotificationDao().insert(record)
 
+        db.categoryDao().cleanupDuplicateAutoCategories(userId)
         val customCategories = db.categoryDao().getCustomCategoriesListForUser(userId)
         val hasAutoCategory = customCategories.any { it.name.equals("Auto", ignoreCase = true) }
         if (!hasAutoCategory) {
@@ -170,7 +171,7 @@ class ExpenseNotificationListenerService : NotificationListenerService() {
             "Auto-detected from notification"
         }
 
-        if (parsed.type == TransactionType.EXPENSE) {
+        val rowId = if (parsed.type == TransactionType.EXPENSE) {
             db.transactionDao().insertExpense(
                 ExpenseEntity(
                     userId = userId,
@@ -197,6 +198,15 @@ class ExpenseNotificationListenerService : NotificationListenerService() {
         }
 
         Log.i(TAG, "Auto-created ${parsed.type} of ${parsed.amount} for user $userId from $packageName")
+
+        TransactionTrackedNotifier.notifyTracked(
+            context = applicationContext,
+            type = parsed.type,
+            amount = parsed.amount,
+            merchantOrSender = parsed.merchantOrSender,
+            currencySymbol = db.userDao().findUserById(userId)?.currencySymbol ?: "₹",
+            rowId = rowId
+        )
 
         val now = System.currentTimeMillis()
         if (now - lastCleanupAt > CLEANUP_INTERVAL_MS) {

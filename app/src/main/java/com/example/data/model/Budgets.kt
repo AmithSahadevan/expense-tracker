@@ -220,6 +220,7 @@ object BudgetCalculator {
             transactions.filter { it.type == TransactionType.EXPENSE }.map { it.category }
         return known
             .distinctBy { it.lowercase() }
+            .filter { !it.equals("Auto", ignoreCase = true) }
             .filter { it.lowercase() !in taken }
             .sortedByDescending { spent(transactions, range, it) }
     }

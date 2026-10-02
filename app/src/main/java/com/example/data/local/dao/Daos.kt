@@ -294,6 +294,9 @@ interface CategoryDao {
     @Query("DELETE FROM custom_categories WHERE id = :id AND userId = :userId")
     suspend fun deleteCategory(id: Long, userId: Long): Int
 
+    @Query("DELETE FROM custom_categories WHERE userId = :userId AND LOWER(name) = 'auto' AND id NOT IN (SELECT MIN(id) FROM custom_categories WHERE userId = :userId AND LOWER(name) = 'auto')")
+    suspend fun cleanupDuplicateAutoCategories(userId: Long): Int
+
     @Query("DELETE FROM custom_categories WHERE userId = :userId")
     suspend fun deleteAllCategoriesForUser(userId: Long)
 }
@@ -303,8 +306,10 @@ interface ProcessedNotificationDao {
     @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND fingerprint = :fingerprint LIMIT 1")
     suspend fun findByFingerprint(userId: Long, fingerprint: String): ProcessedNotificationEntity?
 
-    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND referenceId = :refId LIMIT 1")
-    suspend fun findByReferenceId(userId: Long, refId: String): ProcessedNotificationEntity?
+    // Direction matters: a refund often quotes the reference of the payment it reverses, so the
+    // same reference can legitimately appear once as a debit and once as a credit.
+    @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND referenceId = :refId AND direction = :direction LIMIT 1")
+    suspend fun findByReferenceId(userId: Long, refId: String, direction: String): ProcessedNotificationEntity?
 
     @Query("SELECT * FROM processed_notifications WHERE userId = :userId AND direction = :direction AND ABS(amount - :amount) < 0.01 AND timestamp >= :minTimestamp AND timestamp <= :maxTimestamp LIMIT 1")
     suspend fun findMatchingNotification(

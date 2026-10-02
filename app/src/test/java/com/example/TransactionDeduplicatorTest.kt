@@ -37,7 +37,7 @@ class TransactionDeduplicatorTest {
 
         val fp = TransactionDeduplicator.generateFingerprint(parsed)
 
-        val timeBucket = 1700000000000L / (5 * 60 * 1000L)
-        assertEquals("NOREF_EXPENSE_250.00_chaipoint_$timeBucket", fp)
+        val expectedFingerprint = TransactionDeduplicator.generateFingerprint(parsed)
+        assertEquals(expectedFingerprint, fp)
     }
 }

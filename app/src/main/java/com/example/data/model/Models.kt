@@ -61,6 +61,9 @@ object CategoryRegistry {
     val incomeCategories = defaultIncomeCategories
 
     fun getCategoryInfo(name: String, type: TransactionType): CategoryInfo {
+        if (name.equals("Auto", ignoreCase = true)) {
+            return CategoryInfo("Auto", Icons.Outlined.AutoAwesome, type, "#6366F1")
+        }
         val list = if (type == TransactionType.INCOME) defaultIncomeCategories else defaultExpenseCategories
         return list.find { it.name.equals(name, ignoreCase = true) }
             ?: (if (type == TransactionType.INCOME)

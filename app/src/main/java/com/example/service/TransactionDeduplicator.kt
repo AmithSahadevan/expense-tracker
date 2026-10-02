@@ -37,8 +37,11 @@ object TransactionDeduplicator {
         val refId = parsed.referenceId?.trim()
         val processedDao = database.processedNotificationDao()
 
-        // 1. Reference ID is the strongest signal: the same ID is always the same payment.
-        if (!refId.isNullOrBlank() && processedDao.findByReferenceId(userId, refId) != null) {
+        // 1. Reference ID is the strongest signal: the same ID in the same direction is the
+        //    same payment.
+        if (!refId.isNullOrBlank() &&
+            processedDao.findByReferenceId(userId, refId, parsed.type.name) != null
+        ) {
             return true
         }
 
