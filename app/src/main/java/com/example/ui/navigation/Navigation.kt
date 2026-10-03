@@ -14,5 +14,6 @@ enum class AppDestination(
     WISHLIST("wishlist", "Wishlist", PhosphorIcons.Bold.Star),
     SAVINGS("savings", "Savings", PhosphorIcons.Bold.Target),
     BUDGETS("budgets", "Budgets", PhosphorIcons.Bold.ChartPie),
+    PROFILE("profile", "Profile", PhosphorIcons.Bold.User),
     SETTINGS("settings", "Settings", PhosphorIcons.Bold.Gear)
 }

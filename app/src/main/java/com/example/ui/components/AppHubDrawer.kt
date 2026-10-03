@@ -43,6 +43,7 @@ private fun AppDestination.drawerAccent(): Color = when (this) {
     AppDestination.SAVINGS -> Color(0xFF88C4B0)
     AppDestination.MONEY_FLOW -> Color(0xFF10B981)
     AppDestination.BUDGETS -> Color(0xFF0984E3)
+    AppDestination.PROFILE -> Color(0xFF38BDF8)
     AppDestination.SETTINGS -> Color(0xFF94A3B8)
 }
 
@@ -53,7 +54,8 @@ private fun AppDestination.drawerSubtitle(): String = when (this) {
     AppDestination.SAVINGS -> "Adult Money & protected Emergency Fund"
     AppDestination.MONEY_FLOW -> "Track debts, IOUs & shared expenses"
     AppDestination.BUDGETS -> "Manage spending caps & allocations"
-    AppDestination.SETTINGS -> "User data isolation, accounts & specs"
+    AppDestination.PROFILE -> "Your profile, account & spending stats"
+    AppDestination.SETTINGS -> "App preferences, detection & backup"
 }
 
 /**

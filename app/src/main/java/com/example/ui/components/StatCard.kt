@@ -110,20 +110,12 @@ fun BalanceHeroCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF10B981)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Bold.ArrowDown,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.ArrowDown,
+                        contentDescription = null,
+                        tint = Color(0xFF10B981),
+                        modifier = Modifier.size(20.dp)
+                    )
                     Column {
                         Text(
                             text = "This Month Income",
@@ -154,20 +146,12 @@ fun BalanceHeroCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFF6B6B)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Bold.ArrowUp,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.ArrowUp,
+                        contentDescription = null,
+                        tint = Color(0xFFFF6B6B),
+                        modifier = Modifier.size(20.dp)
+                    )
                     Column {
                         Text(
                             text = "This Month Expenses",

@@ -107,6 +107,7 @@ import com.example.ui.navigation.AppDestination
 import com.example.ui.screens.BudgetsScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.MoneyFlowScreen
+import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.SavingsScreen
 import com.example.ui.screens.SettingsScreen
 import androidx.compose.animation.AnimatedContent
@@ -169,6 +170,7 @@ fun AppShell(
             AppDestination.SAVINGS,
             AppDestination.MONEY_FLOW,
             AppDestination.BUDGETS,
+            AppDestination.PROFILE,
             AppDestination.SETTINGS
         )
     }
@@ -358,7 +360,8 @@ fun AppShell(
                                     onImportData = viewModel::importUserDataFromJson,
                                     onRemoveAccount = { viewModel.deleteCurrentUser() },
                                     onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
-                                    onClearData = { viewModel.clearCurrentUserData() }
+                                    onClearData = { viewModel.clearCurrentUserData() },
+                                    onOpenDrawer = { scope.launch { drawerState.open() } }
                                 )
                             }
                         }
@@ -368,6 +371,7 @@ fun AppShell(
                 // Mobile canonical layout: pages draw full-bleed, with the gradient top bar
                 // and the floating dock overlaid on top of them.
                 val showDock = currentDestination != AppDestination.SETTINGS &&
+                        currentDestination != AppDestination.PROFILE &&
                         if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
 
                 ModalNavigationDrawer(
@@ -457,6 +461,7 @@ fun AppShell(
                             onRemoveAccount = { viewModel.deleteCurrentUser() },
                             onUpdateProfile = { name, email, pfp -> viewModel.updateProfile(name, email, pfp) },
                             onClearData = { viewModel.clearCurrentUserData() },
+                            onOpenDrawer = { scope.launch { drawerState.open() } },
                             dockAddRequest = dockAddRequest,
                             onDockAddRequestHandled = { dockAddRequest = null },
                             onWishlistDetailToggle = { isWishlistDetailActive = it }
@@ -499,11 +504,12 @@ fun AppShell(
                                                 AppDestination.BUDGETS -> dockAddRequest = currentDestination
                                                 AppDestination.HOME,
                                                 AppDestination.SAVINGS,
+                                                AppDestination.PROFILE,
                                                 AppDestination.SETTINGS -> Unit
                                             }
                                         },
                                         onOpenProfile = {
-                                            navigateToDestination(AppDestination.SETTINGS.route)
+                                            navigateToDestination(AppDestination.PROFILE.route)
                                         }
                                     )
                                     Spacer(modifier = Modifier.height(10.dp))
@@ -610,7 +616,7 @@ fun AppShell(
     }
 
     BackHandler(
-        enabled = currentDestination == AppDestination.SETTINGS &&
+        enabled = (currentDestination == AppDestination.SETTINGS || currentDestination == AppDestination.PROFILE) &&
                 viewingTransaction == null &&
                 !drawerState.isOpen
     ) {
@@ -724,14 +730,18 @@ private fun ScreenRouter(
     onRemoveAccount: () -> Unit,
     onUpdateProfile: (String, String, String?) -> Unit,
     onClearData: () -> Unit,
+    onOpenDrawer: () -> Unit = {},
     dockAddRequest: AppDestination? = null,
     onDockAddRequestHandled: () -> Unit = {},
     onWishlistDetailToggle: (Boolean) -> Unit = {}
 ) {
+    val currentDestination = pagerDestinations[pagerState.currentPage]
+    val isSwipeDisabled = currentDestination == AppDestination.PROFILE || currentDestination == AppDestination.SETTINGS
+
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
-        userScrollEnabled = true,
+        userScrollEnabled = !isSwipeDisabled,
         key = { it }
     ) { pageIndex ->
         val destination = pagerDestinations[pageIndex]
@@ -744,7 +754,8 @@ private fun ScreenRouter(
                 onNavigateTo = onNavigateTo,
                 onOpenAddTransaction = onOpenAddTransaction,
                 onEditTransaction = onEditTransaction,
-                onOpenAuthModal = onOpenAuthModal
+                onOpenAuthModal = onOpenAuthModal,
+                onOpenDrawer = onOpenDrawer
             )
             AppDestination.TRANSACTIONS -> TransactionsScreen(
                 currentUser = currentUser,
@@ -800,6 +811,14 @@ private fun ScreenRouter(
                 onDeleteBudget = onDeleteBudget,
                 addRequested = dockAddRequest == AppDestination.BUDGETS,
                 onAddRequestHandled = onDockAddRequestHandled
+            )
+            AppDestination.PROFILE -> ProfileScreen(
+                currentUser = currentUser,
+                transactions = transactions,
+                onOpenAuthModal = onOpenAuthModal,
+                onRemoveAccount = onRemoveAccount,
+                onUpdateProfile = onUpdateProfile,
+                onBackToHome = { onNavigateTo(AppDestination.HOME.route) }
             )
             AppDestination.SETTINGS -> SettingsScreen(
                 currentUser = currentUser,
@@ -880,7 +899,7 @@ private fun FloatingDock(
     }
 }
 
-private val DockItemSize = 52.dp
+private val DockItemSize = 42.dp
 
 // Accent of the page's own add FAB; null for pages without one (dock button shows the "O").
 private fun AppDestination.dockAddAccent(): Color? = when (this) {
@@ -888,7 +907,7 @@ private fun AppDestination.dockAddAccent(): Color? = when (this) {
     AppDestination.WISHLIST -> Color(0xFFFD79A8)
     AppDestination.MONEY_FLOW -> Color(0xFF10B981)
     AppDestination.BUDGETS -> Color(0xFF0984E3)
-    AppDestination.HOME, AppDestination.SAVINGS, AppDestination.SETTINGS -> null
+    AppDestination.HOME, AppDestination.SAVINGS, AppDestination.PROFILE, AppDestination.SETTINGS -> null
 }
 
 @Composable
@@ -1037,7 +1056,7 @@ private fun DockCircleItem(
             contentDescription = contentDescription,
             tint = iconTint,
             modifier = Modifier
-                .size(22.dp)
+                .size(18.dp)
                 .graphicsLayer {
                     scaleX = iconScale
                     scaleY = iconScale

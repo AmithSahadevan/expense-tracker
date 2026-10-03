@@ -44,7 +44,8 @@ class PhosphorIconTest {
      */
     private val expected = mapOf(
         "House" to "house-simple",
-        "Bell" to "bell-simple",
+        "Bell" to "bell",
+        "BellSimple" to "bell-simple",
         "Funnel" to "funnel-simple",
         "Globe" to "globe-simple",
         "Link" to "link-simple",
@@ -97,7 +98,9 @@ class PhosphorIconTest {
         "Handshake" to "handshake",
         "Info" to "info",
         "Lightning" to "lightning",
+        "List" to "list",
         "MagnifyingGlass" to "magnifying-glass",
+        "Notification" to "notification",
         "Money" to "money",
         "Package" to "package",
         "Paperclip" to "paperclip",
@@ -122,7 +125,7 @@ class PhosphorIconTest {
 
     /** Icons that must resolve to an official Phosphor "-simple" variant. */
     private val mustBeSimple = setOf(
-        "Bell",
+        "BellSimple",
         "DownloadSimple",
         "Funnel",
         "Globe",
@@ -316,6 +319,7 @@ class PhosphorIconTest {
         assertEquals("phosphor-bold-star", AppDestination.WISHLIST.icon.name)
         assertEquals("phosphor-bold-target", AppDestination.SAVINGS.icon.name)
         assertEquals("phosphor-bold-chart-pie", AppDestination.BUDGETS.icon.name)
+        assertEquals("phosphor-bold-user", AppDestination.PROFILE.icon.name)
         assertEquals("phosphor-bold-gear", AppDestination.SETTINGS.icon.name)
     }
 

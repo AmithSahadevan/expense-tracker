@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import com.example.ui.components.PhosphorIcons
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,11 +30,11 @@ import com.example.data.local.entities.UserEntity
 import com.example.data.model.BudgetsSummary
 import com.example.data.model.GoalsSummary
 import com.example.data.model.TransactionItem
+import com.example.ui.components.AppChrome
 import com.example.ui.components.BalanceHeroCard
 import com.example.ui.components.FunkyEmptyState
-import com.example.ui.components.AppChrome
 import com.example.ui.components.GradientTopBar
-import androidx.compose.foundation.layout.Box
+import com.example.ui.components.PhosphorIcons
 import com.example.ui.components.TransactionRowItem
 import com.example.ui.theme.MintGreen
 import com.example.ui.viewmodel.DashboardSummaryUiState
@@ -47,6 +49,7 @@ fun HomeScreen(
     onOpenAddTransaction: () -> Unit = {},
     onEditTransaction: (TransactionItem) -> Unit = {},
     onOpenAuthModal: () -> Unit = {},
+    onOpenDrawer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
@@ -139,6 +142,32 @@ fun HomeScreen(
         title = "Kyash",
         centerTitle = true,
         showFade = false,
+        navigationIcon = {
+            IconButton(
+                onClick = onOpenDrawer,
+                modifier = Modifier
+                    .padding(end = 4.dp)
+                    .testTag("home_hamburger_button")
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Bold.List,
+                    contentDescription = "Open Drawer",
+                    tint = Color.White
+                )
+            }
+        },
+        actions = {
+            IconButton(
+                onClick = { /* Placeholder for notifications feature */ },
+                modifier = Modifier.testTag("home_notification_button")
+            ) {
+                Icon(
+                    imageVector = PhosphorIcons.Bold.Notification,
+                    contentDescription = "Notifications",
+                    tint = Color.White
+                )
+            }
+        },
         modifier = Modifier.align(Alignment.TopCenter)
     )
     }

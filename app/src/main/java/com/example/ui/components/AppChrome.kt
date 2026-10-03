@@ -63,10 +63,10 @@ object AppChrome {
     val ContentTopGap: Dp = 16.dp
 
     /** Total height of the bottom scrim, including the dock that sits inside it. */
-    val BottomScrimHeight: Dp = 170.dp
+    val BottomScrimHeight: Dp = 160.dp
 
     /** Bottom padding a page's scroll container needs to clear the dock. */
-    val BottomContentPadding: Dp = 132.dp
+    val BottomContentPadding: Dp = 122.dp
 
     /**
      * Top padding for a title-only page, whose header height is known without measuring.

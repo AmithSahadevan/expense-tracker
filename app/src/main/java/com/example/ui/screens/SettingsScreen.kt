@@ -226,83 +226,6 @@ fun SettingsScreen(
     ) {
         Spacer(modifier = Modifier.height(AppChrome.topContentPadding))
 
-        // Active Account Profile Card (Flattened)
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(vertical = 12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(CircleShape)
-                                .background(userColor),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (currentUser?.avatarImagePath != null) {
-                                AsyncImage(
-                                    model = "file:///android_asset/${currentUser.avatarImagePath}",
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Text(text = currentUser?.avatarEmoji ?: "⚡", fontSize = 24.sp)
-                            }
-                        }
-
-                        Column {
-                            Text(
-                                text = currentUser?.displayName ?: "Guest",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "@${currentUser?.username ?: "anon"} • ${currentUser?.email ?: "no-email"}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IconButton(
-                            onClick = { showEditProfileDialog = true },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Bold.PencilSimple,
-                                contentDescription = "Edit Profile",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = onOpenAuthModal,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Bold.ArrowsLeftRight,
-                                contentDescription = "Switch Profile",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
         // App Preferences (Flattened)
         Text(
             text = "APP PREFERENCES",
@@ -313,41 +236,37 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column {
-                        Text(text = "Currency", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        val currentInfo = Currencies.all.find { it.symbol == currency }
-                        val displayText = if (currentInfo != null) "${currentInfo.name} (${currentInfo.symbol})" else currency
-                        Text(
-                            text = "Active: $displayText",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+        Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = { showCurrencyDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(text = "Change", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                    }
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(text = "Currency", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                val currentInfo = Currencies.all.find { it.symbol == currency }
+                val displayText = if (currentInfo != null) "${currentInfo.name} (${currentInfo.symbol})" else currency
+                Text(
+                    text = "Active: $displayText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Button(
+                onClick = { showCurrencyDialog = true },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(text = "Change", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         // Automatic Transaction Detection
         Text(
@@ -359,205 +278,193 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                        Text(
-                            text = "Automatic Transaction Detection",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            text = "Parse bank & payment app notifications locally to record expenses and incomes automatically.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+        Spacer(modifier = Modifier.height(8.dp))
 
-                    Switch(
-                        checked = isAutoDetectionEnabled,
-                        onCheckedChange = { enabled ->
-                            isAutoDetectionEnabled = enabled
-                            TransactionDetectionPreferences.setAutoDetectionEnabled(context, enabled)
-                            if (enabled) {
-                                hasNotificationAccess =
-                                    ExpenseNotificationListenerService.isNotificationAccessGranted(context)
-                                if (hasNotificationAccess) {
-                                    ExpenseNotificationListenerService.ensureListenerConnected(context)
-                                } else {
-                                    try {
-                                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Please open Settings and grant Notification Access to Expense Tracker", Toast.LENGTH_LONG).show()
-                                    }
-                                }
-                            }
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = Color.Gray,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        text = "Automatic Transaction Detection",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Text(
+                        text = "Parse bank & payment app notifications locally to record expenses and incomes automatically.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                if (isAutoDetectionEnabled) {
-                    if (!hasNotificationAccess) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = PhosphorIcons.Bold.Bell,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.error,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Notification Access Required",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                                Text(
-                                    text = "Android requires notification access permission to read bank SMS and payment app alerts. Tap below to enable access in Settings.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Button(
-                                    onClick = {
-                                        try {
-                                            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                                            context.startActivity(intent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Please grant Notification Access in Android Settings", Toast.LENGTH_LONG).show()
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.error,
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Text("Grant Notification Access", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                Switch(
+                    checked = isAutoDetectionEnabled,
+                    onCheckedChange = { enabled ->
+                        isAutoDetectionEnabled = enabled
+                        TransactionDetectionPreferences.setAutoDetectionEnabled(context, enabled)
+                        if (enabled) {
+                            hasNotificationAccess =
+                                ExpenseNotificationListenerService.isNotificationAccessGranted(context)
+                            if (hasNotificationAccess) {
+                                ExpenseNotificationListenerService.ensureListenerConnected(context)
+                            } else {
+                                try {
+                                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Please open Settings and grant Notification Access to Expense Tracker", Toast.LENGTH_LONG).show()
                                 }
                             }
                         }
-                    } else {
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary,
+                        uncheckedThumbColor = Color.Gray,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
+            }
+
+            if (isAutoDetectionEnabled) {
+                if (!hasNotificationAccess) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(MintGreen)
+                            Icon(
+                                imageVector = PhosphorIcons.Bold.Bell,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Active • Listening for financial transaction notifications",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                color = MintGreen
+                                text = "Notification Access Required",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
-                    }
-                }
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                )
-
-                // Permission for the confirmation shown after a transaction is recorded.
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            when {
-                                canPostNotifications -> openAppNotificationSettings(context)
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                    !postNotificationsRequested -> {
-                                    postNotificationsRequested = true
-                                    postNotificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                                else -> openAppNotificationSettings(context)
-                            }
-                        }
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        modifier = Modifier.weight(1f).padding(end = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            imageVector = PhosphorIcons.Bold.Bell,
-                            contentDescription = null,
-                            tint = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
+                        Text(
+                            text = "Android requires notification access permission to read bank SMS and payment app alerts. Tap below to enable access in Settings.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                        Column {
-                            Text(
-                                text = "Transaction Tracked Alerts",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Text(
-                                text = if (canPostNotifications) {
-                                    "You'll get a notification each time a transaction is recorded."
-                                } else {
-                                    "Tap to allow notifications so the app can confirm each recorded transaction."
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Button(
+                            onClick = {
+                                try {
+                                    val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Please grant Notification Access in Android Settings", Toast.LENGTH_LONG).show()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Grant Notification Access", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                         }
                     }
-
+                } else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 2.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
                                 .clip(CircleShape)
-                                .background(if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error)
+                                .background(MintGreen)
                         )
                         Text(
-                            text = if (canPostNotifications) "Allowed" else "Not allowed",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error
+                            text = "Active • Listening for financial transaction notifications",
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = MintGreen
                         )
                     }
                 }
             }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
+
+            // Permission for the confirmation shown after a transaction is recorded.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        when {
+                            canPostNotifications -> openAppNotificationSettings(context)
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                                !postNotificationsRequested -> {
+                                postNotificationsRequested = true
+                                postNotificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                            else -> openAppNotificationSettings(context)
+                        }
+                    }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f).padding(end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.Bell,
+                        contentDescription = null,
+                        tint = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Transaction Tracked Alerts",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = if (canPostNotifications) {
+                                "You'll get a notification each time a transaction is recorded."
+                            } else {
+                                "Tap to allow notifications so the app can confirm each recorded transaction."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error)
+                    )
+                    Text(
+                        text = if (canPostNotifications) "Allowed" else "Not allowed",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (canPostNotifications) MintGreen else MaterialTheme.colorScheme.error
+                    )
+                }
+            }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         // Monthly Salary & Payday (Flattened)
         Text(
@@ -569,71 +476,62 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("salary_payday_card")
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val currentSalary = currentUser?.monthlySalary ?: 0.0
+        val payday = currentUser?.paydayDayOfMonth ?: 1
+
+        Row(
+            modifier = Modifier.fillMaxWidth().testTag("salary_payday_card"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
         ) {
-            Column(
-                modifier = Modifier.padding(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                val currentSalary = currentUser?.monthlySalary ?: 0.0
-                val payday = currentUser?.paydayDayOfMonth ?: 1
-
+            Column {
+                Text(
+                    text = if (currentSalary > 0)
+                        "$currency${String.format(Locale.US, "%,.0f", currentSalary)}"
+                    else
+                        "Not set yet",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Black
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = if (currentSalary > 0)
-                                "$currency${String.format(Locale.US, "%,.0f", currentSalary)}"
-                            else
-                                "Not set yet",
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Black
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = PhosphorIcons.Bold.Calendar,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Text(
-                                text = "Payday: Day $payday of each month",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = { showSalaryDialog = true },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.testTag("set_salary_button")
-                    ) {
-                        Text(
-                            text = if (currentSalary > 0) "Edit Salary" else "Set Salary",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.Calendar,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "Payday: Day $payday of each month",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+            }
+
+            Button(
+                onClick = { showSalaryDialog = true },
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.testTag("set_salary_button")
+            ) {
+                Text(
+                    text = if (currentSalary > 0) "Edit Salary" else "Set Salary",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                )
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         // Data Management (Flattened)
         Text(
@@ -645,99 +543,57 @@ fun SettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(text = "Backup & Import", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        onClick = {
-                            val fileName = "expense_tracker_backup_${System.currentTimeMillis()}.json"
-                            exportLauncher.launch(fileName)
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(imageVector = PhosphorIcons.Bold.DownloadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Backup", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                    }
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(text = "Backup & Import", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
 
-                    Button(
-                        onClick = { importLauncher.launch("application/json") },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(imageVector = PhosphorIcons.Bold.UploadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Import", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
-                    }
-                }
-                
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
-                    onClick = { showClearDataDialog = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f),
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
+                    onClick = {
+                        val fileName = "expense_tracker_backup_${System.currentTimeMillis()}.json"
+                        exportLauncher.launch(fileName)
+                    },
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(imageVector = PhosphorIcons.Bold.DownloadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Clear All Data", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Backup", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                }
+
+                Button(
+                    onClick = { importLauncher.launch("application/json") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(imageVector = PhosphorIcons.Bold.UploadSimple, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Import", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                 }
             }
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        // Account Lifecycle Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Create New Account
+            
             Button(
-                onClick = onOpenAuthModal,
-                shape = RoundedCornerShape(12.dp),
+                onClick = { showClearDataDialog = true },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("create_account_button")
-            ) {
-                Icon(imageVector = PhosphorIcons.Bold.Users, contentDescription = null, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("New Account", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
-            }
-
-            // Remove Account Section
-            Button(
-                onClick = { showRemoveAccountDialog = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f),
                     contentColor = MaterialTheme.colorScheme.error
                 ),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(imageVector = PhosphorIcons.Bold.Trash, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Remove Profile", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                Text("Clear All Data", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
             }
         }
 
         Spacer(modifier = Modifier.navigationBarsPadding().height(30.dp))
     }
     GradientTopBar(
-        title = "Settings & Profiles",
+        title = "Settings & Preferences",
         navigationIcon = if (onBackToHome != null) {
             {
                 IconButton(
@@ -758,121 +614,6 @@ fun SettingsScreen(
     )
     }
 
-
-    if (showEditProfileDialog && currentUser != null) {
-        var nameInput by remember { mutableStateOf(currentUser.displayName) }
-        var emailInput by remember { mutableStateOf(currentUser.email) }
-        var selectedPfp by remember { mutableStateOf(currentUser.avatarImagePath) }
-        
-        val pfpImages = remember { (1..10).map { "pfp/pfp_$it.jpg" } }
-
-        AlertDialog(
-            onDismissRequest = { showEditProfileDialog = false },
-            title = { Text("Edit Profile", fontWeight = FontWeight.Black, color = Color.White) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // PFP Picker
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Box(
-                            modifier = Modifier
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .background(userColor),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (selectedPfp != null) {
-                                AsyncImage(
-                                    model = "file:///android_asset/$selectedPfp",
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Text(text = currentUser.avatarEmoji, fontSize = 32.sp)
-                            }
-                        }
-                        
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(pfpImages) { path ->
-                                val isSelected = selectedPfp == path
-                                Box(
-                                    modifier = Modifier
-                                        .size(50.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(if (isSelected) Color.White else Color.Transparent)
-                                        .clickable { selectedPfp = path }
-                                        .padding(if (isSelected) 2.dp else 0.dp)
-                                ) {
-                                    AsyncImage(
-                                        model = "file:///android_asset/$path",
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = nameInput,
-                        onValueChange = { nameInput = it },
-                        label = { Text("Display Name", color = Color(0xFF94A3B8)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.White,
-                            unfocusedBorderColor = Color(0xFF4B5563),
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color(0xFF94A3B8),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color(0xFFF4F4F6)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = emailInput,
-                        onValueChange = { emailInput = it },
-                        label = { Text("Email Address", color = Color(0xFF94A3B8)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.White,
-                            unfocusedBorderColor = Color(0xFF4B5563),
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color(0xFF94A3B8),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color(0xFFF4F4F6)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onUpdateProfile(nameInput, emailInput, selectedPfp)
-                        showEditProfileDialog = false
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF0C0F14)
-                    )
-                ) {
-                    Text("Save Changes", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showEditProfileDialog = false }) {
-                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-    }
 
     if (showClearDataDialog) {
         AlertDialog(
@@ -897,35 +638,6 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearDataDialog = false }) {
-                    Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-    }
-
-    if (showRemoveAccountDialog) {
-        AlertDialog(
-            onDismissRequest = { showRemoveAccountDialog = false },
-            title = { Text("Remove Account?", fontWeight = FontWeight.Black, color = Color.White) },
-            text = {
-                Text("This will permanently delete your account '@${currentUser?.username}' and ALL its transactions, wishlist items, and savings records. This cannot be undone.", color = Color(0xFFF4F4F6))
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onRemoveAccount()
-                        showRemoveAccountDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF0C0F14)
-                    )
-                ) {
-                    Text("Delete Permanently", fontWeight = FontWeight.Bold, color = Color(0xFF0C0F14))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRemoveAccountDialog = false }) {
                     Text("Cancel", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
