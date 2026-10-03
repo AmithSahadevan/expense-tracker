@@ -14,6 +14,7 @@ import com.example.data.local.AppDatabase
 import com.example.data.remote.ProductLookupService
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.ExpenseTrackerRepository
+import com.example.data.local.preferences.NotificationStateStore
 import com.example.data.local.preferences.TransactionDetectionPreferences
 import com.example.service.ExpenseNotificationListenerService
 import com.example.ui.AppShell
@@ -27,7 +28,7 @@ class MainActivity : ComponentActivity() {
         val database = AppDatabase.getInstance(applicationContext)
         val authRepo = AuthRepository(database.userDao(), context = applicationContext)
         val expenseRepo = ExpenseTrackerRepository(database)
-        ExpenseTrackerViewModelFactory(authRepo, expenseRepo, ProductLookupService())
+        ExpenseTrackerViewModelFactory(authRepo, expenseRepo, ProductLookupService(), NotificationStateStore(applicationContext))
     }
 
     // Flag indicating if the VSYNC keep-alive choreographer loop is currently running

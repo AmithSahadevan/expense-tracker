@@ -97,6 +97,8 @@ import com.example.data.model.BudgetInput
 import com.example.data.model.BudgetsSummary
 import com.example.data.model.GoalsSummary
 import com.example.data.model.MoneyFlowInput
+import com.example.data.export.ExportMonth
+import com.example.data.model.NotificationCenterUiState
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsGoalInput
 import com.example.data.model.SavingsTransactionInput
@@ -105,8 +107,11 @@ import com.example.ui.components.AddTransactionSheet
 import com.example.ui.components.UserAuthModal
 import com.example.ui.navigation.AppDestination
 import com.example.ui.screens.BudgetsScreen
+import com.example.ui.screens.ExportExcelScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.MoneyFlowScreen
+import com.example.ui.screens.NotificationActions
+import com.example.ui.screens.NotificationsScreen
 import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.SavingsScreen
 import com.example.ui.screens.SettingsScreen
@@ -159,6 +164,8 @@ fun AppShell(
     val budgetsSummary by viewModel.budgetsSummary.collectAsStateWithLifecycle()
     val goalsSummary by viewModel.goalsSummary.collectAsStateWithLifecycle()
     val customCategories by viewModel.customCategories.collectAsStateWithLifecycle()
+    val notificationCenter by viewModel.notificationCenter.collectAsStateWithLifecycle()
+    val exportMonths by viewModel.exportMonths.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
 
@@ -171,7 +178,9 @@ fun AppShell(
             AppDestination.MONEY_FLOW,
             AppDestination.BUDGETS,
             AppDestination.PROFILE,
-            AppDestination.SETTINGS
+            AppDestination.SETTINGS,
+            AppDestination.NOTIFICATIONS,
+            AppDestination.EXPORT
         )
     }
 
@@ -192,6 +201,17 @@ fun AppShell(
                 scope.launch { pagerState.scrollToPage(page) }
             }
         }
+    }
+
+    val notificationActions = remember(viewModel) {
+        NotificationActions(
+            onMarkRead = { viewModel.markNotificationRead(it) },
+            onMarkAllRead = viewModel::markAllNotificationsRead,
+            onDismiss = { viewModel.dismissNotifications(it) },
+            onRestore = { viewModel.restoreNotifications(it) },
+            onRestoreAllDismissed = viewModel::restoreDismissedNotifications,
+            onSetCategoryEnabled = { category, enabled -> viewModel.setNotificationCategoryEnabled(category, enabled) }
+        )
     }
 
     var showAddTransactionSheet by remember { mutableStateOf(false) }
@@ -322,6 +342,11 @@ fun AppShell(
                                     budgets = budgets,
                                     budgetsSummary = budgetsSummary,
                                     goalsSummary = goalsSummary,
+                                    notificationCenter = notificationCenter,
+                                    notificationActions = notificationActions,
+                                    exportMonths = exportMonths,
+                                    excelFileNameFor = viewModel::excelExportFileName,
+                                    onBuildExcel = viewModel::buildExcelExport,
                                     allUsersCount = allUsers.size,
                                     onNavigateTo = navigateToDestination,
                                     onOpenAddTransaction = {
@@ -372,11 +397,15 @@ fun AppShell(
                 // and the floating dock overlaid on top of them.
                 val showDock = currentDestination != AppDestination.SETTINGS &&
                         currentDestination != AppDestination.PROFILE &&
+                        currentDestination != AppDestination.NOTIFICATIONS &&
+                        currentDestination != AppDestination.EXPORT &&
                         if (currentDestination == AppDestination.WISHLIST) !isWishlistDetailActive else true
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
-                    gesturesEnabled = drawerState.isOpen || viewingTransaction == null,
+                    // Only Home offers the drawer, so no other page can be swiped into it.
+                    gesturesEnabled = drawerState.isOpen ||
+                            (currentDestination == AppDestination.HOME && viewingTransaction == null),
                     scrimColor = Color.Black.copy(alpha = 0.55f),
                     drawerContent = {
                         ModalDrawerSheet(
@@ -389,6 +418,7 @@ fun AppShell(
                                 currentUser = currentUser,
                                 currentDestination = currentDestination,
                                 accountCount = allUsers.size,
+                                unreadNotifications = notificationCenter.unreadCount,
                                 onNavigate = { dest ->
                                     scope.launch { drawerState.close() }
                                     navigateToDestination(dest.route)
@@ -396,6 +426,10 @@ fun AppShell(
                                 onSwitchProfile = {
                                     scope.launch { drawerState.close() }
                                     showAuthModal = true
+                                },
+                                onExportExcel = {
+                                    scope.launch { drawerState.close() }
+                                    navigateToDestination(AppDestination.EXPORT.route)
                                 }
                             )
                         }
@@ -422,6 +456,11 @@ fun AppShell(
                             budgets = budgets,
                             budgetsSummary = budgetsSummary,
                             goalsSummary = goalsSummary,
+                            notificationCenter = notificationCenter,
+                            notificationActions = notificationActions,
+                            exportMonths = exportMonths,
+                            excelFileNameFor = viewModel::excelExportFileName,
+                            onBuildExcel = viewModel::buildExcelExport,
                             allUsersCount = allUsers.size,
                             onNavigateTo = navigateToDestination,
                             onOpenAddTransaction = {
@@ -505,7 +544,9 @@ fun AppShell(
                                                 AppDestination.HOME,
                                                 AppDestination.SAVINGS,
                                                 AppDestination.PROFILE,
-                                                AppDestination.SETTINGS -> Unit
+                                                AppDestination.SETTINGS,
+                                                AppDestination.NOTIFICATIONS,
+                                                AppDestination.EXPORT -> Unit
                                             }
                                         },
                                         onOpenProfile = {
@@ -616,7 +657,10 @@ fun AppShell(
     }
 
     BackHandler(
-        enabled = (currentDestination == AppDestination.SETTINGS || currentDestination == AppDestination.PROFILE) &&
+        enabled = (currentDestination == AppDestination.SETTINGS ||
+                currentDestination == AppDestination.PROFILE ||
+                currentDestination == AppDestination.NOTIFICATIONS ||
+                currentDestination == AppDestination.EXPORT) &&
                 viewingTransaction == null &&
                 !drawerState.isOpen
     ) {
@@ -698,6 +742,11 @@ private fun ScreenRouter(
     budgets: List<BudgetEntity>,
     budgetsSummary: BudgetsSummary,
     goalsSummary: GoalsSummary,
+    notificationCenter: NotificationCenterUiState,
+    notificationActions: NotificationActions,
+    exportMonths: List<ExportMonth>,
+    excelFileNameFor: (Set<ExportMonth>) -> String,
+    onBuildExcel: suspend (Set<ExportMonth>) -> ByteArray?,
     allUsersCount: Int,
     onNavigateTo: (String) -> Unit,
     onOpenAddTransaction: () -> Unit,
@@ -736,7 +785,10 @@ private fun ScreenRouter(
     onWishlistDetailToggle: (Boolean) -> Unit = {}
 ) {
     val currentDestination = pagerDestinations[pagerState.currentPage]
-    val isSwipeDisabled = currentDestination == AppDestination.PROFILE || currentDestination == AppDestination.SETTINGS
+    val isSwipeDisabled = currentDestination == AppDestination.PROFILE ||
+            currentDestination == AppDestination.SETTINGS ||
+            currentDestination == AppDestination.NOTIFICATIONS ||
+            currentDestination == AppDestination.EXPORT
 
     HorizontalPager(
         state = pagerState,
@@ -755,7 +807,8 @@ private fun ScreenRouter(
                 onOpenAddTransaction = onOpenAddTransaction,
                 onEditTransaction = onEditTransaction,
                 onOpenAuthModal = onOpenAuthModal,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                unreadNotificationCount = notificationCenter.unreadCount
             )
             AppDestination.TRANSACTIONS -> TransactionsScreen(
                 currentUser = currentUser,
@@ -811,6 +864,18 @@ private fun ScreenRouter(
                 onDeleteBudget = onDeleteBudget,
                 addRequested = dockAddRequest == AppDestination.BUDGETS,
                 onAddRequestHandled = onDockAddRequestHandled
+            )
+            AppDestination.NOTIFICATIONS -> NotificationsScreen(
+                center = notificationCenter,
+                actions = notificationActions,
+                onNavigateTo = onNavigateTo,
+                onBack = { onNavigateTo(AppDestination.HOME.route) }
+            )
+            AppDestination.EXPORT -> ExportExcelScreen(
+                months = exportMonths,
+                fileNameFor = excelFileNameFor,
+                onBuildFile = onBuildExcel,
+                onBack = { onNavigateTo(AppDestination.HOME.route) }
             )
             AppDestination.PROFILE -> ProfileScreen(
                 currentUser = currentUser,
@@ -907,7 +972,8 @@ private fun AppDestination.dockAddAccent(): Color? = when (this) {
     AppDestination.WISHLIST -> Color(0xFFFD79A8)
     AppDestination.MONEY_FLOW -> Color(0xFF10B981)
     AppDestination.BUDGETS -> Color(0xFF0984E3)
-    AppDestination.HOME, AppDestination.SAVINGS, AppDestination.PROFILE, AppDestination.SETTINGS -> null
+    AppDestination.HOME, AppDestination.SAVINGS, AppDestination.PROFILE, AppDestination.SETTINGS,
+    AppDestination.NOTIFICATIONS, AppDestination.EXPORT -> null
 }
 
 @Composable

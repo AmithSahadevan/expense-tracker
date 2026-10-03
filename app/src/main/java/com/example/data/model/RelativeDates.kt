@@ -1,6 +1,9 @@
 package com.example.data.model
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToLong
 
 /** Plain-language due dates, shared by the wishlist and money flow screens. */
@@ -26,6 +29,24 @@ object RelativeDates {
             days > 1 -> "in $days days"
             days == -1 -> "yesterday"
             else -> "${-days} days ago"
+        }
+    }
+
+    /** "Just now", "12m ago", "3h ago", "Yesterday", "4d ago", then a plain date, for something that already happened. */
+    fun ago(timestamp: Long, now: Long = System.currentTimeMillis()): String {
+        val elapsed = now - timestamp
+        val days = daysUntil(timestamp, now)
+        return when {
+            elapsed < 60_000L -> "Just now"
+            elapsed < 3_600_000L -> "${elapsed / 60_000L}m ago"
+            days == 0 -> "${elapsed / 3_600_000L}h ago"
+            days == -1 -> "Yesterday"
+            days > -7 -> "${-days}d ago"
+            else -> {
+                val sameYear = Calendar.getInstance().apply { timeInMillis = timestamp }.get(Calendar.YEAR) ==
+                    Calendar.getInstance().apply { timeInMillis = now }.get(Calendar.YEAR)
+                SimpleDateFormat(if (sameYear) "d MMM" else "d MMM yyyy", Locale.getDefault()).format(Date(timestamp))
+            }
         }
     }
 

@@ -32,6 +32,7 @@ import com.example.data.model.GoalsSummary
 import com.example.data.model.TransactionItem
 import com.example.ui.components.AppChrome
 import com.example.ui.components.BalanceHeroCard
+import com.example.ui.components.CountBadge
 import com.example.ui.components.FunkyEmptyState
 import com.example.ui.components.GradientTopBar
 import com.example.ui.components.PhosphorIcons
@@ -50,6 +51,7 @@ fun HomeScreen(
     onEditTransaction: (TransactionItem) -> Unit = {},
     onOpenAuthModal: () -> Unit = {},
     onOpenDrawer: () -> Unit = {},
+    unreadNotificationCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val currency = currentUser?.currencySymbol ?: "₹"
@@ -157,15 +159,30 @@ fun HomeScreen(
             }
         },
         actions = {
-            IconButton(
-                onClick = { /* Placeholder for notifications feature */ },
-                modifier = Modifier.testTag("home_notification_button")
-            ) {
-                Icon(
-                    imageVector = PhosphorIcons.Bold.Notification,
-                    contentDescription = "Notifications",
-                    tint = Color.White
-                )
+            Box {
+                IconButton(
+                    onClick = { onNavigateTo("notifications") },
+                    modifier = Modifier.testTag("home_notification_button")
+                ) {
+                    Icon(
+                        imageVector = PhosphorIcons.Bold.Notification,
+                        contentDescription = if (unreadNotificationCount > 0) {
+                            "Notifications, $unreadNotificationCount unread"
+                        } else {
+                            "Notifications"
+                        },
+                        tint = Color.White
+                    )
+                }
+                if (unreadNotificationCount > 0) {
+                    CountBadge(
+                        count = unreadNotificationCount,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 4.dp, end = 2.dp)
+                            .testTag("home_notification_badge")
+                    )
+                }
             }
         },
         modifier = Modifier.align(Alignment.TopCenter)

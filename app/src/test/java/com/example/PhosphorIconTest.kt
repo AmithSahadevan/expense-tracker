@@ -319,8 +319,10 @@ class PhosphorIconTest {
         assertEquals("phosphor-bold-star", AppDestination.WISHLIST.icon.name)
         assertEquals("phosphor-bold-target", AppDestination.SAVINGS.icon.name)
         assertEquals("phosphor-bold-chart-pie", AppDestination.BUDGETS.icon.name)
+        assertEquals("phosphor-bold-bell", AppDestination.NOTIFICATIONS.icon.name)
         assertEquals("phosphor-bold-user", AppDestination.PROFILE.icon.name)
         assertEquals("phosphor-bold-gear", AppDestination.SETTINGS.icon.name)
+        assertEquals("phosphor-bold-download-simple", AppDestination.EXPORT.icon.name)
     }
 
     @Test

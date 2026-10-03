@@ -14,6 +14,8 @@ enum class AppDestination(
     WISHLIST("wishlist", "Wishlist", PhosphorIcons.Bold.Star),
     SAVINGS("savings", "Savings", PhosphorIcons.Bold.Target),
     BUDGETS("budgets", "Budgets", PhosphorIcons.Bold.ChartPie),
+    NOTIFICATIONS("notifications", "Notifications", PhosphorIcons.Bold.Bell),
     PROFILE("profile", "Profile", PhosphorIcons.Bold.User),
-    SETTINGS("settings", "Settings", PhosphorIcons.Bold.Gear)
+    SETTINGS("settings", "Settings", PhosphorIcons.Bold.Gear),
+    EXPORT("export", "Export as Excel", PhosphorIcons.Bold.DownloadSimple)
 }

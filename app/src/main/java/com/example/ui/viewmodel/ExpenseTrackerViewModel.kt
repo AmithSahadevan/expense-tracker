@@ -15,6 +15,10 @@ import com.example.data.local.entities.SavingsTransactionEntity
 import com.example.data.local.entities.SavingsType
 import com.example.data.local.entities.UserEntity
 import com.example.data.local.entities.WishlistItemEntity
+import com.example.data.local.preferences.NotificationStateStore
+import com.example.data.export.ExcelExport
+import com.example.data.export.ExportMonth
+import com.example.data.export.XlsxWriter
 import com.example.data.model.BudgetCalculator
 import com.example.data.model.BudgetInput
 import com.example.data.model.BudgetValidator
@@ -24,6 +28,12 @@ import com.example.data.model.MoneyFlowCalculator
 import com.example.data.model.MoneyFlowInput
 import com.example.data.model.MoneyFlowSummary
 import com.example.data.model.MoneyFlowValidator
+import com.example.data.model.NotificationCategory
+import com.example.data.model.NotificationCenter
+import com.example.data.model.NotificationCenterUiState
+import com.example.data.model.NotificationEngine
+import com.example.data.model.NotificationInputs
+import com.example.data.model.NotificationUserState
 import com.example.data.model.ProductLookupResult
 import com.example.data.model.SavingsCalculator
 import com.example.data.model.SavingsGoalCalculator
@@ -43,15 +53,19 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 
 data class DashboardSummaryUiState(
@@ -79,7 +93,8 @@ data class DashboardSummaryUiState(
 class ExpenseTrackerViewModel(
     private val authRepository: AuthRepository,
     private val repository: ExpenseTrackerRepository,
-    private val productLookup: ProductLookupService
+    private val productLookup: ProductLookupService,
+    private val notificationStore: NotificationStateStore = NotificationStateStore()
 ) : ViewModel() {
 
     private val moshi = Moshi.Builder()
@@ -294,6 +309,147 @@ class ExpenseTrackerViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardSummaryUiState()
     )
+
+    // --- Notification centre ---
+
+    private data class NotificationSources(
+        val transactions: List<TransactionItem>,
+        val budgets: List<BudgetEntity>,
+        val moneyFlows: List<MoneyFlowEntity>,
+        val goals: GoalsSummary,
+        val wishlist: List<WishlistItemEntity>
+    )
+
+    private data class NotificationContext(
+        val summary: DashboardSummaryUiState,
+        val savingsTransactions: List<SavingsTransactionEntity>,
+        val goalContributions: List<GoalContributionEntity>,
+        val user: UserEntity?,
+        val now: Long
+    )
+
+    /** Re-evaluates date-driven alerts (an IOU falling due, a new month starting) while the app stays open. */
+    private val clock: Flow<Long> = flow {
+        while (true) {
+            emit(System.currentTimeMillis())
+            delay(NOTIFICATION_CLOCK_TICK_MS)
+        }
+    }
+
+    private val notificationSources = combine(
+        transactions,
+        budgets,
+        moneyFlows,
+        goalsSummary,
+        wishlist,
+        ::NotificationSources
+    )
+
+    private val notificationContext = combine(
+        dashboardSummary,
+        savingsTransactions,
+        goalContributions,
+        currentUser,
+        clock,
+        ::NotificationContext
+    )
+
+    private val notificationUserState: Flow<NotificationUserState> = currentUser.flatMapLatest { user ->
+        if (user != null) notificationStore.observe(user.id) else flowOf(NotificationUserState())
+    }
+
+    /**
+     * Every notification the user should see right now, already filtered by what they have
+     * dismissed or muted. The Home badge and the Notifications page both read this.
+     */
+    val notificationCenter: StateFlow<NotificationCenterUiState> = combine(
+        notificationSources,
+        notificationContext,
+        notificationUserState
+    ) { sources, context, userState ->
+        val inputs = NotificationInputs(
+            currency = context.user?.currencySymbol ?: "₹",
+            transactions = sources.transactions,
+            budgets = sources.budgets,
+            moneyFlows = sources.moneyFlows,
+            goals = sources.goals,
+            goalContributions = context.goalContributions,
+            wishlist = sources.wishlist,
+            savingsTransactions = context.savingsTransactions,
+            availableMoney = context.summary.remainingMoney,
+            adultMoneyBalance = context.summary.adultMoneyBalance,
+            emergencyFundBalance = context.summary.emergencyFundBalance,
+            monthlySalary = context.user?.monthlySalary ?: 0.0,
+            paydayDayOfMonth = context.user?.paydayDayOfMonth ?: 1
+        )
+        NotificationCenter.build(NotificationEngine.generate(inputs, context.now), userState, context.now)
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = NotificationCenterUiState()
+    )
+
+    fun markNotificationRead(id: String) {
+        val user = currentUser.value ?: return
+        notificationStore.markRead(user.id, listOf(id))
+    }
+
+    fun markAllNotificationsRead() {
+        val user = currentUser.value ?: return
+        notificationStore.markRead(user.id, notificationCenter.value.entries.map { it.notification.id })
+    }
+
+    fun dismissNotifications(ids: Collection<String>) {
+        val user = currentUser.value ?: return
+        notificationStore.dismiss(user.id, ids)
+    }
+
+    fun restoreNotifications(ids: Collection<String>) {
+        val user = currentUser.value ?: return
+        notificationStore.restore(user.id, ids)
+    }
+
+    fun restoreDismissedNotifications() {
+        val user = currentUser.value ?: return
+        notificationStore.restoreAllDismissed(user.id)
+    }
+
+    fun setNotificationCategoryEnabled(category: NotificationCategory, enabled: Boolean) {
+        val user = currentUser.value ?: return
+        notificationStore.setCategoryEnabled(user.id, category, enabled)
+    }
+
+    // --- Excel export ---
+
+    /** Months that hold any dated record, newest first, for the export picker. */
+    val exportMonths: StateFlow<List<ExportMonth>> = combine(
+        transactions,
+        savingsTransactions,
+        moneyFlows,
+        goalContributions
+    ) { txList, savings, flows, contributions ->
+        ExcelExport.monthsFrom(
+            txList.map { it.date } + savings.map { it.date } + flows.map { it.date } + contributions.map { it.date }
+        )
+    }.flowOn(Dispatchers.Default).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    /** The workbook as bytes, or null when there is no account or the build failed. */
+    suspend fun buildExcelExport(months: Set<ExportMonth>): ByteArray? {
+        val user = currentUser.value ?: return null
+        return try {
+            withContext(Dispatchers.IO) {
+                XlsxWriter.write(ExcelExport.build(repository.getUserDataForBackup(user.id), months))
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun excelExportFileName(months: Set<ExportMonth>): String = ExcelExport.fileName(months)
 
     fun clearActionMessage() {
         // No-op
@@ -773,6 +929,7 @@ class ExpenseTrackerViewModel(
 
     fun deleteCurrentUser() {
         val user = currentUser.value ?: return
+        notificationStore.forget(user.id)
         viewModelScope.launch {
             // 1. Delete all associated data
             repository.deleteAllUserData(user.id)
@@ -789,15 +946,19 @@ class ExpenseTrackerViewModel(
     }
 }
 
+/** How often the notification centre re-checks the clock while the app is open. */
+private const val NOTIFICATION_CLOCK_TICK_MS = 15 * 60 * 1000L
+
 class ExpenseTrackerViewModelFactory(
     private val authRepository: AuthRepository,
     private val repository: ExpenseTrackerRepository,
-    private val productLookup: ProductLookupService
+    private val productLookup: ProductLookupService,
+    private val notificationStore: NotificationStateStore = NotificationStateStore()
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ExpenseTrackerViewModel::class.java)) {
-            return ExpenseTrackerViewModel(authRepository, repository, productLookup) as T
+            return ExpenseTrackerViewModel(authRepository, repository, productLookup, notificationStore) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
